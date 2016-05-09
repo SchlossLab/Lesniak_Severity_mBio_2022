@@ -35,7 +35,7 @@ print-%:
 $(REFS)/silva.seed.align :
 	wget -N http://mothur.org/w/images/1/15/Silva.seed_v123.tgz
 	tar xvzf Silva.seed_v123.tgz silva.seed_v123.align silva.seed_v123.tax
-	mothur "#get.lineage(fasta=silva.seed_v123.align, taxonomy=silva.seed_v123.tax, taxon=Bacteria);degap.seqs(fasta=silva.seed_v123.pick.align, processors=8)"
+	mothur "#get.lineage(fasta=silva.seed_v123.align, taxonomy=silva.seed_v123.tax, taxon=Bacteria);degap.seqs(fasta=silva.seed_v123.pick.align, Wprocessors=8)"
 	mv silva.seed_v123.pick.align $(REFS)/silva.seed.align
 	rm Silva.seed_v123.tgz silva.seed_v123.*
 
@@ -77,7 +77,7 @@ $(REFS)/HMP_MOCK.v4.fasta : $(REFS)/HMP_MOCK.fasta $(REFS)/silva.v4.align
 ################################################################################
 
 
-BASIC_STEM = data/process/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
+BASIC_STEM = data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
 
 
 
