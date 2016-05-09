@@ -54,6 +54,19 @@ $(REFS)/trainset14_032015.% :
 	rmdir trainset14_032015.pds
 	rm Trainset14_032015.pds.tgz
 
+$(REFS)/HMP_MOCK.fasta :
+	wget --no-check-certificate -N -P $(REFS) https://raw.githubusercontent.com/SchlossLab/Kozich_MiSeqSOP_AEM_2013/master/data/references/HMP_MOCK.fasta
+
+#align the mock community reference sequeces
+$(REFS)/HMP_MOCK.v4.fasta : $(REFS)/HMP_MOCK.fasta $(REFS)/silva.v4.align
+	mothur "#align.seqs(fasta=$(REFS)/HMP_MOCK.fasta, reference=$(REFS)/silva.v4.align);\
+			degap.seqs()";\
+	mv $(REFS)/HMP_MOCK.ng.fasta $(REFS)/HMP_MOCK.v4.fasta;\
+	rm $(REFS)/HMP_MOCK.align;\
+	rm $(REFS)/HMP_MOCK.align.report;\
+	rm $(REFS)/HMP_MOCK.flip.accnos
+
+
 ################################################################################
 #
 # Part 2: Run data through mothur
@@ -62,6 +75,57 @@ $(REFS)/trainset14_032015.% :
 # overall analysis.
 #
 ################################################################################
+
+
+BASIC_STEM = data/process/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
+
+
+
+# here we go from the raw fastq files and the files file to generate a fasta,
+# taxonomy, and count_table file that has had the chimeras removed as well as
+# any non bacterial sequences
+$(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta $(BASIC_STEM).pick.v4.wang.pick.taxonomy : code/get_good_seqs.batch\
+										data/raw/get_data\
+										data/references/silva.v4.align\
+										data/references/trainset10_082014.v4.fasta\
+										data/references/trainset10_082014.v4.tax
+	mothur code/get_good_seqs.batch;\
+	rm data/process/*.map
+
+
+
+# here we go from the good sequences and generate a shared file and a
+# cons.taxonomy file based on OTU data
+$(BASIC_STEM).pick.pick.pick.an.unique_list.shared $(BASIC_STEM).pick.pick.pick.an.unique_list.0.03.cons.taxonomy : code/get_shared_otus.batch\
+										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
+										$(BASIC_STEM).pick.pick.fasta\
+										$(BASIC_STEM).pick.v4.wang.pick.taxonomy
+	mothur code/get_shared_otus.batch
+	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table
+	rm $(BASIC_STEM).pick.pick.pick.fasta
+	rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy;
+
+
+
+# here we go from the good sequences and generate a shared file and a
+# cons.taxonomy file based on phylum-level data
+$(BASIC_STEM).pick.v4.wang.pick.pick.tx.5.cons.taxonomy $(BASIC_STEM).pick.v4.wang.pick.pick.tx.shared : code/get_shared_phyla.batch\
+										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
+										$(BASIC_STEM).pick.pick.fasta\
+										$(BASIC_STEM).pick.v4.wang.pick.taxonomy
+	mothur code/get_shared_phyla.batch;\
+	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table;\
+    rm $(BASIC_STEM).pick.pick.pick.fasta
+    rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy
+	rm data/process/*.tx.*rabund;
+
+
+# now we want to get the sequencing error as seen in the mock community samples
+$(BASIC_STEM).pick.pick.pick.error.summary : code/get_error.batch\
+										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
+										$(BASIC_STEM).pick.pick.fasta\
+										$(REFS)HMP_MOCK.v4.fasta
+	mothur code/get_error.batch
 
 
 
