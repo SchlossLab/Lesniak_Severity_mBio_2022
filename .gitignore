@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 
+head.batch
+tail.batch
 
 data/*/*
 !data/process/*
