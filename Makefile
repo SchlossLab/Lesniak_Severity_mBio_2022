@@ -85,10 +85,9 @@ BASIC_STEM = data/process/gf_cdiff.trim.contigs.good.unique.good.filter.unique.p
 # taxonomy, and count_table file that has had the chimeras removed as well as
 # any non bacterial sequences
 $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta $(BASIC_STEM).pick.v4.wang.pick.taxonomy : code/get_good_seqs.batch\
-										data/raw/get_data\
 										data/references/silva.v4.align\
-										data/references/trainset10_082014.v4.fasta\
-										data/references/trainset10_082014.v4.tax
+										data/references/trainset14_032015.pds.fasta\
+										data/references/trainset14_032015.pds.tax
 	mothur code/get_good_seqs.batch;\
 	rm data/process/*.map
 
@@ -115,8 +114,8 @@ $(BASIC_STEM).pick.v4.wang.pick.pick.tx.5.cons.taxonomy $(BASIC_STEM).pick.v4.wa
 										$(BASIC_STEM).pick.v4.wang.pick.taxonomy
 	mothur code/get_shared_phyla.batch;\
 	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table;\
-    rm $(BASIC_STEM).pick.pick.pick.fasta
-    rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy
+	rm $(BASIC_STEM).pick.pick.pick.fasta
+	rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy
 	rm data/process/*.tx.*rabund;
 
 
