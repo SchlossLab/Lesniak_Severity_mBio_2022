@@ -1,0 +1,67 @@
+---
+title: 'Human-derived microbiota challenged with C.diff'
+author: 'Alyxandria Schubert'
+date: '10 June 2015'
+---
+
+# Colonization and Infection Resistance by Human-dervied Microbiotas against _Clostridium difficile_
+
+**Running title:** Colonization and Infection Resistance against _Clostridium difficile_
+
+Alyxandria M. Schubert, Jhansi Leslie, and Patrick D. Schloss\*
+
+Correspondence:
+
+> Department of Microbiology and Immunology
+> University of Michigan
+> 1520A Medical Science Research Bldg. I
+> 1500 W. Medical Center Dr.
+> Ann Arbor, MI 48109
+> pschloss@umich.edu
+> 734.647.5801
+
+```{r, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
+opts_chunk$set("dev" = c("png", "pdf"))
+opts_chunk$set(results = "hold")
+opts_chunk$set(fig.show = "hold")
+opts_chunk$set(fig.align = "center")
+opts_chunk$set(cache = FALSE)
+opts_chunk$set(echo = FALSE)
+opts_chunk$set(warning = FALSE)
+```
+
+
+### Abstract
+
+### (Importance)
+
+### Introduction
+
+### Results
+
+
+```{r summary_stats}
+
+metadata <- read.table(file="~/Documents/Schloss/Data/GF/GFmetadata.txt", header=T, na.strings="NA", stringsAsFactors = FALSE)
+num_sources <- length(unique(metadata$human_source)) 
+## add source group column 
+
+num_cages <- length(unique(metadata$cage_id))
+num_cages <- length(unique(metadata$cage_id))
+num_mice <- length(unique(metadata$mouse_id))
+plot( metadata$day, metadata$cdiff_cfu, log="y", ylim=c(.01, 10e11))
+```
+
+
+Stool from `r num_sources` human subjects were selected for gavage into germ-free mice. Of these subjects, 
+X were inpatient and X were healthy subjects. 
+
+### Discussion
+
+### Materials and Methods
+
+### Acknowledgements
+
+### Figure Legends
+
+
