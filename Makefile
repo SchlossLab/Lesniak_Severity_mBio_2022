@@ -106,19 +106,6 @@ $(BASIC_STEM).pick.pick.pick.an.unique_list.shared $(BASIC_STEM).pick.pick.pick.
 
 
 
-# here we go from the good sequences and generate a shared file and a
-# cons.taxonomy file based on phylum-level data
-$(BASIC_STEM).pick.v4.wang.pick.pick.tx.5.cons.taxonomy $(BASIC_STEM).pick.v4.wang.pick.pick.tx.shared : code/get_shared_phyla.batch\
-										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
-										$(BASIC_STEM).pick.pick.fasta\
-										$(BASIC_STEM).pick.v4.wang.pick.taxonomy
-	mothur code/get_shared_phyla.batch;\
-	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table;\
-	rm $(BASIC_STEM).pick.pick.pick.fasta
-	rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy
-	rm data/process/*.tx.*rabund;
-
-
 # now we want to get the sequencing error as seen in the mock community samples
 $(BASIC_STEM).pick.pick.pick.error.summary : code/get_error.batch\
 										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
