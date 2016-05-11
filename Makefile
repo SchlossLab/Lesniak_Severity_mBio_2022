@@ -78,13 +78,14 @@ $(REFS)/HMP_MOCK.v4.fasta : $(REFS)/HMP_MOCK.fasta $(REFS)/silva.v4.align
 
 
 BASIC_STEM = data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
+NSEQS=5000
 
 
 
 # here we go from the raw fastq files and the files file to generate a fasta,
 # taxonomy, and count_table file that has had the chimeras removed as well as
 # any non bacterial sequences
-$(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta $(BASIC_STEM).pick.v4.wang.pick.taxonomy : code/get_good_seqs.batch\
+$(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta $(BASIC_STEM).pick.pds.wang.pick.taxonomy : code/get_good_seqs.batch\
 										data/references/silva.v4.align\
 										data/references/trainset14_032015.pds.fasta\
 										data/references/trainset14_032015.pds.tax
@@ -98,11 +99,11 @@ $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta 
 $(BASIC_STEM).pick.pick.pick.an.unique_list.shared $(BASIC_STEM).pick.pick.pick.an.unique_list.0.03.cons.taxonomy : code/get_shared_otus.batch\
 										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
 										$(BASIC_STEM).pick.pick.fasta\
-										$(BASIC_STEM).pick.v4.wang.pick.taxonomy
+										$(BASIC_STEM).pick.pds.wang.pick.taxonomy
 	mothur code/get_shared_otus.batch
 	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table
 	rm $(BASIC_STEM).pick.pick.pick.fasta
-	rm $(BASIC_STEM).pick.v4.wang.pick.pick.taxonomy;
+	rm $(BASIC_STEM).pick.pds.wang.pick.pick.taxonomy;
 
 
 
@@ -110,8 +111,24 @@ $(BASIC_STEM).pick.pick.pick.an.unique_list.shared $(BASIC_STEM).pick.pick.pick.
 $(BASIC_STEM).pick.pick.pick.error.summary : code/get_error.batch\
 										$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
 										$(BASIC_STEM).pick.pick.fasta\
-										$(REFS)HMP_MOCK.v4.fasta
+										$(REFS)/HMP_MOCK.v4.fasta
 	mothur code/get_error.batch
+
+
+
+# Generate subsampled shared file
+$(BASIC_STEM).pick.pick.pick.an.unique_list.0.03.subsample.shared : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared
+	mothur "#sub.sample(shared=$(BASIC_STEM).pick.pick.pick.an.unique_list.shared, label=0.03, size=$(NSEQS));"
+
+
+# Generate subsampled distance matrix
+$(BASIC_STEM).pick.pick.pick.an.unique_list.thetayc.0.03.lt.ave.dist : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared
+	mothur "#dist.shared(shared=$^, calc=thetayc, label=0.03, subsample=$(NSEQS), iters=100, processors=8)"
+
+
+# Run alpha diversity analysis
+$(BASIC_STEM).pick.pick.pick.an.unique_list.groups.ave-std.summary : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared.pick.pick.pick.an.unique_list.shared
+	mothur "#summary.single(shared=$(BASIC_STEM).pick.pick.pick.an.unique_list.shared, calc=nseqs-sobs-shannon-invsimpson-coverage, subsample=$(NSEQS))"
 
 
 
