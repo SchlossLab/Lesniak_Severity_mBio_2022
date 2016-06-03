@@ -7,11 +7,11 @@
 #
 #
 ###################
-setwd("~/Documents/SchlossLab_NL/Projects/Schubert_humanCdGF_XXXX_2016")
+setwd("~/Documents/SchlossLab_NL/git-Projects/Schubert_humanCdGF_XXXX_2016/code")
 
-human_GF_exp <- read.table('humanGF_ids.txt', sep='\t',header = T)
-human_GF_tox <- read.table('Alyx_Humice_toxinassay_results.txt',sep='\t',header=T)
-human_GF_IDs <- read.table('MIMARKS_cdclinical.txt',sep='\t',header=T)
+human_GF_exp <- read.table('../data/raw/humanGF_ids.txt', sep='\t',header = T)
+human_GF_tox <- read.table('../data/raw/Alyx_Humice_toxinassay_results.txt',sep='\t',header=T)
+human_GF_IDs <- read.table('../data/raw/MIMARKS_cdclinical.txt',sep='\t',header=T)
 
 #Create list of human sources used in experiment
 Sources <- levels(human_GF_exp$human_source)
@@ -24,4 +24,4 @@ human_GF_exp_metadata <- merge(human_GF_exp, human_GF_tox,by.x='group',by.y='Cag
 human_GF_metadata <- merge(human_GF_exp_metadata,human_source_data,by.x='human_source',by.y='sample_id',
                            invcomparables=NA,all.x=T)
 #output metadata file
-write.table(human_GF_metadata, file='human_GF_metadata.txt',quote=F,sep='\t')
+write.table(human_GF_metadata, file='../data/raw/human_GF_metadata.txt',quote=F,sep='\t')
