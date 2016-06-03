@@ -1,0 +1,715 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;\f2\fnil\fcharset0 Menlo-Regular;
+\f3\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red34\green79\blue188;\red0\green0\blue0;}
+\margl1440\margr1440\vieww67980\viewh6200\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 \
+enter flux - 
+\f1 \expnd0\expndtw0\kerning0
+ssh nlesniak@flux-login.engin.umich.edu\
+	signin to node\
+		
+\f2\fs22 \kerning1\expnd0\expndtw0 \CocoaLigature0 qsub -I -V -l nodes=1:ppn=1,mem=16000mb,walltime=1:00:00:00 -q fluxod -l qos=flux -A micro612w16_fluxod
+\f0\fs24 \ul \CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulc0 \
+DAY 1 - Clean data and \ulnone \
+pipeline to analyze genomic data\
+	raw data to output\
+\
+genomics\
+	microbial phylogenetics\
+	comparative genomics\
+	genomic epidemiology\
+DNA/library prep\
+	process microbial \'97> grow colonies \'97> isolate single colony (grow to stationary)\'97> extract DNA\
+		ideal for single colony \'97> attribute variation to error\
+		stationary to limit bias of accessible near ori during replication\
+Sequencing\
+	library prep (shear DNA and attach adapters) \'97> sequence (illumina)\
+		illumina\
+			insert (target DNA fragment) + illumina primer + adapter/barcode\
+			paired end read  - sequence forward and reverse (~150bp from each end)\
+				leaves ~100 bp linker region\
+				illumina automatically cleaves/removes sequence of adapters\
+			output 2 files - forward and reverse files\
+\
+Process illumina data\
+	Quality control\
+		read mapping\
+			variant calling\
+				variations between sequence reads and genome reference\
+					\ul annotate variance\ulnone  for possible function/mutation\
+						difference between pol error and true mutation can be determined by coverage of base\
+						confounded by genes located on plasmids which may have a lower copy relative to genome\
+					generate \ul phylogenetic tree\ulnone \
+		genome assembly\
+			assembly overlapping regions into larger sequences\
+				\ul genome annotation\ulnone  to predict protein-coding genes\
+				\ul comparative genomics\ulnone \
+	Trim out full length quality reads\
+\
+Fred score\
+	30 - 0.001\
+	60 - 0.000001\
+\
+\ul Quality control\ulnone \
+	FastQC\
+		confirm Fast QC is in path 		\'97> 		fastqc -h\
+		enter interactive cluster node 	\'97>		
+\f1 \expnd0\expndtw0\kerning0
+qsub -I -V -l nodes=1:ppn=1,mem=4000mb,walltime=1:00:00:00 -q fluxod -l qos=flux -A micro612w16_fluxod\
+
+\f0 \kerning1\expnd0\expndtw0 		Run FastQC				\'97>		
+\f1 \expnd0\expndtw0\kerning0
+fastqc -o Rush_KPC_266_FastQC_results/before_trimmomatic/ Rush_KPC_266_1_combine.fastq.gz Rush_KPC_266_2_combine.fastq.gz --extract\
+
+\f0 \kerning1\expnd0\expndtw0 		Exit node 				\'97> 		exit\
+		copy files from node			\'97>		in new terminal window\
+										SFTP (prior, navigate to desired directory on local harddrive)\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+											sftp username@flux-login.engin.umich.edu\
+											cd /flux_directory\
+											get files_
+\f0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 										SCP	\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+											scp username@flux-xfer.engin.umich.edu:/flux_directory/file(s) /path-to-local-directory/\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 	Trim out bad data - low quality reads, remove adapter/contaminant seq, imbalance in bases\
+		enter node - \
+			
+\f1 \expnd0\expndtw0\kerning0
+qsub -I -V -l nodes=1:ppn=4,mem=16000mb,walltime=1:00:00:00 -q fluxod -l qos=flux -A micro612w16_fluxod\
+
+\f0 \kerning1\expnd0\expndtw0 		enter directory\
+		create trimmomatic output directory\
+		load java/trimmomatic\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+				module load lsa java/1.8.0\
+				java -jar /scratch/micro612w16_fluxod/shared/bin/Trimmomatic/trimmomatic-0.33.jar \'96h\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 		Run trimmomatic\
+			
+\f1 \expnd0\expndtw0\kerning0
+time java -jar /scratch/micro612w16_fluxod/shared/bin/Trimmomatic/trimmomatic-0.33.jar PE Rush_KPC_266_1_combine.fastq.gz Rush_KPC_266_2_combine.fastq.gz Rush_KPC_266_trimmomatic_results/forward_paired.fq.gz Rush_KPC_266_trimmomatic_results/forward_unpaired.fq.gz Rush_KPC_266_trimmomatic_results/reverse_paired.fq.gz Rush_KPC_266_trimmomatic_results/reverse_unpaired.fq.gz ILLUMINACLIP:/scratch/micro612w16_fluxod/shared/bin/Trimmomatic/adapters/TruSeq3-PE.fa:2:30:10:8:true SLIDINGWINDOW:4:15 MINLEN:40 HEADCROP:0\
+				ILLUMINACLIP/path_to_fasta_file - cut adapter/illumina sequences\
+				SLIDINGWINDOW - cuts seq below threshold\
+				MINLEN - limits length of reads\
+
+\f0 \kerning1\expnd0\expndtw0 		create fastqc from trimmed files\
+			
+\f1 \expnd0\expndtw0\kerning0
+mkdir Rush_KPC_266_FastQC_results/after_trimmomatic\
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+			fastqc -o Rush_KPC_266_FastQC_results/after_trimmomatic/ Rush_KPC_266_trimmomatic_results/forward_paired.fq.gz Rush_KPC_266_trimmomatic_results/reverse_paired.fq.gz --extract
+\f0 \kerning1\expnd0\expndtw0 \
+		Copy files from node to local (in new terminal window)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 			SFTP (prior, navigate to desired directory on local harddrive)\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+				sftp username@flux-login.engin.umich.edu\
+				cd /flux_directory\
+				get files_
+\f0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 			SCP	\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+				scp username@flux-xfer.engin.umich.edu:/flux_directory/file(s) /path-to-local-directory/\
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+\ul V
+\f0 ariant Calling\ulnone \
+	bwa - read mapping	(SAM file - seq align mapping/BAM file - binary rep of SAM (BAI - index of BAM file))\
+		Create reference genome - \
+			bwa index FILE.fasta\
+		Create fai index file for GATK steps\
+			samtools faidx KPNIH1.fasta\
+		Align\
+			
+\f1 \expnd0\expndtw0\kerning0
+bwa mem -M -R "@RG\\tID:96\\tSM:Rush_KPC_266_1_combine.fastq.gz\\tLB:1\\tPL:Illumina" -t 8 KPNIH1.fasta forward_paired.fq.gz reverse_paired.fq.gz > Rush_KPC_266_varcall_result/Rush_KPC_266__aln.sam
+\f0 \expnd0\expndtw0\kerning0
+\
+		Convert SAM to BAM and sort\
+			
+\f1 \expnd0\expndtw0\kerning0
+samtools view -Sb FILE.sam > FILE.bam\
+
+\f0 \expnd0\expndtw0\kerning0
+			
+\f1 \expnd0\expndtw0\kerning0
+samtools sort FILE.bam FILE_sort
+\f0 \expnd0\expndtw0\kerning0
+\
+	Picard - Remove Duplicates (optical - software splits group into two, duplicating / pcr - pcr error in multiple sequences)\
+		create dictionary reference\
+			
+\f1 \expnd0\expndtw0\kerning0
+java -jar /scratch/micro612w16_fluxod/shared/bin/picard-tools-1.130/picard.jar CreateSequenceDictionary REFERENCE=/path-to-reference/KPNIH1.fasta OUTPUT=/path-to-reference/KPNIH1.dict\
+
+\f0 \expnd0\expndtw0\kerning0
+		Run Picard\
+			
+\f1 \expnd0\expndtw0\kerning0
+java -jar /scratch/micro612w16_fluxod/shared/bin/picard-tools-1.130/picard.jar MarkDuplicates REMOVE_DUPLICATES=true INPUT=Rush_KPC_266__aln_sort.bam OUTPUT= Rush_KPC_266__aln_marked.bam METRICS_FILE=Rush_KPC_266__markduplicates_metrics CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT\
+
+\f0 \expnd0\expndtw0\kerning0
+		View marked duplicates\
+			
+\f1 \expnd0\expndtw0\kerning0
+nano Rush_KPC_266__markduplicates_metrics\
+
+\f0 \expnd0\expndtw0\kerning0
+		Index marked files\
+			
+\f1 \expnd0\expndtw0\kerning0
+samtools index FILE_aln_marked.bam
+\f0 \expnd0\expndtw0\kerning0
+\
+	samtools + bcftools - call out variants (VCF - file) - Use to eliminate variants - MQ, FQ, DP, QUAL\
+			
+\f1 \expnd0\expndtw0\kerning0
+samtools mpileup -ug -f /path-to-reference/KPNIH1.fasta Rush_KPC_266__aln_marked.bam | bcftools call -O v -v -c -o Rush_KPC_266__aln_mpileup_raw.vcf
+\f0 \expnd0\expndtw0\kerning0
+\
+	Filter and annotate variants\
+		gatk - filter (output filtered VCF file)\
+			
+\f1 \expnd0\expndtw0\kerning0
+java -jar /scratch/micro612w16_fluxod/shared/bin/GenomeAnalysisTK-3.3-0/GenomeAnalysisTK.jar -T VariantFiltration -R /path-to-reference/KPNIH1.fasta -o Rush_KPC_266__filter_gatk.vcf --variant Rush_KPC_266__aln_mpileup_raw.vcf --filterExpression "FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15" --filterName pass_filter\
+
+\f0 \expnd0\expndtw0\kerning0
+				Analysis of \
+					grep LABEL FILE | wc <\'97 number of variants\
+		Remove indels and keep passed SNP\
+			
+\f1 \expnd0\expndtw0\kerning0
+vcftools --vcf Rush_KPC_266__filter_gatk.vcf --keep-filtered pass_filter --remove-indels --recode --recode-INFO-all --out Rush_KPC_266__filter_onlysnp\
+
+\f0 \expnd0\expndtw0\kerning0
+		Create consensus fasta\
+			
+\f1 \expnd0\expndtw0\kerning0
+bgzip Rush_KPC_266__filter_onlysnp.recode.vcf\
+			tabix Rush_KPC_266__filter_onlysnp.recode.vcf.gz\
+			cat /path-to-reference/KPNIH1.fasta | vcf-consensus Rush_KPC_266__filter_onlysnp.recode.vcf.gz > Rush_KPC_266__consensus.fa\
+
+\f0 \expnd0\expndtw0\kerning0
+				Check header and change it using sed\
+					
+\f1 \expnd0\expndtw0\kerning0
+head -n1 Rush_KPC_266__consensus.fa\
+					sed -i 's/>.*/>Rush_KPC_266_/g' Rush_KPC_266__consensus.fa 
+\f0 \expnd0\expndtw0\kerning0
+\
+		Annotate variants - snpEff\
+			Check database for ref genome\
+				
+\f1 \expnd0\expndtw0\kerning0
+java -jar /scratch/micro612w16_fluxod/shared/bin/snpEff/snpEff.jar databases | grep 'kpnih1'\
+
+\f0 \expnd0\expndtw0\kerning0
+			Change chromosome name to \'91Chromosome\'92\
+				
+\f1 \expnd0\expndtw0\kerning0
+sed -i 's/gi.*|/Chromosome/g' Rush_KPC_266__filter_gatk.vcf\
+
+\f0 \expnd0\expndtw0\kerning0
+			Run snpEff\
+				
+\f1 \expnd0\expndtw0\kerning0
+module load lsa java/1.8.0\
+				java -jar /scratch/micro612w16_fluxod/shared/bin/snpEff/snpEff.jar -onlyProtein -no-upstream -no-downstream  -no-intergenic -v GCA_000281535.2.29 Rush_KPC_266__filter_gatk.vcf > Rush_KPC_266__filter_gatk_ann.vcf -csvStats Rush_KPC_266__filter_gatk_stats\
+
+\f0 \expnd0\expndtw0\kerning0
+			View annotation\
+				
+\f1 \expnd0\expndtw0\kerning0
+grep 'ANN=' Rush_KPC_266__filter_gatk_ann.vcf | head -n1\
+				No. of Variants:\
+					grep '^Chromosome' Rush_KPC_266__filter_gatk_ann.vcf | wc -l\
+				No. of Variants that passed the filter:\
+					grep '^Chromosome.*pass_filter' Rush_KPC_266__filter_gatk_ann.vcf | wc -l\
+				No. of SNPs that passed the filter:\
+					grep '^Chromosome.*pass_filter' Rush_KPC_266__filter_gatk_ann.vcf | grep -v 'INDEL' | wc -l\
+				No. of Indels that passed the filter:\
+					grep '^Chromosome.*pass_filter' Rush_KPC_266__filter_gatk_ann.vcf | grep 'INDEL' | wc -l
+\f0 \expnd0\expndtw0\kerning0
+\
+		Statistics - ensure analysis is accurate\
+			qualimap - BAM coverage\
+				
+\f1 \expnd0\expndtw0\kerning0
+qualimap bamqc -bam Rush_KPC_266__aln_sort.bam -outdir ./ -outfile Rush_KPC_266__report.pdf -outformat pdf 
+\f0 \expnd0\expndtw0\kerning0
+\
+	Visualize \
+		artemis\
+			
+\f3 \expnd0\expndtw0\kerning0
+Required Input files: KPNIH1 reference fasta and genbank file, Rush_KPC_266__aln_marked.bam and Rush_KPC_266__aln_marked.bam.bai, Rush_KPC_266__filter_gatk_ann.vcf.gz and Rush_KPC_266__filter_gatk_ann.vcf.gz.tbi
+\f0 \expnd0\expndtw0\kerning0
+\
+		Compress files\
+			
+\f1 \expnd0\expndtw0\kerning0
+bgzip Rush_KPC_266__filter_gatk_ann.vcf\
+			tabix Rush_KPC_266__filter_gatk_ann.vcf.gz\
+		Get\
+			sftp\
+			get -r FOLDER \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 \ul DAY 2 - Genome Assembly\
+\ulnone Issues\
+	Absolute v relative\
+		../file\
+		/home/dir/dir/file\
+	Specifying file location\
+\
+Genome Assembly\
+	Clean fastq files (forward/reverse reads)\
+	Assemble into contigs (program - Spades) \'97> fasta files \
+		combines overlapping sequences and bridges gaps between forward and reverse reads\
+	Assess assembly (program - Quast) \'97> test file\
+	Orient contigs (program - Abacas) \'97> fasta files\
+		based on assumption target chromosome is in same order as reference genome\
+	Genome annotation (program - Prokka) \'97> Genbank file\
+		from fasta file \'97> finds genes and annotates hypothetical genes (based on database of identified genes)\
+	Visualize genome (program - ACT) \'97> Genbank/alignment files\
+\
+enter flux - 
+\f1 \expnd0\expndtw0\kerning0
+ssh user@flux-login.engin.umich.edu\
+	signin to node\
+		
+\f2\fs22 \cf1 \cb2 \kerning1\expnd0\expndtw0 \CocoaLigature0 qsub -I -V -l nodes=1:ppn=1,mem=16000mb,walltime=1:00:00:00 -q fluxod -l qos=flux -A micro612w16_fluxod
+\f1\fs24 \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 show whats loaded in environment - module list\
+		available modules - module available\
+		\
+\
+Assemble into contigs - Spades\
+	load and confrim module in environment\
+		
+\f1 \expnd0\expndtw0\kerning0
+module load python\
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+		spades.py -h  \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 	insert command into nano file\
+		
+\f1 \expnd0\expndtw0\kerning0
+spades.py --pe1-1 forward_paired.fq.gz --pe1-2 reverse_paired.fq.gz --pe1-s forward_unpaired.fq.gz --pe1-s reverse_unpaired.fq.gz -o Rush_KPC_266_assembly_result/ --careful\
+
+\f0 \kerning1\expnd0\expndtw0 	submit to cluster\
+		qsub -V FILE\
+	check status\
+		qstat -u username\
+Assess assembly - QUAST\
+	generate report\
+		
+\f1 \expnd0\expndtw0\kerning0
+quast.py -o quast sample_264_contigs.fasta sample_266_contigs.fasta\
+
+\f0 \kerning1\expnd0\expndtw0 		enter quast/\
+		open report.txt\
+			best - \
+				# contigs - fewest number of contigs (< 200) \
+				Largest contig - largest size contig\
+				N50 - largest N50 (half of contigs bigger than specified size)\
+Compare assembly to reference\
+	generate blast reference\
+		
+\f1 \expnd0\expndtw0\kerning0
+makeblastdb -in KPNIH1.fasta -dbtype nucl -out KPNIH1.fasta\
+
+\f0 \kerning1\expnd0\expndtw0 	stitch together contigs as is\
+		create file with header \'97> 
+\f1 \expnd0\expndtw0\kerning0
+echo ">sample_266_contigs_concat" > sample_266_contigs_concat.fasta \
+
+\f0 \kerning1\expnd0\expndtw0 		insert contigs from fasta \'97> 
+\f1 \expnd0\expndtw0\kerning0
+grep -v ">" sample_266_contigs.fasta >> sample_266_contigs_concat.fasta \
+
+\f0 \kerning1\expnd0\expndtw0 							-v = invert selection (all lines but ones with >)\
+							>> = append/add to file\
+		Blast against reference - 
+\f1 \expnd0\expndtw0\kerning0
+blastn -outfmt 6 -evalue 1e-20 -db KPNIH1.fasta -query sample_266_contigs_concat.fasta -out concat_comp.blast
+\f0 \kerning1\expnd0\expndtw0 \
+			\expnd0\expndtw0\kerning0
+1) query sequences (-query sample_266_contigs_concat.fasta)\
+			2) the database to search against (-db KPNIH1.fasta), \
+			3) the name of a file to store your results (-out blastn_results), \
+			4) output format (-outfmt 6)\
+			5) e-value cutoff (-evalue 1e-20)\kerning1\expnd0\expndtw0 \
+			Output file \'97> http://www.pangloss.com/wiki/Blast\
+		Move files into folder and pull from flux to analyze with ACT locally\
+			
+\f1 \expnd0\expndtw0\kerning0
+mkdir ACT_contig_comparison \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+			cp KPNIH.gb KPNIH1.fasta concat_comp.blast sample_266_contigs_concat.fasta ACT_contig_comparison/\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 			
+\f1 \expnd0\expndtw0\kerning0
+scp -r nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_morn/ACT_contig_comparison/ 
+\f2\fs22 \kerning1\expnd0\expndtw0 \CocoaLigature0 /Users/nicklesniak/Desktop/micro_612/micro_612.3/day2_morn
+\f1\fs24 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+
+\f0 \kerning1\expnd0\expndtw0 				or - 
+\f1 \expnd0\expndtw0\kerning0
+scp -r nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_morn/ACT_contig_comparison/ 
+\f2\fs22 \kerning1\expnd0\expndtw0 \CocoaLigature0 .
+\f1\fs24 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+
+\f0 \kerning1\expnd0\expndtw0 					use \'91.\'92 to copy to current local folder\
+	Open and view alignment in ACT\
+		file \'97> open \'97> \
+			seq 1 - .gb (ref)\
+			comp 1 - .blast\
+			seq 2 - .fasta (target)\
+	Orient contigs (abacus)\
+		edit bashrc - abacus uses MUMmer, so defining location of program\
+			
+\f1 \expnd0\expndtw0\kerning0
+nano ~/.bashrc\
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+				Add this path to the bottom of bashrc file\
+					export PATH=$PATH:/scratch/micro612w16_fluxod/shared/bin/MUMmer3.23/\
+				Exit and save this file. Source your bashrc file.\
+			source ~/.bashrc\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 		run abacus\
+			
+\f1 \expnd0\expndtw0\kerning0
+perl abacas.1.3.1.pl -r KPNIH1.fasta -q sample_266_contigs.fasta -p nucmer -b -d -a -o sample_266_contigs_ordered
+\f0 \kerning1\expnd0\expndtw0 \
+			\expnd0\expndtw0\kerning0
+input parameters: \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+				1) your reference sequence (-r KPNIH.fasta)\
+				2) your contig file (-q sample_266_contigs.fasta), \
+				3) the program to use to align contigs to reference (-p nucmer)\
+				4) append unmapped contigs to end of file (-b)\
+				5) use default nucmer parameters (-d)\
+				6) append contigs into pseudo-chromosome (-a)\
+				7) the prefix for your output files (\'96o sample_266_contigs_ordered) \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \kerning1\expnd0\expndtw0 			copy files to local folder\
+				
+\f1 \expnd0\expndtw0\kerning0
+scp nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_morn/sample_266_contigs_ordered* .\
+
+\f0 \kerning1\expnd0\expndtw0 		Compare contig alignment in ACT\
+			seq 1 - .gb\
+			comp 1 - .crunch\
+			seq 2 - .fasta\
+			Create file with genes missing in target\
+				Highlight genes in ref\
+					\'97> Selection \'97> Reference FILE \'97> Features overlapping selection\
+						\'97> View \'97> reference FILE \'97> Selection\
+				Copy data into nano file\
+				Extract product lines from nano file\
+					grep product FILE > product_FILE\
+		Map reads to final ordered assembly (instead of genome)\
+			create bwa index of ordered fasta\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+				bwa index sample_266_contigs_ordered.fasta\
+				samtools faidx sample_266_contigs_ordered.fasta\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 			align trimmed reads used for genome assembly to ordered assembly (BWA mem)\
+				convert SAM \'97> BAM, sort, index\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+					bwa mem -M -R "@RG\\tID:96\\tSM:Rush_KPC_266_1_combine.fastq.gz\\tLB:1\\tPL:Illumina" -t 8 sample_266_contigs_ordered.fasta forward_paired.fq.gz reverse_paired.fq.gz > sample_266_contigs_ordered.sam\
+					samtools view -Sb sample_266_contigs_ordered.sam > sample_266_contigs_ordered.bam\
+					samtools sort sample_266_contigs_ordered.bam sample_266_contigs_ordered_sort\
+					samtools index sample_266_contigs_ordered_sort.bam\
+\pard\pardeftab720
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 			visualize alignments against ordered\
+				
+\f1 \expnd0\expndtw0\kerning0
+scp nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_morn/sample_266_contigs_ordered_sort* ./\
+
+\f0 \kerning1\expnd0\expndtw0 				
+\f1 \expnd0\expndtw0\kerning0
+Select File -> sample_266_contigs_ordered.fasta -> Read BAM/VCF > select sorted bam file copied from flux\
+
+\f0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 		Id protein coding regions - Prokka\
+			
+\f1 \expnd0\expndtw0\kerning0
+module load med perl-modules prokka \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+			prokka \'96setupdb\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 			
+\f1 \expnd0\expndtw0\kerning0
+prokka -kingdom Bacteria -outdir /scratch/micro612w16_fluxod/nlesniak/day2_morn/sample_266_prokka -force -prefix sample_266 sample_266_contigs_ordered.fasta\
+
+\f0 \kerning1\expnd0\expndtw0 			Copy to local - \
+				
+\f1 \expnd0\expndtw0\kerning0
+scp -r nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_morn/sample_266_prokka/ ./\
+
+\f0 \kerning1\expnd0\expndtw0 			ACT\
+				file load .gff to identify \
+Comparative genomics\
+	Fasta,genbank, and/or pep \
+		BLAST - genome mining\
+		LS-BSR - pan-genome analysis\
+		ACT - structural variants\
+	Determine which genomes contain specific gene\
+		Get gene from database\
+			Run perl filter_fasta_file.pl to extract gene\
+\pard\pardeftab720
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+				module load BioPerl\
+				cd scratch/micro612w16_fluxod/username/day2_after\
+				perl filter_fasta_file.pl resisGenes.pfasta fasta_file_keys ardb_beta_lactam_genes.pfasta\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 				\expnd0\expndtw0\kerning0
+The script takes as input: \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+					1) the ARDB database (resisGenes.pfasta), \
+					2) a file containing terms to search the database for (fasta_file_keys) and \
+					3) an output file to contain the subset of sequences that match the text your searching for (ardb_beta_lactam_genes.pfasta).\
+		Build BLAST database\
+			
+\f1 \expnd0\expndtw0\kerning0
+formatdb -i ardb_beta_lactam_genes.pfasta -p T\
+
+\f0 \expnd0\expndtw0\kerning0
+			formatdb takes as input: \
+				1) a fasta file of protein or nucleotide sequences (ardb_beta_lactam_genes.pfasta)\
+				2) a flag indicating whether to construct a protein or nucleotide database (in this case protein/ -p T)\
+		BLAST genome against GENE database\
+			
+\f1 \expnd0\expndtw0\kerning0
+blastall -p blastp -i Abau_all.pfasta -d ardb_beta_lactam_genes.pfasta -o bl_blastp_results -m 8 -e 1e-20 -v 1 -b 1\
+
+\f0 \expnd0\expndtw0\kerning0
+			input parameters are: \
+				1) the type of blast to use (-p blastp)\
+				2) query sequences (-i Abau_all.pfasta)\
+				3) the database to search against (-d ardb_beta_lactam_genes.pfasta)\
+				4) the name of a file to store your results (-o bl_blastp_results)\
+				5) output format (-m 8)\
+					removing -m 8 \'97> \
+				6) e-value cutoff (-e 1e-20)\
+				7) number of database sequences to return (-v 1) \
+				8) number of database sequences to show alignment for (-b 1)\
+	Identify GENEs in genome (all at once) - check if similar genes present (all beta-lactamases count as beta-lactamase)\
+		Load relevant Modules\
+			module load med \
+			module load sph \
+			module load lsa \
+			module load usearch \
+			module unload python\
+			module load python/2.7.3 \
+			module load biopython \
+			module load ls-bsr \
+			module load prodigal\
+		Select representatives from database to create non-redundant gene set \
+			
+\f1 \expnd0\expndtw0\kerning0
+usearch -cluster_fast resisGenes.pep -id 0.8 -centroids resisGenes_nr.pep -uc resisGenes.uc\
+
+\f0 \expnd0\expndtw0\kerning0
+		Run LS-BSR (how confident we are gene is present in genome)\
+			move into directory\
+			
+\f1 \expnd0\expndtw0\kerning0
+python /home/software/rhel6/med/python-libs/ls-bsr/1.0/LS-BSR-master/ls_bsr.py -d Abau_genomes/ -g resisGenes_nr.pep
+\f0 \expnd0\expndtw0\kerning0
+\
+		View data\
+			Get files from flux\
+				
+\f1 \expnd0\expndtw0\kerning0
+scp nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_after/bsr_matrix_values.txt .\
+
+\f0 \expnd0\expndtw0\kerning0
+			View matrix in R\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \kerning1\expnd0\expndtw0 				
+\f1 \expnd0\expndtw0\kerning0
+bsr_mat = read.table('~/Desktop/bsr_matrix_values.txt', sep = "\\t", row.names = 1, header = TRUE, quote = "")\
+
+\f0 \kerning1\expnd0\expndtw0 				visualize with heatmap3\
+		Pan-genome analysis -LS-BSR\
+			prodigal analyzes genomes for protein coding genes \
+				usearch analyzes protein coding for non-redundancy and clusters\
+						blast to compare genes of each genome to collective pan-genome\
+			annotate ls-bsr matrix\
+				
+\f1 \expnd0\expndtw0\kerning0
+perl transfer_annotations.pl Abau_ECII_PC.fasta Abau_ECII_PC.NR.annot bsr_matrix_values.txt consensus.fasta\
+
+\f0 \kerning1\expnd0\expndtw0 			get file to local\
+				
+\f1 \expnd0\expndtw0\kerning0
+scp nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day2_after/bsr_matrix_values_annot.txt .\
+
+\f0 \kerning1\expnd0\expndtw0 	Compare genomes - ACT\
+		Generate ACT alignment with BLAST\
+			
+\f1 \expnd0\expndtw0\kerning0
+blastall -p blastn -i ./Abau_genomes/AbauA_genome.fasta -d ./Abau_BLAST_DB/ACICU_genome.fasta -m 8 -e 1e-20 -o AbauA_vs_ACICU.blast\
+
+\f0 \kerning1\expnd0\expndtw0 		Copy local\
+			
+\f1 \expnd0\expndtw0\kerning0
+sftp username@flux-login.engin.umich.edu \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+			cd /scratch/micro612w16_fluxod/username/day2_after \
+			get Abau_genomes/AbauA_genome.fasta \
+			get Abau_genomes/ACICU_genome.fasta \
+			get AbauA_vs_ACICU.blast \
+			get Abau_ACT_files/AbauA_genome_gene.gff \
+			get Abau_ACT_files/ACICU_genome_gene.gff\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 		Read into ACT\
+			
+\f1 \expnd0\expndtw0\kerning0
+Sequence file 1  = ACICU_genome.fasta \
+\pard\pardeftab720
+\cf0 \expnd0\expndtw0\kerning0
+			Comparison file 1  = AbauA_vs_ACICU.blast\
+			Sequence file 2  = AbauA_genome.fasta\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ul DAY 3 - Phylogenetic analysis\ulnone \
+\ul Morning\ulnone \
+Mauve - Identify variant by whole genome alignments of assemblies (dont work well with >100 genomes)
+\f1 \cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 	Construct whole genome alignments and transfer xmfa to flux\
+		
+\f1 \cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Open mauve \
+\pard\pardeftab720
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 			File -> align with progressiveMauve \
+			Click on \'93Add Sequnce\'94 and add each of the 5 genomes you just downloaded\
+			Name the output file \'93mauve_ECII_outgroup\'94 and make sure it is in the directory you created for this exercise \
+			Click Align! 
+\f0 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 	Transfer to flux\
+		
+\f1 \cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 scp ./mauve_ECII_outgroup nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day3_morn 
+\f0 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+	Convert to xmfa to fasta (xmfa not used by others - less FILE to explore)\
+		
+\f1 \cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 module load med BioPerl\
+\pard\pardeftab720
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 		perl convert_msa_format.pl -i mauve_ECII_outgroup -o mauve_ECII_outgroup.fasta -f fasta -c\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ul Afternoon\ulnone \
+	Isolate columns from matrix and sort\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f2\fs22 \cf1 \cb2 \CocoaLigature0 awk '\{print $1,$2\}'  Single_sample_summary.txt | grep 'Rush' | sort -n -k2
+\f0\fs24 \cf0 \cb1 \CocoaLigature1 \
+	isolate columns - awk \
+		select columns - $1\
+	sort\
+		by number -n\
+		by second column -k2\
+
+\f2\fs22 \cf1 \cb2 \CocoaLigature0 grep 'Chro'  Comparative/All_SNPs_annotated.txt | awk '\{print $1\}' | grep -o \'91[0-9]*\'92
+\f0\fs24 \cf0 \cb1 \CocoaLigature1 \
+	select lines with \'93chromosome\'94 | only select 1st column | and only output numbers\
+
+\f2\fs22 \cf1 \cb2 \CocoaLigature0 cut -f1 Comparative/All_SNPs_annotated.txt | cut -d'_' -f2 | grep [0-9] 
+\f0\fs24 \cf0 \cb1 \CocoaLigature1 \
+	cut first column | second cut splits by underscore and output second column | only with numbers\
+\
+tree - http://itol.embl.de/tree/1412131689688921459364253#\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 		run abacus\
+			copy abacas.1.3.1.pl into directory\
+			
+\f1 \expnd0\expndtw0\kerning0
+perl abacas.1.3.1.pl -r KPNIH1.fasta -q Rush_KPC_298_contigs.fasta -p nucmer -b -d -a -o Rush_KPC_298_ordered
+\f0 \kerning1\expnd0\expndtw0 \
+				
+\f1 \expnd0\expndtw0\kerning0
+scp nlesniak@flux-xfer.engin.umich.edu:/scratch/micro612w16_fluxod/nlesniak/day3_after/Rush_KPC_298_ordered* ./ACT_files\
+
+\f0 \kerning1\expnd0\expndtw0 		Compare contig alignment in ACT\
+			seq 1 - 
+\f1 \cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 KPNIH
+\f0 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 .gb\
+			comp 1 - *_ordered.crunch\
+			seq 2 - *_ordered.fasta\
+			Create file with genes missing in target\
+				Highlight genes in ref\
+					\'97> Selection \'97> Reference FILE \'97> Features overlapping selection\
+						\'97> View \'97> reference FILE \'97> Selection\
+				Copy data into nano file\
+				Extract product lines from nano file\
+					grep product FILE > product_FILE\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 \
+}

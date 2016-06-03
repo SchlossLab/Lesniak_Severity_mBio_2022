@@ -1,0 +1,339 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 http://microbialinformatics.github.io/2016-02-29-UMichigan/\
+\
+Terminal \
+\
+General Nav - pwd, ls, cd, .., ~\
+Creation - nano, mkdir\
+Remove - rm (-r), rmdir\
+Move/copy/rename - mv cp\
+Look at file - cat, less, nano\
+Analyze file - wc, sort, head, tail\
+Redirect \
+	input - |\
+	output - > >> \
+for loops\
+	
+\b \ul for
+\b0 \ulnone  loop_var 
+\b \ul in
+\b0 \ulnone  list\
+		
+\b \ul do
+\b0 \ulnone \
+			cmd $loop_var\
+		
+\b \ul done
+\b0 \ulnone \
+\
+\
+\
+Cmd + T -> new tab\
+\
+Example - marine biology\
+	300 samples, 300 data points\
+		(goostats/goodiff)\
+\
+which - what is being used by command entered\
+\
+/ - Root directory\
+	users,bin,etc (bin=binary programs)\
+\
+ls - list directory\
+	ls -F - flags directories with /\
+	ls -l - details of list\
+	ls -r - lists in reverse order\
+	ls -a - shows all\
+	ls ~/directory - lists from directory of indicated path\
+\
+
+\b \ul man
+\b0 \ulnone  - brings up manual for following command\
+	man ls - prints all possible flags for commands\
+	q - quits manual\
+\
+cd - change working directory\
+	directory name - move down into directory\
+	.. - move up directory\
+		../.. - move up two\
+	tab while typing autocompletes or lists possible options for autocomplete\
+	~ - home directory\
+\
+spaces in unix separates commands\
+	either use \\ or \'93\'94 around file name with space\
+\
+mk dir - make directory\
+\
+
+\b \ul nano
+\b0 \ulnone  file.txt - create txt file\
+	commands - ^ = control\
+	.txt not necessary for unix, but for us\
+less file.txt - quick look at text\
+	q - quits\
+rm file.txt - removes file\
+	only works on files not dir\
+	rmdir directory - removes directory if empty\
+		rmdir -r directory - removes directory and files\
+mv location newlocation - move/rename\
+	moving to a new name will overwrite anything with the same name\
+cp file newfile - copies file to new dir/name\
+\
+wc - lines, words, etc of files\
+\
+
+\b \ul *
+\b0 \ulnone  - any characters \
+\
+cat - concatenate into file\
+	cat _____ > file\
+	> - redirect to file name instead of output/printing\
+		>> - appends file\
+		< redirects input from only whats inside file\
+sort -n - sorts data in file\
+head - n - takes top line (and sorted by number)\
+	tail - bottom of sorting\
+
+\b \ul |
+\b0 \ulnone  - combines commands\
+	creates pipelines, output from one command inputs into next\
+\
+uniq - removes all adjacent duplicate files\
+	sort | uniq - removes\
+\
+cut - produces reduced output based on tab/comma sep file\
+	cut -d, -f\
+\
+ctrl + C - kills all processes or ends multiple \
+\
+/ forward\
+\\ back\
+\
+data year-month-day\
+\
+File analysis\
+	\
+clear - clears display\
+\
+check file size before anaylsis\
+	wc -l *.txt | sort -n\
+	remove files w/ bad name\
+		ls *Z.txt\
+		ls *[AB].txt - [] either A or B\
+$ - variable\
+\
+for loops\
+	replication of task\
+	\
+	
+\b \ul for
+\b0 \ulnone  XXXX 
+\b \ul in
+\b0 \ulnone  FILES\
+		
+\b \ul do\
+		
+\b0 \ulnone cmd 
+\b \ul $
+\b0 \ulnone XXXX\
+		
+\b \ul done
+\b0 \ulnone \
+\
+Shell script program (nano)\
+	*.sh  - shell file	\
+	$# - # is variable to use command line argument\
+		$@ - run on all files following bash script \
+	# - notes for function/usage of script	\
+\
+grep - searching patterns\
+	grep PATTERN FILE  - returns lines which contain pattern\
+		flags\
+			-w  - restricts to word boundaries\
+			-n  - returns the line number\
+			-v  - inverts selection\
+			-E - regular expressions - quotes around pattern\
+				^ match beginning\
+				. match anything\
+\
+\
+difference between \'93*.txt\'94 and *.txt for command line input to script\
+\
+touch creates new files\
+\
+
+\b \ul GIT
+\b0 \ulnone \
+\
+initialize git repo - git init\
+	shown w/ ls -a\
+	git status\
+	git add - add file to tracking (stage)\
+		must add files being changed before committing\
+			can include add in commit w/ -a\
+	git commit - commit changes\
+		-m - message\
+		-a - add (skip add/staging step)\
+	git log - git commit history\
+	git diff - difference between version\
+	git CMD help - manual of options for command\
+\
+	HEAD - most recent commit\
+		HEAD~# - commit # from most current\
+	sha hash - commit each has its own identifier\
+	- - help\
+	checkout HEAD~#(or hash) - brings previous version to be current version\
+		HEAD or - - restore\
+			. - every files\
+	cat FILE - view file\
+	reset HEAD FILE - removes file from staging\
+\
+process\
+	mkdir DIR\
+	cd DIR\
+	git init\
+	nano FILE\
+	git add FILE \'97> staged\
+	git commit -m \'93MESSAGE\'94 \'97> commits changes\
+	git diff FILE \'97> differences between versions\
+		\'97staged - necessary to see changes made to staged files\
+		HEAD@\{#\} - compare latest commit to specified commit\
+		HEAD~# - compare latest commit to specified commit\
+		commit ID - either whole string or first ~7 characters\
+edit/modify created files\
+	ignore\
+		nano .gitignore - include files to ignore\
+		to add files that are ignored, include -f\
+github\
+	use SSH link from github repo\
+	git remote add origin LINK\
+	git push \
+	pit pull\
+Collaborating/Conflicts - http://swcarpentry.github.io//git-novice/index.html\
+\
+figshare/datadryad - online repositories for large data files\
+	\
+Best practices\
+	< 50 MB\
+	Text files\
+	Commit single changes\
+	Stage then commit \'97> allows for commiting multiple files at the right time (can edit change)\
+	DO NOT COMMIT proprietary/PPI/passwords/patient/personal data\
+\
+
+\b \ul R
+\b0 \ulnone \
+to use flux, use R from commandline\
+cancel - Ctrl+C or Esc\
+[1] on lines of output <- vector\
+\
+	character\
+	factor - categorical\
+\pard\pardeftab720
+
+\f1 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 NA - denotes a missing value\
+\pard\pardeftab720
+
+\f2 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 Inf
+\f1 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0  denotes infinity (can be positive or negative), while \
+
+\f2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 NaN
+\f1 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0  means Not a number, an undefined value (i.e. 
+\f2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 0/0
+\f1 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 )\
+
+\f2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 NULL
+\f1 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0  denotes that the data structure doesn\'92t exist (but can occur in list elements)\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\b \cf0 \kerning1\expnd0\expndtw0 \ul \ulc0 \outl0\strokewidth0 R w/version control
+\b0 \ulnone \
+create repository in github\
+	github can create .gitignore with ignoring files typically ignored for program\
+	license - GNU v3\
+clone repository (with ssh) to local via terminal\
+create project in Rstudio\
+	existing directory - navigate to new dir\
+add R file to git\
+	git status (files modified/added)\
+	git add (stage files)\
+	git commit -m \'93\'85.\'94 (commit changes)\
+	git push (push R commit to github repo)\
+In R \'97> tools \'97> project options \'97> turn all general to \'93No\'94 (workspace/history options)\
+	Modify files (git tab shows M icon next to files)\
+	Check box to stage\
+	\'97> tools \'97> Version control \'97> Commit\
+		\'97> Review changes window\
+		Add message \'97> commit\
+		\'97> Push\
+Rmd\
+	Doc/Presentation/Shiny/Template\
+		Line 1-6 - header information (not good to edit)\
+	# - heading titles (numbers is hierarchy of size)\
+	** text** - bold\
+	*text* - italics\
+	```\{r LABEL\}  Rcode ``` - generates output into new frame\
+		echo=FALSE - turns off code being output so only output is displayed\
+	`r Rcode ` - generates code within text\
+Rscript\
+	\ul source\ulnone  reads in file\
+Read in data\
+	analyze data file\
+		head - see first 10 lines to see how data is formatted\
+		wc -l - see how many lines of data\
+! - exclude data\
+\
+
+\b \ul function
+\b0 \ulnone \
+	function_name <- Function(variable)\{\
+		work\
+	\}\
+	use return() to explicit determine what should be returned at end of function\
+
+\b \ul Flow
+\b0 \ulnone \
+conditional - if else\
+	if(X1==Y1)\
+		Cmd1\
+	else if(X2==Y2)\
+		Cmd2\
+	else\
+		Cmd3\
+loop - for\
+	for (variable in vector)\{\
+		Cmd\
+	\}\
+plyr\
+	ddply/adply(data, variable, function)\
+ggplot\
+	plot in layers\
+		data\
+		axis\
+		graphic (\
+\
+\
+Best practice to have Yaxis start at 0\
+	D ont \
+	R epeat\
+	Y ourself\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 	noun for variable\
+	verb for function\
+}

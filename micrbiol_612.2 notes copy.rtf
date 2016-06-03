@@ -1,0 +1,562 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue233;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\margl1440\margr1440\vieww18260\viewh10460\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 \ul \ulc0 Day 1 Morning \'97> What is your question?\ulnone \
+\
+molecular phylogenetics\
+\
+banfield (new clade(?))\
+	sequence a single cell\
+\
+Molecular Methods (understand methods)\
+	culturing\
+		+ identify/characterize specifics of bacteria\
+		- artificial environment\
+	phospholipids (soil scientists)\
+		+ broad level euk/arch based on dist of \
+		- general characterization (not specific)\
+	PCR\
+		+ amplify any gene (known)\
+			16S rRNA (18S - fungus/euk, alternatively region inbetween (ITS region) <\'97 16s doesnt vary with in species but ITS does)\
+			protein coding genes\
+			- not quantitative \'97> percentages are not truly indicative of levels\
+		Finger-printing (T-RFLP/DGGE)\
+			amplfy 16S, cleave 16s and detect cleave c term with fluorescence, community generates pattern\
+		Array (phylochip, geoChip)\
+			probes on chip from different phylogenetic/protein-coding groups\
+			- limits to finding whats present on chip\
+		FISH (fluo in-situ hybrid)\
+			stain sample to show location of \
+			link taxonomy with other factors\
+			target specifc bacteria and Flow to sort specific cell\
+		qPCR\
+			+ quantify number of genes present\
+			- what is denomenator? - based on what/relatve to what\
+				context/relevance\
+	-Omics\
+		Meta (map) - genetic diversity and potential function/gene expression\
+			- presence does not equal expression\
+			- abundance of bacteria can skew bias in levels\
+		metatranscript (contours of map) - sequence RNA\
+			- more likely/closer to function/expression\
+			- need to eliminate rRNA\
+			- need genome to map to\
+		prote - \
+			limited level of detection \
+			map to metagenome\
+		metabolo - end products of pathways/output of community\
+\
+\
+\
+Sequencing\
+	mi-seq\
+		4 fold coverage\
+		adapter, barcode, index\
+		sequencing done in cycles\
+			errors increase as cycle increases\
+		\ul V2 chemistry\ulnone \
+		X -> V3 chemistry\
+	454\
+		1 fold coverage\
+		longer, more expensive, fewer\
+	Ion Torrent\
+		1 fold coverage\
+		shorter, many reads, high error rate\
+	PacBio\
+		full-length\
+		decreased number of reads\
+		high price\
+		many times fold coverage\
+			decreases signle base error rate\
+	Oxford nanopore\
+\
+Mi-Seq\
+	1-3 log variation\
+\
+Seq output - 			Amnt of Concern\
+	- DNA ext bias		X\
+	- PCR bias			X    _________\
+	- Chimera 			XX 		   \\\
+	- PCR error (1:10^5-6)			    | \'97 increase number of OTUs, increase distribution between samples\
+	- Seq error (1%)  		XXX ________/\
+	Reduce Seq error\
+	Caparosso - 2x150 - V4\
+	Schloss -  - V4, V34, V45\
+		error rates increase with number of bases sequenced\
+			compare forward and reverse reads\
+			quality - Q = -10logE (0<Q<40, if Q=40, E(error rate) = 10^-4\
+			delQ - error rate for contig\
+			delQ > or = 6 \'97> error rate is 0.05 \
+				delQ < 6 means error rate for each read is not significantly different to determine base \'97> assign N\
+			error	% lost		length		# otu (mock - 20)\
+		\ul V4	0.05	20		253		21.4\ulnone \
+		V45	0.5	60		375		83.5\
+		V34	0.5	>95		429		very few remain\
+		\'97> make.contigs\
+				files - which files go together and what sample they belong to\
+					\
+	Mock - allow to calculate error rate\
+\
+\ul Day 1 Afternoon\ulnone \
+	assignment \'97> \
+
+\f1 \expnd0\expndtw0\kerning0
+To speed up the tutorial we provide some of the downstream files that take awhile to generate (e.g. the output of shhh.flows): \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls1\ilvl0\cf2 \kerning1\expnd0\expndtw0 {\listtext	\'95	}{\field{\*\fldinst{HYPERLINK "http://mothur.org/w/images/d/d6/MiSeqSOPData.zip"}}{\fldrslt \expnd0\expndtw0\kerning0
+\ul Example data from Schloss lab}}\cf0 \expnd0\expndtw0\kerning0
+ that will be used with this tutorial. It was extracted from the {\field{\*\fldinst{HYPERLINK "http://www.mothur.org/MiSeqDevelopmentData/StabilityNoMetaG.tar"}}{\fldrslt \cf2 \expnd0\expndtw0\kerning0
+\ul \ulc2 full dataset}}\
+\ls1\ilvl0\cf2 \kerning1\expnd0\expndtw0 {\listtext	\'95	}{\field{\*\fldinst{HYPERLINK "http://mothur.org/w/images/9/98/Silva.bacteria.zip"}}{\fldrslt \expnd0\expndtw0\kerning0
+\ul SILVA-based bacterial reference alignment}}\cf0 \expnd0\expndtw0\kerning0
+\
+\ls1\ilvl0\cf2 \kerning1\expnd0\expndtw0 {\listtext	\'95	}{\field{\*\fldinst{HYPERLINK "http://mothur.org/w/images/5/59/Trainset9_032012.pds.zip"}}{\fldrslt \expnd0\expndtw0\kerning0
+\ul mothur-formatted version of the RDP training set (v.9)}}\cf0 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\sa240
+\cf0 \expnd0\expndtw0\kerning0
+You can easily substitute these choices for the reference and taxonomy alignments using the updated {\field{\*\fldinst{HYPERLINK "http://mothur.org/wiki/Silva_reference_files"}}{\fldrslt \cf2 \expnd0\expndtw0\kerning0
+\ul \ulc2 Silva reference files}} and {\field{\*\fldinst{HYPERLINK "http://mothur.org/w/index.php?title=Greengenes-formatted_databases_greengenes_reference_files&action=edit&redlink=1"}}{\fldrslt \cf2 \expnd0\expndtw0\kerning0
+\ul \ulc2 Greengenes-formatted_databases greengenes reference files}}
+\f0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 move silva, miseq sop, trainset, mothur files into \'93mothur_workshop\'94 dir\
+use stability.files \'97> file containing names of samples and the corresponding read pairs\
+\
+View output\
+	summary.seqs(fasta= )\
+		can use current\
+\
+Generate contigs - match Read1 and Read2, eliminate delQ < 6, and replace with N\
+	make.contigs\
+Remove large/bad  seq\
+	screen.seqs \'97> bad.accnos tells why seq tossed\
+		\'97> good.fasta and good.group\
+Make data smaller by eliminating to only unique sequences (same length and sequences)\
+	unique.seqs \'97> merge duplicate sequences\
+		good.names - contains names of duplicates\
+		good.unique.fasta - contains only unique sequences\
+	count.seqs\
+		outputs table with counts of unique sequences\
+\
+\
+Alignments\
+	provide evolutionary information by maintaining positional homology\
+		protein coding sequences \'97> codon triplets\
+		16s \'97> secondary structure\
+				stems and loops conserved\
+					utilize to inform sequencing, must maintain sequence homology in specific regions\
+	pairwise - align direct\
+		global - aligns all bases\
+			depends on penalties for mismatch/gap(opening or extension)\
+			aligns all bases\
+		local - aligns only aligned bases (BLAST)\
+			returns optimal sub alignment\
+			drops unmatched bases\
+			- trims and inflates similarity because dissimilar bases are eliminated\
+			+ motifs in sequences, fast\
+	multiple sequence alignment\
+		scales alignment to more sequences\
+		- slow and a lot of memory\
+			speed = pairwise = Time/number^2, multiple = time/number^4\
+	Profile\
+		\ul refernece alignment\ulnone  - incorporates secondary structure\
+			with unaligned, finds closest match in database \'97> K-mer counting (word of length K)\
+				PW align unaligned to aligned ref\
+		Kmer counting (7-mers)\
+			list of Kmers from unaligned, compared to Kmer from database\
+				picks reference for sequencing\
+			key is reference alignment\
+				\ul SILVA\ulnone  - good quality\
+					- large size - 50000 (gene only 1500, extra contains gaps and includes 18s and introns)\
+						+ trim to V4 region\
+				RDP - no good reference alignment\
+				greengenes - poor reference alignment\
+					small size - 8000\
+	align sequences to trimmed silva V4 \
+		trim silva to V4\
+			
+\f2 \expnd0\expndtw0\kerning0
+pcr.seqs(fasta=silva.bacteria.fasta, start=11894, end=25319, keepdots=F, processors=8)\
+		
+\f0 \kerning1\expnd0\expndtw0 		rename - 
+\f2 \expnd0\expndtw0\kerning0
+system(mv silva.bacteria.pcr.fasta silva.v4.fasta)\
+
+\f0 \kerning1\expnd0\expndtw0 						system() allows you to use command lines commands\
+		align sequences to ref and the remove sequences that don\'92t start/end where primers do and remove\
+			
+\f2 \expnd0\expndtw0\kerning0
+align.seqs(fasta=stability.trim.contigs.good.unique.fasta, reference=silva.v4.fasta)\
+			summary.seqs(fasta=stability.trim.contigs.good.unique.align, count=stability.trim.contigs.good.count_table)\
+			screen.seqs(fasta=stability.trim.contigs.good.unique.align, count=stability.trim.contigs.good.count_table, summary=stability.trim.contigs.good.unique.summary, start=1968, end=11550, maxhomop=8)
+\f0 \kerning1\expnd0\expndtw0 \
+		alignment contains alot of gaps -> bases = 250 but start-end = 13000\
+			
+\f2 \expnd0\expndtw0\kerning0
+filter.seqs(fasta=stability.trim.contigs.good.unique.good.align, vertical=T, trump=.)\
+
+\f0 \kerning1\expnd0\expndtw0 		eliminate sequnces that are now duplicates after trimming alignments\
+			
+\f2 \expnd0\expndtw0\kerning0
+unique.seqs(fasta=stability.trim.contigs.good.unique.good.filter.fasta, count=stability.trim.contigs.good.good.count_table)\
+
+\f0 \kerning1\expnd0\expndtw0 \
+	\
+\ul Day 2 Morning\ulnone \
+Having a question is critical to everything done in microbial ecology\
+	What question are you trying to ask?\
+		then pick your method\
+			quantify c diff - culture is quick, cheaper, better than sequencing\
+key from yesterday\
+	seq methods\
+	error rates\
+		affect on otu and dissimilarity\
+	paired overlapping reads\
+		\
+Error Rates\
+	1- Data from sequencer - error rate ~1%\
+	2 - Contigs - 0.05% (delQ = 6) (based on mock community)\
+	3 - Pre.Cluster - 0.01% (diff = 2) <\'97 groups similar seqs into most similar and very trustworthy seq\
+		remove residual pcr error (high abundance seqs are more trustworthy), \
+		-> sort seq by abundance then start with most abundant seq, look through list for \ul similar\ulnone  seqs				similar is defined by \ul diffs\ulnone , merge clusters if clusters less than defined amount of nucleotide differences\
+				similar - if we want to see OTUs @ 3% different, we aim for 1% different \'97>  diffs = 1/100nts (V4 is 250bp so use 2 as conservative)\
+Chimera - composite DNA from 2 or more fragments\
+	lab to eliminate - longer extension times, few cycles\
+	more likely to form along similar seqs\
+	reproducible - show up in many data sets, since not random event\
+	not necessarily singletons, \
+	techiniques to eliminate chimeras in mothur\
+		ChimeraSlayer, uchime, perseus\
+			identify short reads with potential different parents\
+				split contigs into L and R and compare trees built from seqs to detect seqs that change location in tree\
+					difficult for \
+						-larger data\
+						-determine where to break seqs\
+						-determine how far apart seqs L and R have to move\
+					chimeraslayer (and uchime(better at detecting >2 parents) )- contains chmera free dataset -> seqs from culutred data\
+						de novo - 2 most abundant are not chimeras, they check if next seq is chimera of 1 and 2, then add to not chimera group and continue to check next seqs\
+							if flagged as chimeric in one sample, not tagging seq in other samples as chimera \
+							sensitve to low abundance seqs, since comparing with most abundant ones, \
+			Abundance bias					-> last seq will have more to compare to? \
+Calc Error rate (of mock community)\
+	seq.error\
+		output error rates and chimera\
+Classification of seqs\
+	match our seq to reference seqs and generate a name\
+		blast - based on local alignments, so compares primarily most similar\
+		\ul kmer counting\ulnone  - almost as good as calc\
+		calc dist between seqs - slow\
+	N-nearest neighbor\
+		get consensus taxonomy for N-closest references\
+			what N to use, N=1 ignores ties/indistinuishable diff\
+		causes problems because when useing higher N for seqs with one match, you lose resolution of genus\
+	Bayesian Approach\
+		-kmers\
+		calc probabilty of genus X given your kmers \'97 p(GenusX | Your kmers) \'97>  max prob genus\
+						randomly subsample your kmers \'97> prob \'97> max prob (repeat 100)									*random subsampling = bootstrapping\
+				confidence score = how often do random samples agree (if >80%, trust classification)\
+					class goes up a level until conf score higher than threshold\
+				sensitive to the number of seqs in each Genus\
+	Groups (lumping/spliting) different amoung references \
+		RDP, SILVA, greengenes\
+		Differences \
+			how they name tax\
+			depth of name (greengenes only goes to species in 10%)\
+			number of sequences (RDP has less)\
+			curation practices\
+				RDP - follows burgess manual (needs bacteria culture)\
+				SILVA/greengenes - group based on breaks in phylogenetic tree\
+		can use all three and compare diff in class\
+				compare depth of classification by which database used\
+Look in seqs for contaminants\
+	obvious contaminants\
+		mitochondria, chloroplast(\ul cyanobacteria\ulnone ), archaea, eukorya, unknown domain\
+			*melanobacterium - classify as cyano, but not chloro but present in gut although typically rare\
+		remove.lineage\
+		get.lineage\
+	Negative control\
+		reagents, PCR, DNA extraction\
+		ideally remove neg ctrl seq from all samples\
+			remove most specific \
+		relative proportions\
+			compare proportions of neg ctrl seqs to sample\
+Clustering/OTUs - Distance-based\
+	eachgap - number of nts with mismatch or gap/seq length\
+	ignoregap - number of subs/seq length (not counting nts with gaps)\
+	onegap - number of subs + consecutive nt gaps counted as one gap/length of seq with consecutive gaps as 1\
+	when seqs < 3% diff between eachgap and one gap is small\
+	*multiple substitutuons (revertant mutations) - ignore, unsure to deal with\
+	Distances not same from V1-V9\
+		distance V1-V9 doesnt equal dist V4\
+			rate of evolution between V1-9 and V4, similar slope (same rate) but different noise/amount of mutation along (R2=0.4)\
+				\'97> does not match whole seq cluster\
+	OTUs\
+		Closed ref clustering -> ref tax is limited, contains naming bias, only available for rRNA genes, fast, currently what is understood\
+		de novo -> OTUs - ref independent, cluster by similarity within dataset, slow/memory intesive, unclear what method best, how do OTUs relate to taxonomy\
+		Open reference -> hybrid of closed and de novo\
+		3% difference = 97% similarity\
+			past paper on speciation, DNA-DNA hybridization\
+				> 70% hybrid = same species (not true based on classification of current species\
+					based on full-length seq and specific group of bacteria\
+				compare difference in 16s and DNA-DNA \'97> different at 97%\
+					99 can give better grouping, but can also be separating same OTU which had intragenic variation\
+		OTUs vs Genera\
+		Hierarchical\
+			\ul Average neighbor\ulnone  avg dist between each in group is < 3%\
+				True Pos - clustered and sim\
+				True Neg - not clust and not sim\
+				False Pos - clust but not sim\
+				False Neg - not clust but sim\
+					all collectively - Matthew\'92s correlation coefficient\
+						sens.spec\
+			Nearest - based on who can touch, creates larger group and includes far (anyone within 3% with anyone in group is same OTU)\
+			Furthest - separates who arent dist (any one < 3% from any one in OTU is split)\
+		Greedy\
+			Usearch - \
+			Vsearch - almost as good as avg neighbor (but good for ITS)\
+			Swarm\
+			CDhit\
+		Slow/memory intensive (split data at order/family)\
+			dist.seqs <- parallel\
+			cluster\
+				OR\
+			clusters.split\
+				split data by taxonomy\
+				within each bin in parallel - dist.seq; cluster (n parallel)\
+				merge data\
+			\'97> outputs list file with assignments of each bin, multiple distance thresholds\
+			make.shared \'97> parses list file to count OTUs by sample\
+				\'97> output \ul shared file\ulnone  \'97> used for community analysis\
+		Attach names to OTUs\
+			classify.otu (better than taking seq from OTU as representative)\
+				link list to taxonomy (classify.seqs)\
+					\'97> output \ul cons.taxonomy \ulnone  \
+\
+\ul Day 2 Afternoon\ulnone \
+pre.cluster\
+	split by group \
+chimera check\
+	chimera.uchime, dereplicate=t (only remove from sample identified in)\
+remove chimeras\
+	remove.seqs\
+classify seqs\
+	classify.seqs\
+assess error rates (mock community)\
+	get mock group \'97>		get.groups (can string together multiple groups with hyphen)\
+	calc error rate \'97>		seq.error (error rate does not include chimeras)\
+remove mock\
+	remove.seqs\
+Bin by OTU OR phylotype\
+	OTUs\
+		cluster.split - taxlevel, cutoff\
+			cluster splits based on taxonomy not by number of seqs in group so imbalance in time to process each group\
+		make.shared - level - threshold\
+		label OTUs\
+			classify.otu \'97> NAME(percent)\
+	phylotypes - group into \
+		phylotype\
+		make.shared\
+		classify.otu\
+Build tree (with lt lower triangle format for tree program)\
+	dist.seqs\
+	clearcut\
+	\
+\
+run mothur from commmandline - mothur \'93COMMAND;COMMAND\'94\
+run whole commands from batch ./mothur FILE.batch\
+\
+phylotype \'97> list \'97> shared file\
+feces \'97> DNA \'97> illumina \'97> fastq \'97> mothur \'97> shared \'97> analysis\
+\
+\ul Day 3 Morning\ulnone \
+\
+Data analysis\
+	OTU (uses .shared and .cons.taxonomy) - all otus are unrelated to each other, strictly look at individual OTUs\
+	Phylotype (uses .shared and .cons.taxonomy) - loo\
+	Phylogenetic (uses .tree)\
+alpha-diversity\
+beta-diversity\
+population analysis\
+	Diversity - combination of number of types in a community and how individual are distributed across types\
+			number of states/countries of students and how many from each\
+	alpha - doesnt matter the names/types of groups, focuses on number of types (richness) and how distribution among types (evenness)\
+				richness - \
+				evenness - \
+			shannon index - H = -(sum of all species(ri ln ri))\
+				high H = high diversity\
+			simpson index - D = sum(ri^2)\
+				high D = low diversity, so we use 1/D (high D \'97> high diversity(1/D))\
+			Richness\
+				observed richness = Sobs, use tools to predict unobserved richness (Anne Chao)\
+					Choa1 = Sobs + (n1^2/2*n2)  n1=number of otus that appear once n2= number of otus that appear twice\
+						minimum richness\
+					ACE and jackknife alternative tools\
+					non-parametric - does not make any assumptions about the distribution or community\
+				All analysis is sensitive to sampling\
+					rarefaction - account for and standardize sampling and standardize sequencing detritus (increases with increased seqs)\
+						plot number of types vs number of times sampled, repeat many times to generate average curve, avg curve = rarefaction curve\
+							plot OTUs vs sequence numbers and downsample to lowest number of sequnces\
+							how well your sampling your most abundant OTUs (not necessarily indicating completeness of sampling\
+							rarefy to # of sequences and use OTU value in stat test\
+							rarefaction curve - (without complete sampling) cannot show richness, but does show differences in evenness and diversity\
+				Abundance\
+					rank abundances, rank order of OTUs, convert bar plot to line plot \
+					alternatively, species abundance plot, Y=# of species, X=# of times \
+						use species abundance plot to predict number of species sampled 0 times\
+							parametric prediction of unsampled species\
+								tools - lognormal, power series, broken stick\
+								catchall (john bunge) - fits model to distribution, finds best fit, extrapolates to 0 samples\
+					non-parametric - approaches richness as increased seqs\
+					parametric - contains richness but error/variation from richness decreases with sampling\
+			Coverage\
+				goods coverage - 1-(n1/NT) = % of sequences in OTUs seen more than once   (1 - number of single seqs/total seqs)\
+		Phylogenetic diversity\
+			length of branch = amount of evolution between common ancestor\
+			PD = sum of branch length\
+				need to rarefy (sensitive to sampling)\
+		inverse-simpson index\
+				1/(sum of relative abundance^2)\
+			Power analysis\
+				how many samples necessary to have confidence in data\
+				Power\
+					N\
+					# of treatment groups\
+					variation in data - challenge to interpret what difference means\
+					effect size (how much of a difference are we detecting - prefer to connect with pheonotype)\
+		alpha-diversity Data visualization\
+			stripchart\
+				y=shannon index, x= treatment groups (instead of rarefaction curve) \
+			diversity over time\
+	Selecting threshold - to select number of seqs/sample\
+		mininum to still keep controls, pairs, baseline\
+	Beta-diversity\
+		compare composition of communities\
+			membership - strictly who is present\
+			membership + abundance \'97> structure\
+			Jaccard = Sab / Sa + Sb - Sab\
+				like venn diagram = Sa + Sb = number of OTUs in A or B, Sab number of shared OTUs\
+				sensitive to sampling\
+					uneven effort\
+				strictly looks at OTUs, \
+			Bray-curtis - structure - 1-2*(sum(min(Sai,Sbi)/(sum(Sai)+sum(Sbi))  Sai - abundance of OTU i in sample a\
+			theta-yc - 1-2*(sum((SaiSbi)/(sum(Sai^2)+sum(Sbi^2))\
+			Unifrac - unique fraction (uses phylotype information)\
+				tree of sequences\
+					total branch length = Ebl\
+				sum(S_only_a)+sum(S_only_b)/sum(total branch) <- unweighted branch (membership)\
+				weighted branch \'97> sums branches for each group, weighting to shared branches (structure)\
+			outputs distance matrix of all samples\
+				ordination\
+					distances \'97> map\
+						distorts (greenland/alaska on 2D map)\
+							microbial data - high dimensional data \'97> 2-3D data\
+						visualization\
+					principle components (PCA/\ul PCoA\ulnone )\
+						assumes linearity, calculate eigen vectors\
+							draw line with least variance - axis 1 \
+							draw second line that minimizes remaining variation - axis 2 (perpendicular to previous)\
+							subsequently plotting perpendicular lines to fit remaining variation\
+						plot axis 1 and axis 2 with amount of variance explained\
+						PCA - variance/covariance matrixas dist, makes assumptions about data\
+						\ul PCoA\ulnone  - uses any distance matrix\
+					nonmetric dimensional scaling (NMDS)\
+						instruct program number of dimensions\
+							moves points on grid to try to match dist matrix to number of dimensions\
+							difference between dist matrix and plot - stress ( < 0.01)? \
+							R^2 is indicative of how well the output distance cordinate with the input dist matrix\
+								typically R^2nmds > R^2pcoa\
+							con - ambiguous axis, pcoa has defined, obtainable linear lines\
+								not always same plot\
+			Stats test (use dist matrix not ordination) - compare structure of communities (amova and homova are independent)\
+				\ul amova\ulnone  - analysis of molecular variance (permanova/np-anova/adonis(vegan))\
+					are clusters of groups significantly different\
+				homova - homogeneity of variance\
+					is variance in structure different\
+			tree - build dendrogram from dist matrix\
+				parsimony\
+					tests if changes are not by chance, compares changes in tree to random dist tree\
+			plot distances to compare by group\
+			venn diagram\
+	alpha - complexity of community and across community\
+	beta - structure and similarity/difference between community\
+	population analysis - what is accounting for the differences\
+		t-test/wilcoxon for each OTU between group, correct for multiple hypothesis tests\
+			metastats - np t-test/FRD\
+			lefse - wilcox + LDA\
+				pairwise comparisons (only 2 groups)\
+				for more import to R\
+					filter otus\
+						meet min rel abund/appear in min number samples\
+							reduces ~400 to 20 otus to test\
+			random forest\
+				composite model, nonlinear, \'97> classifier(\'93spam-filter\'94)\
+				also for regression \'97>\
+					predictors can implicate possible mechanism\
+		correlation between OTUs\
+			sparcc - corrections to deal with relative abundances\
+				network diagrams, co-occurence networks\
+		DMM - dirichelet multinomial mixtures\
+			get.communitytype\
+				identifies clusters in ordination plots \
+					uninformed/unsupervised - groups without knowing treatments\
+		heatmaps X - difficult to differentiate and know distances\
+		piecharts/stacked bar charts - XX - difficult to see differences, limited colors, no visualization of variance( alot of variance in microbiome, necessary to show)\
+			what to do instead? what are you trying to show?\
+				difference? \'97> focus on comparisons in more concise/direct way to show population level differences with in community\
+		interactive graphics with R - shiny\
+\
+\ul Day 3 Afternoon \'97 Analysis in mothur\ulnone \
+ find the number of seqs in each sample to know what to rarefy to \
+	count.groups\
+subsample data to size of smallest samples\
+	sub.sample\
+Alpha-analysis\
+	rarefy data\
+		rarefaction.single\
+	summarize data and subsample at same levels\
+		summary.single\
+			plot ave sobs by group via stripchart in R (using summary file)\
+Beta-diversity\
+	heatmap\
+	calc distances\
+		membership - jaccard\
+		structure - theta-yc\
+			dist.shared(shared=current, calc=thetayc-jclass, subsample=T)\
+				heatmap to show similarity\
+		tree\
+			tree.shared\
+			parsimony test significance of splits in trees, need design file to designate each sample treatment\
+				parsimony\
+	PCoA\
+		pcoa - axis, \
+	NMDS\
+		nmds\
+			package - rgl - plot3d()\
+	test dist matrix for significant difference\
+		amova\
+		homova\
+	test the amount of pull each OTU has on samples \
+		corr.axes\
+			with pcoa  to see effect of each otu\
+			but is biased by trying to force data into ordination\
+				better to use metastats\
+		partition data with out separating into groups\
+			get.communitytype\
+				laplace indicates number of partitions\
+				\
+population-level analysis\
+	metastats/lefse - identify otus that change between groups, reference con file to identify otus classification\
+		compares otus one at a time\
+	random forest (classify.rf) - orders features in importance of separating groups\
+		uses all otus together\
+Phylogenetic\
+	\
+\
+r summarize data - head, str, summary}
