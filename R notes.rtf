@@ -6,4 +6,9 @@
 
 \f0\fs24 \cf0 Subsetting\
 	== searches column for vector in order and recycles\
-	%in% searches column for any in vector}
+	%in% searches column for any in vector\
+		to subset by column name\
+			DF[,colnames(DF) %in% c(\'93COLNAME\'94,\'94COLNAME\'94]\
+		to subset by columns with multiple inputs\
+			DF[,sapply(DF, function(col) length(unique(col)))>1]			\
+q - to exit less}
