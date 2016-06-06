@@ -13,3 +13,5 @@ data/*/*
 mothur*logfile
 *temp*
 *.docx
+
+.DS*
