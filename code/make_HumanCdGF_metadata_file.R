@@ -13,11 +13,12 @@ human_GF_exp <- read.table('data/raw/humanGF_ids.txt', sep='\t',header = T)
 human_GF_tox <- read.table('data/raw/Alyx_Humice_toxinassay_results.txt',sep='\t',header=T)
 human_GF_IDs <- read.table('data/raw/MIMARKS_cdclinical.txt',sep='\t',header=T)
 
-#Create list of human sources used in experiment
-Sources <- levels(human_GF_exp$human_source)
-
 #Subset the human source metadata dataframe to a data frame of only samples used in study
-human_source_data <- human_GF_IDs[human_GF_IDs$sample_id %in% Sources,c(1,8:9,13,17,32:45)]
+#   Subset sources to only ones used in study
+human_source_data <- human_GF_IDs[human_GF_IDs$sample_id %in% human_GF_exp$human_source,]
+#   Subset data columns to remove columns with same information
+human_source_data <- human_source_data[,sapply(human_source_data, function(col) length(unique(col)))>1]
+
 #Combine Toxin, Exp, and metadata
 human_GF_exp_metadata <- merge(human_GF_exp, human_GF_tox,by.x='group',by.y='Cage_Mouse',
                                incomparables=NA, all.x=T)
