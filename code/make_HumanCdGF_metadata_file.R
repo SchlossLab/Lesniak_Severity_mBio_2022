@@ -41,5 +41,5 @@ human_CdGF_metadata <- human_CdGF_metadata[order(human_CdGF_metadata$group),]
 
 
 #output metadata file
-write.table(human_CdGF_metadata, file='data/process/human_CdGF_metadata.txt',quote=F,sep='\t')
-write.table(shared_file, file='data/process/human_CdGF.an.unique_list.0.03.subsample.shared',quote=F,sep='\t')
+write.table(human_CdGF_metadata, file='data/process/human_CdGF_metadata.txt',quote=F,sep='\t',row.names=F)
+write.table(shared_file, file='data/process/human_CdGF.an.unique_list.0.03.subsample.shared',quote=F,sep='\t',row.names=F)
