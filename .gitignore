@@ -1,6 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
+.Rapp*
 
 head.batch
 tail.batch
@@ -13,3 +14,5 @@ data/*/*
 mothur*logfile
 *temp*
 *.docx
+
+.DS*
