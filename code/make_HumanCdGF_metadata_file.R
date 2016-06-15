@@ -7,7 +7,7 @@
 #
 #
 ###################
-setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
+#setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 human_GF_mouse <- read.table('data/raw/humanGF_ids.txt', sep='\t',header = T)
 human_GF_toxin <- read.table('data/raw/Alyx_Humice_toxinassay_results.txt',sep='\t',header=T)
