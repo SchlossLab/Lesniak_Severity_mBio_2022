@@ -7,7 +7,6 @@ head.batch
 tail.batch
 
 data/mothur
-data/raw/*.xlsx
 
 *.qsub*
 mothur*logfile
