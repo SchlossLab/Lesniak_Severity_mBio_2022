@@ -6,9 +6,8 @@
 head.batch
 tail.batch
 
-data/*/*
-!data/process/*
-!README.md
+data/mothur
+data/raw/*.xlsx
 
 *.qsub*
 mothur*logfile
