@@ -7,6 +7,7 @@ head.batch
 tail.batch
 
 data/mothur
+*.fastq
 
 *.qsub*
 mothur*logfile
