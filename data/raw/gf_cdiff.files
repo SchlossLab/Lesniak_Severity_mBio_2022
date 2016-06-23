@@ -769,7 +769,7 @@ DA00430_inoculum	DA00430_S317_L001_R1_001.fastq	DA00430_S317_L001_R2_001.fastq
 DA00578_1_inoculum	DA-00578_S320_L001_R1_001.fastq	DA-00578_S320_L001_R2_001.fastq
 DA00578_2_inoculum	inpa-Control-DA-00578_S322_L001_R1_001.fastq	inpa-Control-DA-00578_S322_L001_R2_001.fastq
 DA00581_inoculum	DA-581_S329_L001_R1_001.fastq	DA-581_S329_L001_R2_001.fastq
-DA00431_inoculum	431-community_S319_L001_R1_001.fastq	431-community_S319_L001_R1_001.fastq
+DA00431_inoculum	431-community_S319_L001_R1_001.fastq	431-community_S319_L001_R2_001.fastq
 DA00884_inoculum	inpa-control-DA0084_S314_L001_R1_001.fastq	inpa-control-DA0084_S314_L001_R2_001.fastq
 DA01134_inoculum	DA-01134_S328_L001_R1_001.fastq	DA-01134_S328_L001_R2_001.fastq
 DA00953_inoculum	IN-953_S340_L001_R1_001.fastq	IN-953_S340_L001_R2_001.fastq
