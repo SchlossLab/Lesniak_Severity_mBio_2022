@@ -78,7 +78,7 @@ $(REFS)/HMP_MOCK.v4.fasta : $(REFS)/HMP_MOCK.fasta $(REFS)/silva.v4.align
 
 
 BASIC_STEM = data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
-NSEQS=5000
+NSEQS=2000
 
 
 
