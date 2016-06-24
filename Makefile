@@ -91,7 +91,7 @@ $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta 
 										data/references/trainset14_032015.pds.tax\
 										data/raw/gf_cdiff.files
 	mothur code/get_good_seqs.batch;\
-	rm data/process/*.map
+	rm data/mothur/*.map
 
 
 
