@@ -128,7 +128,7 @@ $(BASIC_STEM).pick.pick.pick.an.unique_list.thetayc.0.03.lt.ave.dist : $(BASIC_S
 
 
 # Run alpha diversity analysis
-$(BASIC_STEM).pick.pick.pick.an.unique_list.groups.ave-std.summary : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared.pick.pick.pick.an.unique_list.shared
+$(BASIC_STEM).pick.pick.pick.an.unique_list.groups.ave-std.summary : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared
 	mothur "#summary.single(shared=$(BASIC_STEM).pick.pick.pick.an.unique_list.shared, calc=nseqs-sobs-shannon-invsimpson-coverage, subsample=$(NSEQS))"
 
 
