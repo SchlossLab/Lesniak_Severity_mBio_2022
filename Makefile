@@ -78,7 +78,7 @@ $(REFS)/HMP_MOCK.v4.fasta : $(REFS)/HMP_MOCK.fasta $(REFS)/silva.v4.align
 
 
 BASIC_STEM = data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster
-NSEQS=5000
+NSEQS=2000
 
 
 
@@ -88,9 +88,10 @@ NSEQS=5000
 $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta $(BASIC_STEM).pick.pds.wang.pick.taxonomy : code/get_good_seqs.batch\
 										data/references/silva.v4.align\
 										data/references/trainset14_032015.pds.fasta\
-										data/references/trainset14_032015.pds.tax
+										data/references/trainset14_032015.pds.tax\
+										data/raw/gf_cdiff.files
 	mothur code/get_good_seqs.batch;\
-	rm data/process/*.map
+	rm data/mothur/*.map
 
 
 
@@ -127,7 +128,7 @@ $(BASIC_STEM).pick.pick.pick.an.unique_list.thetayc.0.03.lt.ave.dist : $(BASIC_S
 
 
 # Run alpha diversity analysis
-$(BASIC_STEM).pick.pick.pick.an.unique_list.groups.ave-std.summary : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared.pick.pick.pick.an.unique_list.shared
+$(BASIC_STEM).pick.pick.pick.an.unique_list.groups.ave-std.summary : $(BASIC_STEM).pick.pick.pick.an.unique_list.shared
 	mothur "#summary.single(shared=$(BASIC_STEM).pick.pick.pick.an.unique_list.shared, calc=nseqs-sobs-shannon-invsimpson-coverage, subsample=$(NSEQS))"
 
 

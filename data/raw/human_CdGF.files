@@ -784,5 +784,10 @@ DA10034_inoculum	outpa-DA-10034_S318_L001_R1_001.fastq	outpa-DA-10034_S318_L001_
 DA10148_inoculum	out2-10148_S339_L001_R1_001.fastq	out2-10148_S339_L001_R2_001.fastq
 DA10027_inoculum	outpatient-10027_S312_L001_R1_001.fastq	outpatient-10027_S312_L001_R2_001.fastq
 DA00810_inoculum	DA-810_S342_L001_R1_001.fastq	DA-810_S342_L001_R2_001.fastq
+<<<<<<< HEAD:data/raw/human_CdGF.files
 Mock_1_inoculum_run	mock1_S343_L001_R1_001.fastq mock1_S343_L001_R2_001.fastq
 Mock_2_inoculum_run	mock2_S344_L001_R1_001.fastq	mock2_S344_L001_R2_001.fastq
+=======
+Mock_1_inoculum_run	mock1_S343_L001_R1_001.fastq	mock1_S343_L001_R2_001.fastq
+Mock_2_inoculum_run	mock2_S344_L001_R1_001.fastq	mock2_S344_L001_R2_001.fastq
+>>>>>>> upstream/master:data/raw/gf_cdiff.files
