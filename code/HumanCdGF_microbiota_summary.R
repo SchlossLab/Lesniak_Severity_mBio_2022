@@ -53,16 +53,6 @@ get_tax <- function(tax_level=1){
 taxonomy_genus <- get_tax(1)
 taxonomy_phylum <- get_tax(5)
 
-#missing inoculum
-
-shared_presample <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.shared', sep='\t',header = T)
-
-needed_inoculum <- as.character(unique(meta_file[meta_file$cage_id!='inoculum','human_source']))
-sequenced_inoculum <- as.character(unique(meta_file[meta_file$cage_id=='inoculum','human_source']))
-needed_inoculum <- needed_inoculum[!needed_inoculum %in% sequenced_inoculum]
-inoculum_presample <- shared_presample[,'Group']
-inoculum_presample <- inoculum_presample[grep('*inoc*',inoculum_presample)]
-
 #create function to output a dataframe with OTU rel abund summed by tax group per sample
 # input file with tax level classs and file with samples OTU rel abund
 sum_OTU_by_tax_level <- function(TAX_DF,OTU_DF){
