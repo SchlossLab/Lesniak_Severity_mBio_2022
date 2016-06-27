@@ -1,0 +1,7 @@
+set.dir(input=data/mothur, output=data/mothur, seed=19760620)
+set.current(processors=8)
+remove.groups(count=gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.count_table, fasta=gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.fasta, taxonomy=gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, groups=Mock1-Mock2-Mock3-Mock4-Mock_1_inoculum_run-Mock_2_inoculum_run-Mock_new-GD)
+cluster.split(fasta=current, count=current, taxonomy=current, splitmethod=classify, taxlevel=5, processors=4, classic=T, cluster=F)
+cluster.split(file=current, classic=T)
+make.shared(list=current, count=current, label=0.03)
+classify.otu(list=current, count=current, taxonomy=current, label=0.03)
