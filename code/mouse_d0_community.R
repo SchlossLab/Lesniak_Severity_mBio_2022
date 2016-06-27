@@ -92,6 +92,14 @@ cages <- na.omit(cages)
 rel_d0[90] <- cages
 colnames(rel_d0)[90] <- "cage"
 
+d0_med <- aggregate(rel_d0[, 1:89], list(rel_d0$cage), median)
+d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
+cage_only <- cage_IDs[-15]
+d0_med_phy[7] <- cage_only
+
+barplot(t(d0_med_phy), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
+        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7)
+
 #need to add a column of cages to the rel_d0 df
 
 #what kind of plots do we want? line plots of diversity? 
