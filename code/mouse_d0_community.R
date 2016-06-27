@@ -27,6 +27,8 @@ inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
 
 #df of OTUs w abundances >1% 
 rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
+#it's adding weird NAs, idk why but remove them:
+rel_d0 <- na.omit(rel_abund_d0)
 
 #get taxonomy - df with columns for each level - 
 # level - 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum), 6 (kingdom)
@@ -50,7 +52,6 @@ get_tax <- function(tax_level=1){
   }
 }
 
-
 taxonomy_genus <- get_tax(1)
 taxonomy_phylum <- get_tax(5)
 
@@ -70,15 +71,28 @@ sum_OTU_by_tax_level <- function(TAX_DF,OTU_DF){
   return(OUTPUT_DF)
 }
 
-
 #get phylum level for D0 only
 
-phylum_d0 <- sum_OTU_by_tax_level(taxonomy_phylum, rel_abund_d0)
+phylum_d0 <- sum_OTU_by_tax_level(taxonomy_phylum, rel_d0)
 
+#plot each mouse individually
 
-#combine by cages
+colors <- c('red', 'blue', 'green', 'orange', 'purple', 'pink')
+legend_labels <- as.character(taxonomy_phylum$tax)
+legend_labels[5] <- "Other"
 
-#get OTU data from nicks shared file? or what
+barplot(t(phylum_d0), ylab='Relative Abundance', main="Taxonomic composition of mice on D0", 
+        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7)
 
-#plot by donors/cages. bar plots? line plots of diversity? 
+#combine by cages/donors/ median per cage 
+
+#add a column for cages to the df
+cages <- meta_file$cage_id[meta_file$day==0]
+cages <- na.omit(cages)
+rel_d0[90] <- cages
+colnames(rel_d0)[90] <- "cage"
+
+#need to add a column of cages to the rel_d0 df
+
+#what kind of plots do we want? line plots of diversity? 
 
