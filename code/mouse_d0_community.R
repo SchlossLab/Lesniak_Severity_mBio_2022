@@ -97,8 +97,10 @@ d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
 cage_only <- cage_IDs[-15]
 d0_med_phy[7] <- cage_only
 
+d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
 barplot(t(d0_med_phy), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
-        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7)
+        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7, xaxt='n', xlab="cage")
+axis(1, at=1:26, labels=cage_only, cex.axis=0.6, cex.names=0.7)
 
 #need to add a column of cages to the rel_d0 df
 
