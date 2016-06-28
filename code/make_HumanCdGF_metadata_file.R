@@ -16,7 +16,7 @@
 #         data/process/human_CdGF.an.unique_list.0.03.subsample.shared
 #
 ###################
-setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
+#setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 #need gdata to read excel files
 install.packages('gdata')
