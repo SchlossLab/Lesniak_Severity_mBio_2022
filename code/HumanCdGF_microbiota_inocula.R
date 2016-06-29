@@ -74,26 +74,43 @@ barplot(t(phylum_454_level_RA), ylab='Relative Abundance', las=2, cex.sub=0.9,
 mtext('Human Source', side=1, line=5, cex=0.9)
 legend('right',fill=colors,legend_454, inset=c(-0.16,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
 
-# merge all samples to compare differences between miseq v4 and 454 v53
-v4_16s <- cbind(t(phylum_level_RA),names(phylum_level_RA))
-colnames(v4_16s)[24] <- 'tax'
-v53_454 <- cbind(t(phylum_454_level_RA),names(phylum_454_level_RA))
-colnames(v53_454)[18] <- 'tax'
+
+# merge all samples to compare differences between miseq v4 and 454 v53 - at the family level
+family_level_RA <- sum_OTU_by_tax_level(2,rel_abund,tax_file)
+family_454_level_RA <- sum_OTU_by_tax_level(2,rel_454_abund,tax_454_file)
+
+v4_16s <- cbind(as.data.frame(t(family_level_RA)),tax=names(family_level_RA))
+v53_454 <- cbind(as.data.frame(t(family_454_level_RA)),tax=names(family_454_level_RA))
 
 all_inocula <- merge(v53_454,v4_16s,by='tax')
-all_inocula <- t(all_inocula)
-colnames(all_inocula) <- all_inocula[1,]
-all_inocula <- all_inocula[-1,]
-rownames(all_inocula)[18] <- 'DA00581_1_inoc'
-rownames(all_inocula)[40] <- 'DA00581_2_inoc'
-sort_all_inocula <- all_inocula[order(rownames(all_inocula)),]
+rownames(all_inocula) <- all_inocula[,'tax']
+all_inocula <- all_inocula[,-1]
+all_inocula_OTUs_1 <- apply(all_inocula, 1, mean) > 1
+less <- all_inocula[!all_inocula_OTUs_1,]
+less_abund <- apply(less, 2, sum)
+family_inocula <- rbind(all_inocula[all_inocula_OTUs_1,],'Less Abundant Taxa'=less_abund)
+
+names(family_inocula)[names(family_inocula)=='581-inoculum'] <- 'DA00581_1_inoc'
+names(family_inocula)[names(family_inocula)=='DA581'] <- 'DA00581_2_inoc'
+sort_all_inocula <- family_inocula[,order(names(family_inocula))]
 
 par(mar=c(8.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(sort_all_inocula), ylab='Relative Abundance', las=2, cex.sub=0.9,
+barplot(as.matrix(sort_all_inocula), ylab='Relative Abundance', las=2, cex.sub=0.9,
         main="Comparison of Taxonomic Composition of GF mice inocula",cex.lab=0.9, cex.axis = 0.7, cex.names = 0.7,
-        border= brewer.pal(8, 'Set2'), col = brewer.pal(8, 'Set2'), ylim=c(0,100),
+        border= brewer.pal(length(rownames(sort_all_inocula)), 'Paired'), col = brewer.pal(length(rownames(sort_all_inocula)), 'Paired'), ylim=c(0,100),
         space=c(0.5,0.1,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.1,0.5,0.1,0.1,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5
                 ,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1,0.5,0.1))
 mtext('DA##### = v53 454, all others v4 MiSeq\nAll v4 samples from sequencing of inocula on 6/5/15 (AMSno, DA00581_1_inoc and DA00581_2_inoc from original seq set) ', side=1, line=7, cex=0.8)
-legend('right',fill=brewer.pal(8, 'Set2'),legend=colnames(sort_all_inocula), inset=c(-0.16,0), bty='n', 
-       border=brewer.pal(8, 'Set2'), y.intersp = 0.8, cex=0.9)
+legend('right',fill=brewer.pal(length(rownames(sort_all_inocula)), 'Paired'),legend=rownames(sort_all_inocula), inset=c(-0.16,0), bty='n', 
+       border=brewer.pal(length(rownames(sort_all_inocula)), 'Paired'), y.intersp = 0.8, cex=0.9)
+
+# - which genera are increased in the june 2015 inoculum samples?
+family_OTU_list <-get_tax(2,rownames(tax_file),tax_file)
+genus_OTU_list <- get_tax(1,rownames(tax_file),tax_file)
+entero <- genus_OTU_list[family_OTU_list$tax=='Enterobacteriaceae',]
+pseudo <- genus_OTU_list[family_OTU_list$tax=='Pseudomonadaceae',]
+pseudo_list <- unique(pseudo)
+entero_list <- unique(entero)
+genus_level_RA <- sum_OTU_by_tax_level(1,rel_abund,tax_file)
+genus_level_RA[,names(genus_level_RA) %in% pseudo_list]
+genus_level_RA[,names(genus_level_RA) %in% entero_list]
