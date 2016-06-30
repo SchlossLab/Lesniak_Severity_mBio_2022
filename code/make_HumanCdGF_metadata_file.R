@@ -41,6 +41,8 @@ human_GF_clinical <- human_GF_clinical[,!colnames(human_GF_clinical) %in%
                                          c("feature",'lib_reads_seqd','sfffile_id','mid')]
 # Remove file names
 human_GF_mouse <- human_GF_mouse[,!colnames(human_GF_mouse) %in% 'file']
+# Remove AMS samples
+human_GF_mouse <- human_GF_mouse[!human_GF_mouse$human_source=='AMS',]
 
 #Combine Toxin, Exp, and metadata
 human_CdGF_metadata <- merge(human_GF_mouse, human_GF_toxin,by.x='group',by.y='Cage_Mouse',
