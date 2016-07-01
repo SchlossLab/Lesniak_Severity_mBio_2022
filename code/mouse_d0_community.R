@@ -53,6 +53,7 @@ get_tax <- function(tax_level=1){
 }
 
 taxonomy_genus <- get_tax(1)
+taxonomy_family <- get_tax(2)
 taxonomy_phylum <- get_tax(5)
 
 sum_OTU_by_tax_level <- function(TAX_DF,OTU_DF){
@@ -95,14 +96,32 @@ colnames(rel_d0)[90] <- "cage"
 d0_med <- aggregate(rel_d0[, 1:89], list(rel_d0$cage), median)
 d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
 cage_only <- cage_IDs[-15]
-d0_med_phy[7] <- cage_only
+
+
+#run this whole command to make the figure of phylum by cage/donor
 
 d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
-barplot(t(d0_med_phy), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
-        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7, xaxt='n', xlab="cage")
-axis(1, at=1:26, labels=cage_only, cex.axis=0.6, cex.names=0.7)
+cage_only_char <- as.character(cage_only)
+d0_med_phy[7] <- cage_only_char
+barplot(t(d0_med_phy[,1:6]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
+        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7, xlab="cage", names.arg=d0_med_phy$V7)
+legend_labels <- as.character(unique(taxonomy_phylum$tax))
+legend_labels[5] <- "Other"
+legend('right',fill=colors,legend_labels, inset=c(-0.2,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
 
-#need to add a column of cages to the rel_d0 df
+#run this whole command to make figure of family by cage/donor
+
+d0_med_fam <- sum_OTU_by_tax_level(taxonomy_family, d0_med)
+d0_med_fam[20] <- cage_only_char
+n=19
+par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
+barplot(t(d0_med_fam[,1:19]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
+        col = rainbow(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", names.arg=d0_med_fam$V20, cex.names=0.5)
+fam_labels <- as.character(unique(taxonomy_family$tax))
+legend('right', fill = rainbow(n), fam_labels, inset=c(-0.15,0), cex=0.6)
+
+
+#col = fam_col
 
 #what kind of plots do we want? line plots of diversity? 
 
