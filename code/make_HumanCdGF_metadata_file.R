@@ -4,13 +4,27 @@
 #
 #Create file with experiment data with toxin and metadata
 #
+#    Need files:
+#         data/raw/humanGF_ids.xlsx
+#         data/raw/Alyx_Humice_toxinassay_results.xlsx
+#         data/raw/MIMARKS_cdclinical.txt
+#         data/raw/humanGF_ids.xlsx
+#         data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared
 #
+#    Outputs files:
+#         data/process/human_CdGF_metadata.txt
+#         data/process/human_CdGF.an.unique_list.0.03.subsample.shared
 #
 ###################
 #setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
-human_GF_mouse <- read.table('data/raw/humanGF_ids.txt', sep='\t',header = T)
-human_GF_toxin <- read.table('data/raw/Alyx_Humice_toxinassay_results.txt',sep='\t',header=T)
+#need gdata to read excel files
+install.packages('gdata')
+library(gdata)
+
+#read in data files
+human_GF_mouse <- read.xls('data/raw/humanGF_ids.xlsx',sheet='complete metadata')
+human_GF_toxin <- read.xls('data/raw/Alyx_Humice_toxinassay_results.xlsx', sheet = 'to metadata')
 human_GF_clinical <- read.table('data/raw/MIMARKS_cdclinical.txt',sep='\t',header=T)
 shared_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared', sep='\t',header = T)
 
