@@ -56,17 +56,17 @@ human_CdGF_metadata <- human_CdGF_metadata[human_CdGF_metadata$group %in% shared
 human_CdGF_metadata <- human_CdGF_metadata[order(human_CdGF_metadata$group),]
 
 # - add mouse name column to differentiate NT mice
-human_CdGF_metadata <- cbind(human_CdGF_metadata,MOUSE=paste(human_CdGF_metadata$mouse_id,human_CdGF_metadata$cage_id))
+human_CdGF_metadata <- cbind(human_CdGF_metadata,Mouse_ID=paste(human_CdGF_metadata$mouse_id,human_CdGF_metadata$cage_id))
 
 # - fill in all rows with end day data
 #         create data frame with day euthanized and mouse name
-Euthanized <- unique(human_CdGF_metadata[!is.na(human_CdGF_metadata$day_end),c('day_end','MOUSE')])
-Euthanized <- rbind(Euthanized,unique(human_CdGF_metadata[!human_CdGF_metadata$MOUSE %in% Euthanized$MOUSE,c('day_end','MOUSE')]))
+Euthanized <- unique(human_CdGF_metadata[!is.na(human_CdGF_metadata$day_end),c('day_end','Mouse_ID')])
+Euthanized <- rbind(Euthanized,unique(human_CdGF_metadata[!human_CdGF_metadata$Mouse_ID %in% Euthanized$Mouse_ID,c('day_end','Mouse_ID')]))
 #         add day mouse NT LINE was euthanized, missing day but has all samples upto end of exp at day 10
-Euthanized[Euthanized$MOUSE=='NT LINE','day_end'] <- 10
+Euthanized[Euthanized$Mouse_ID=='NT LINE','day_end'] <- 10
 # add day euthanized data to metadata
-human_CdGF_metadata <- merge(human_CdGF_metadata, Euthanized, by='MOUSE')
-names(human_CdGF_metadata)[names(human_CdGF_metadata) %in% c('day_end.x','day_end.y')] <- c('day_end','Euthanized')
+human_CdGF_metadata <- merge(human_CdGF_metadata, Euthanized, by='Mouse_ID')
+names(human_CdGF_metadata)[names(human_CdGF_metadata) %in% c('mouse_id','day_end.x','day_end.y')] <- c('mouse_eartag','day_end','Euthanized')
 
 #output metadata file
 write.table(human_CdGF_metadata, file='data/process/human_CdGF_metadata.txt',quote=F,sep='\t',row.names=F)
