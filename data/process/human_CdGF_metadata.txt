@@ -505,7 +505,7 @@ NA inoculum	DA00953	DA00953_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	N
 NA inoculum	DA01134	DA01134_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	hospital	carey-blair	58	white	M	yes	yes	yes	no	no	no	no	>=250	DiarrhealControl	NA
 NA inoculum	DA01146	DA01146_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	hospital	carey-blair	79	white	F	yes	no	no	no	no	no	no	<100	DiarrhealControl	NA
 NA inoculum	DA01245	DA01245_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	hospital	carey-blair	51	white	M	yes	no	no	yes	no	no	yes	200-249	DiarrhealControl	NA
-NA inoculum	DA01342	DA01324_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA
+NA inoculum	DA01324	DA01324_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	hospital	carey-blair	28	white	F	yes	no	no	no	no	yes	no	100-149	DiarrhealControl	NA
 NA inoculum	DA10027	DA10027_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	community	anaerobic PBS	52	white	F	yes	no	no	yes	yes	yes	no	150-199	NonDiarrhealControl	NA
 NA inoculum	DA10034	DA10034_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	community	anaerobic PBS	21	asian	M	no	no	no	no	no	no	no	150-199	NonDiarrhealControl	NA
 NA inoculum	DA10082	DA10082_inoculum	inoculum	NA	NA	NA	NA	NA	NA	NA	NA	stool	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	NA	community	anaerobic PBS	72	black	F	no	no	no	no	no	no	no	200-249	NonDiarrhealControl	NA
