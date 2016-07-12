@@ -151,36 +151,26 @@ important <- importance(randomForest(Day_Euth_Log_repiricoal_dilution ~ ., data=
 source('code/Sum_OTU_by_Tax.R')
 
 family_level_RA <- sum_OTU_by_tax_level(2,rel_abund_day_0,tax_file)
-
-colors <- c("dodgerblue2","#E31A1C", # red
-         "green4",
-         "#6A3D9A", # purple
-         "#FF7F00", # orange
-         "black","gold1",
-         "skyblue2","#FB9A99", # lt pink
-         "palegreen2",
-         "#CAB2D6", # lt purple
-         "#FDBF6F", # lt orange
-         "gray70", "khaki2",
-         "maroon","orchid1","deeppink1","blue1","steelblue4",
-         "darkturquoise","green1","yellow4","yellow3",
-         "darkorange4","brown")
-
+family_level_RA <- family_level_RA[order(rownames(family_level_RA)),]
 # stacked barplot of tax comp (phylum) in inoculum samples
 legend_labels <- as.character(names(family_level_RA))
 #legend_labels[names(phylum_level_RA)=="Bacteria_unclassified"] <- "Other"
      
 #stacked bar plot with base
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(family_level_RA), ylab='Relative Abundance', las=2, cex.sub=0.9,
+barplot(t(family_level_RA[]), ylab='Relative Abundance', las=2, cex.sub=0.9,
         main="Taxonomic Composition of GF mice inocula",cex.lab=0.9, cex.axis = 0.7, cex.names = 0.7,
         border= colors, col = colors, ylim=c(0,100))
      mtext('Human Source', side=1, line=5, cex=0.9)
-     legend('right',fill=colors,legend_labels, inset=c(-0.2,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
+     legend('right',fill=colors,legend_labels, inset=c(-0.25,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
 
-#Create median rel abundance and IQRs
-median_rel_abund <- aggregate()
+library(reshape2)
+ggfamily_level_RA <- melt(cbind(sample=rownames(family_level_RA),family_level_RA), id='sample')
+ggfamily_level_RA$cage <- sub('-.*-.*','',ggfamily_level_RA$sample)
+ggfamily_level_RA$mouse <- sub('^\\w*-','',sub('-D0','',ggfamily_level_RA$sample))
+ggfamily_level_RA$mouse[ggfamily_level_RA$mouse=='NT'] <- sub('-D0','',ggfamily_level_RA$sample[ggfamily_level_RA$mouse == 'NT'])
 
-low_QTR
-
-up_QTR
+ggplot(data=ggfamily_level_RA, aes(x=mouse, y=value, fill=variable)) + geom_bar(stat='identity') +
+     theme_bw() + xlab('Mouse') + ylab('Relative Abundance (Taxa > 1%)') + scale_fill_manual(values=colors) + 
+     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+     facet_grid(. ~ cage, scales = 'free') + ggtitle('Relative Abundance of Taxa at Family Level (if available) on Day 0 \nper mouse grouped by cage')
