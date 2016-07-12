@@ -102,6 +102,36 @@ ggplot(data=facet_df, aes( x= day, y=data, color=cage_id)) + geom_point() + geom
      facet_grid(data_type ~ Euthanized, scales='free_y') +
      theme_bw() + xlab('Day') + ylab('') + scale_x_continuous(breaks=c(0:10)) + scale_color_manual(values=colors)
 
+# by cage per day
+#
+
+plot_by_day_df <- rbind(
+     rbind(
+               cbind(
+                    cbind(CFU_431_data[,c('cage_id','day','human_source','Euthanized')],data=CFU_431_data[,'cdiff_cfu']),
+                    data_type=rep('cfu',length(CFU_431_data$human_source))),
+               cbind(
+                    cbind(CFU_431_data[,c('cage_id','day','human_source','Euthanized')],data=CFU_431_data[,'Log_repiricoal_dilution']),
+                    data_type=rep('toxin',length(CFU_431_data$human_source))),
+     cbind(
+          cbind(
+               CFU_431_data[,c('cage_id','day','human_source','Euthanized')],data=CFU_431_data[,'percent_weightLoss.x']),
+          data_type=rep('Weight_Loss',length(CFU_431_data$human_source)))))
+plot_by_day_df$Euthanized_cat[plot_by_day_df$Euthanized %in% 10] <- 'Day 10'
+plot_by_day_df$Euthanized_cat[!plot_by_day_df$Euthanized_cat %in% 'Day 10'] <- 'Early'
+
+plot_outcome <- function(DATA, TITLE, EXTRA = scale_y_continuous()){
+     ggplot(data=plot_by_day_df[plot_by_day_df$data_type == DATA & plot_by_day_df$day %in% c(1,2,3,10),], aes( x= cage_id, y=data, color=cage_id)) + geom_point() +  
+     facet_grid(day ~ Euthanized_cat) + ggtitle(TITLE) +
+     theme_bw() + xlab('') + ylab('') + scale_color_manual(values=colors) + 
+     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), legend.position='none') + EXTRA
+}
+
+
+install.packages('gridExtra')
+library(gridExtra)
+grid.arrange(plot_outcome('cfu', 'CFU of C. difficile', scale_y_log10()),plot_outcome('toxin', 'Toxin Level'),plot_outcome('Weight_Loss', 'Weight - Relative to Day 0'))
+
 
 
 library(randomForest)
