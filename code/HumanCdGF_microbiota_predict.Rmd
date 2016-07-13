@@ -1,0 +1,105 @@
+---
+title: "Predictions From Day 0 Community Structures"
+author: "Nicholas Lesniak"
+date: "July 13, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+if(!require(randomForest)) install.packages('randomForest', repos = 'http://cran.us.r-project.org')
+library(randomForest)
+if(!require(miscTools)) install.packages('miscTools', repos = 'http://cran.us.r-project.org')
+library(miscTools)
+if(!require(ggplot2)) install.packages('ggplot2', repos = 'http://cran.us.r-project.org')
+library(ggplot2)
+```
+
+```{r, echo=FALSE}
+setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
+
+#read in files
+meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 'group')
+shared_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header = T, row.names='Group')
+tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 'OTU')
+
+     
+#### subset files to day 0 data
+day_0_meta <- meta_file[which(meta_file$day==0),!is.na(meta_file['430-307-D0',])]
+# subset meta to day 1 data
+cdiff_effect <- c("cdiff_cfu","nextDayCFU_colon","nextDayCFU_any","weight_grams","percent_weightLoss.x","Number","Experiment_day",
+                  "loss_below90","day_end","Recip_Dilution_from_DP2","Recip_Dilution_from_adding_to_cells",
+                  "Recip_Dilution_from_Postion_on_PlateA","Recip_Dilution_from_Postion_on_PlateB","Average.",
+                  "Log_repiricoal_dilution")
+day_1_cdiff <- meta_file[which(meta_file$day==1),c(cdiff_effect, 'Mouse_ID')]
+names(day_1_cdiff)[!names(day_1_cdiff) %in% 'Mouse_ID'] <- 
+     paste('Day_1_',names(day_1_cdiff)[!names(day_1_cdiff) %in% 'Mouse_ID'], sep='')
+#subset meta_file to endpoint data
+stool_meta_file <- meta_file[!meta_file$sample_type=='cecum',]
+day_euthanized_cdiff <- stool_meta_file[which(stool_meta_file$day == stool_meta_file$Euthanized), c(cdiff_effect,'Mouse_ID')]
+names(day_euthanized_cdiff)[!names(day_euthanized_cdiff) %in% 'Mouse_ID'] <- 
+     paste('Day_Euth_',names(day_euthanized_cdiff)[!names(day_euthanized_cdiff) %in% 'Mouse_ID'], sep='')
+
+#### subset shared
+#Create df with relative abundances
+day_0_shared <- shared_file[rownames(day_0_meta),]
+rel_abund_day_0 <- 100*day_0_shared/unique(apply(day_0_shared, 1, sum))
+#Create vector of OTUs with median abundances >1%
+day_0_shared_median <- aggregate(rel_abund_day_0, by=list(day_0_meta$cage_id),median)
+#cage_IDs <- day_0_shared_median[,"Group.1"]
+day_0_shared_median <- day_0_shared_median[,!colnames(day_0_shared_median) %in% 'Group.1']
+OTUs_day_0_01 <- apply(day_0_shared_median, 2, max) > 1
+#df of OTUs with abundances >1% - by cage and inoculum
+rel_abund_day_0 <- rel_abund_day_0[,OTUs_day_0_01]
+
+#Merge data by mouse
+Disease_predict_df <- merge(
+          merge(day_1_cdiff[,c('Mouse_ID','Day_1_cdiff_cfu','Day_1_percent_weightLoss.x','Day_1_Average.','Day_1_Log_repiricoal_dilution')],
+                day_euthanized_cdiff[,c('Mouse_ID','Day_Euth_cdiff_cfu','Day_Euth_percent_weightLoss.x','Day_Euth_Average.','Day_Euth_Log_repiricoal_dilution')], by='Mouse_ID',all.x=T),
+          merge(day_0_meta[,c('Mouse_ID','cage_id','Euthanized')],rel_abund_day_0, by='row.names'),
+          by='Mouse_ID',all.y=T)
+Predict_df <- Disease_predict_df[,!names(Disease_predict_df) %in% c('Mouse_ID','Row.names','cage_id')]
+Predict_median_cage <- aggregate(Predict_df, by=list(Disease_predict_df$cage_id), median, na.rm=TRUE)
+Predict_median_cage <- data.frame(Predict_median_cage[,!names(Predict_median_cage) %in% 'Group.1'], row.names = Predict_median_cage$Group.1)
+```
+
+##Predict Day 1 C. difficile CFU by Day 0 Community 
+```{r,echo=FALSE}
+#rf to predict 
+Predict_day_1_df <- Predict_df[!Predict_df$Day_1_cdiff_cfu %in% NA,c(1,10:117)]
+rf_day_1_cfu <- randomForest(Day_1_cdiff_cfu ~ ., data = Predict_day_1_df)
+r2 <- rSquared(Predict_day_1_df$Day_1_cdiff_cfu, Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))
+#0.826
+mse <- mean((Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))^2)
+#1.243e+15
+ggplot(data = data.frame(actual=Predict_day_1_df$Day_1_cdiff_cfu,pred=predict(rf_day_1_cfu,Predict_day_1_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+```
+
+##Predict Endpoint C. difficile CFU by Day 0 Community 
+```{r, echo=FALSE}
+Predict_euth_cfu_df <- Predict_df[!Predict_df$Day_Euth_cdiff_cfu %in% NA,c(5,10:117)]
+rf_day_euth_cfu <- randomForest(Day_Euth_cdiff_cfu ~ ., data = Predict_euth_cfu_df)
+r2 <- rSquared(Predict_euth_cfu_df$Day_Euth_cdiff_cfu, Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))
+#0.797
+mse <- mean((Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))^2)
+#3.663e+16
+ggplot(data = data.frame(actual=Predict_euth_cfu_df$Day_Euth_cdiff_cfu,pred=predict(rf_day_euth_cfu,Predict_euth_cfu_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+```
+
+##Predict Moribund/Persistent Infection by Day 0 Community 
+
+```{r, echo=FALSE}
+Predict_euth_df <- Predict_df[!Predict_df$Euthanized %in% NA,c(9:117)]
+rf_day_euth <- randomForest(Euthanized ~ ., data = Predict_euth_df)
+r2 <- rSquared(Predict_euth_df$Euthanized, Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))
+#0.956
+mse <- mean((Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))^2)
+#0.504
+ggplot(data = data.frame(actual=Predict_euth_df$Euthanized,pred=predict(rf_day_euth,Predict_euth_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+```
