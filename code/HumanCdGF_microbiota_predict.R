@@ -40,7 +40,6 @@ day_0_shared_median <- aggregate(rel_abund_day_0, by=list(day_0_meta$cage_id),me
 #cage_IDs <- day_0_shared_median[,"Group.1"]
 day_0_shared_median <- day_0_shared_median[,!colnames(day_0_shared_median) %in% 'Group.1']
 OTUs_day_0_01 <- apply(day_0_shared_median, 2, max) > 1
-OTU_list <- colnames(rel_abund_day_0)[OTUs_1]
 #df of OTUs with abundances >1% - by cage and inoculum
 rel_abund_day_0 <- rel_abund_day_0[,OTUs_day_0_01]
 
@@ -53,6 +52,45 @@ Disease_predict_df <- merge(
 Predict_df <- Disease_predict_df[,!names(Disease_predict_df) %in% c('Mouse_ID','Row.names','cage_id')]
 Predict_median_cage <- aggregate(Predict_df, by=list(Disease_predict_df$cage_id), median, na.rm=TRUE)
 Predict_median_cage <- data.frame(Predict_median_cage[,!names(Predict_median_cage) %in% 'Group.1'], row.names = Predict_median_cage$Group.1)
+
+#rf to predict 
+install.packages('randomForest')
+library(randomForest)
+install.packages('miscTools')
+library(miscTools)
+Predict_day_1_df <- Predict_df[!Predict_df$Day_1_cdiff_cfu %in% NA,c(1,10:117)]
+rf_day_1_cfu <- randomForest(Day_1_cdiff_cfu ~ ., data = Predict_day_1_df)
+r2 <- rSquared(Predict_day_1_df$Day_1_cdiff_cfu, Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))
+#0.826
+mse <- mean((Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))^2)
+#1.243e+15
+ggplot(data = data.frame(actual=Predict_day_1_df$Day_1_cdiff_cfu,pred=predict(rf_day_1_cfu,Predict_day_1_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+
+Predict_euth_cfu_df <- Predict_df[!Predict_df$Day_Euth_cdiff_cfu %in% NA,c(5,10:117)]
+rf_day_euth_cfu <- randomForest(Day_Euth_cdiff_cfu ~ ., data = Predict_euth_cfu_df)
+r2 <- rSquared(Predict_euth_cfu_df$Day_Euth_cdiff_cfu, Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))
+#0.797
+mse <- mean((Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))^2)
+#3.663e+16
+ggplot(data = data.frame(actual=Predict_euth_cfu_df$Day_Euth_cdiff_cfu,pred=predict(rf_day_euth_cfu,Predict_euth_cfu_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+
+Predict_euth_df <- Predict_df[!Predict_df$Euthanized %in% NA,c(9:117)]
+rf_day_euth <- randomForest(Euthanized ~ ., data = Predict_euth_df)
+r2 <- rSquared(Predict_euth_df$Euthanized, Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))
+#0.956
+mse <- mean((Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))^2)
+#0.504
+ggplot(data = data.frame(actual=Predict_euth_df$Euthanized,pred=predict(rf_day_euth,Predict_euth_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+
+
+
+important <- importance(randomForest(Day_Euth_cdiff_cfu ~ ., data=Predict_median_cage[,c(5,10:117)], na.action=na.omit))
+important <- importance(randomForest(Day_Euth_Log_repiricoal_dilution ~ ., data=Predict_median_cage[,c(8,10:117)], na.action=na.omit))
+
+
 
 ## plot cfu
 library(ggplot2)
@@ -103,7 +141,6 @@ ggplot(data=facet_df, aes( x= day, y=data, color=cage_id)) + geom_point() + geom
      theme_bw() + xlab('Day') + ylab('') + scale_x_continuous(breaks=c(0:10)) + scale_color_manual(values=colors)
 
 # by cage per day
-#
 
 plot_by_day_df <- rbind(
      rbind(
@@ -127,18 +164,10 @@ plot_outcome <- function(DATA, TITLE, EXTRA = scale_y_continuous()){
      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), legend.position='none') + EXTRA
 }
 
-
+# plot all three on one page
 install.packages('gridExtra')
 library(gridExtra)
 grid.arrange(plot_outcome('cfu', 'CFU of C. difficile', scale_y_log10()),plot_outcome('toxin', 'Toxin Level'),plot_outcome('Weight_Loss', 'Weight - Relative to Day 0'))
-
-
-
-library(randomForest)
-
-important <- importance(randomForest(Euthanized ~ ., data=Predict_median_cage[,c(9:117)], na.action=na.omit))
-important <- importance(randomForest(Day_Euth_cdiff_cfu ~ ., data=Predict_median_cage[,c(5,10:117)], na.action=na.omit))
-important <- importance(randomForest(Day_Euth_Log_repiricoal_dilution ~ ., data=Predict_median_cage[,c(8,10:117)], na.action=na.omit))
 
 #Load taxonomy function from tax_level.R
 # Create dataframe with tax level as 
