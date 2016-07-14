@@ -24,82 +24,223 @@ setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 'group')
 shared_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header = T, row.names='Group')
-tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 'OTU')
 
-     
-#### subset files to day 0 data
+#### main subset of meta file with all mouse and day 0 info
 day_0_meta <- meta_file[which(meta_file$day==0),!is.na(meta_file['430-307-D0',])]
-# subset meta to day 1 data
-cdiff_effect <- c("cdiff_cfu","nextDayCFU_colon","nextDayCFU_any","weight_grams","percent_weightLoss.x","Number","Experiment_day",
-                  "loss_below90","day_end","Recip_Dilution_from_DP2","Recip_Dilution_from_adding_to_cells",
-                  "Recip_Dilution_from_Postion_on_PlateA","Recip_Dilution_from_Postion_on_PlateB","Average.",
-                  "Log_repiricoal_dilution")
-day_1_cdiff <- meta_file[which(meta_file$day==1),c(cdiff_effect, 'Mouse_ID')]
-names(day_1_cdiff)[!names(day_1_cdiff) %in% 'Mouse_ID'] <- 
-     paste('Day_1_',names(day_1_cdiff)[!names(day_1_cdiff) %in% 'Mouse_ID'], sep='')
-#subset meta_file to endpoint data
-stool_meta_file <- meta_file[!meta_file$sample_type=='cecum',]
-day_euthanized_cdiff <- stool_meta_file[which(stool_meta_file$day == stool_meta_file$Euthanized), c(cdiff_effect,'Mouse_ID')]
+day_0_meta$RowNames <- rownames(day_0_meta)
+day_0_meta$Euth_Early <-ifelse(day_0_meta$Euthanized %in% 10, 'No','Yes')
+####
+#    function to move mouse data from rows by mouse and days --> rows by mouse and columns by days
+####
+# select data to move
+cdiff_effect <- c("cdiff_cfu","percent_weightLoss.x","Log_repiricoal_dilution")
+# function input meta_file as DATAFRAME and mouse dataframe as INPUT
+combine_days_by_mouse <- function(DATAFRAME, INPUT){
+          OUTPUT <- INPUT
+     for(DAY in 1:10){
+          NEW_ROW <- DATAFRAME[which(DATAFRAME$day==DAY),c(cdiff_effect, 'Mouse_ID')]
+          names(NEW_ROW)[!names(NEW_ROW) %in% 'Mouse_ID'] <- 
+               paste('Day_',paste(DAY,paste('_',names(NEW_ROW)[!names(NEW_ROW) %in% 'Mouse_ID'], sep=''), sep=''),sep='')
+          OUTPUT <- merge(OUTPUT, NEW_ROW, by='Mouse_ID', all.x=TRUE)
+     }
+     return(OUTPUT)
+}
+
+test <- merge(day_0_meta,meta_file[which(meta_file$day==3),c(cdiff_effect, 'Mouse_ID')], by='Mouse_ID')
+
+rf_meta_df <- combine_days_by_mouse(meta_file[!meta_file$sample_type=='cecum',], day_0_meta)
+# remove all columns with no data - toxin missing from some days
+rf_meta_df <- rf_meta_df[,colSums(is.na(rf_meta_df)) != nrow(rf_meta_df)]
+# add columns for data from day euthanized
+day_euthanized_cdiff <- meta_file[which(meta_file$sample_type=='stool' & meta_file$day == meta_file$Euthanized), c(cdiff_effect,'Mouse_ID')]
 names(day_euthanized_cdiff)[!names(day_euthanized_cdiff) %in% 'Mouse_ID'] <- 
      paste('Day_Euth_',names(day_euthanized_cdiff)[!names(day_euthanized_cdiff) %in% 'Mouse_ID'], sep='')
+rf_meta_df <- merge(rf_meta_df,day_euthanized_cdiff, by='Mouse_ID', all.x=TRUE)
 
 #### subset shared
 #Create df with relative abundances
 day_0_shared <- shared_file[rownames(day_0_meta),]
 rel_abund_day_0 <- 100*day_0_shared/unique(apply(day_0_shared, 1, sum))
 #Create vector of OTUs with median abundances >1%
-day_0_shared_median <- aggregate(rel_abund_day_0, by=list(day_0_meta$cage_id),median)
-#cage_IDs <- day_0_shared_median[,"Group.1"]
-day_0_shared_median <- day_0_shared_median[,!colnames(day_0_shared_median) %in% 'Group.1']
-OTUs_day_0_01 <- apply(day_0_shared_median, 2, max) > 1
+OTUs_day_0_01 <- apply(rel_abund_day_0, 2, max) > 1
 #df of OTUs with abundances >1% - by cage and inoculum
 rel_abund_day_0 <- rel_abund_day_0[,OTUs_day_0_01]
+OTU_list <- names(rel_abund_day_0)
 
-#Merge data by mouse
-Disease_predict_df <- merge(
-          merge(day_1_cdiff[,c('Mouse_ID','Day_1_cdiff_cfu','Day_1_percent_weightLoss.x','Day_1_Average.','Day_1_Log_repiricoal_dilution')],
-                day_euthanized_cdiff[,c('Mouse_ID','Day_Euth_cdiff_cfu','Day_Euth_percent_weightLoss.x','Day_Euth_Average.','Day_Euth_Log_repiricoal_dilution')], by='Mouse_ID',all.x=T),
-          merge(day_0_meta[,c('Mouse_ID','cage_id','Euthanized')],rel_abund_day_0, by='row.names'),
-          by='Mouse_ID',all.y=T)
-Predict_df <- Disease_predict_df[,!names(Disease_predict_df) %in% c('Mouse_ID','Row.names','cage_id')]
-Predict_median_cage <- aggregate(Predict_df, by=list(Disease_predict_df$cage_id), median, na.rm=TRUE)
-Predict_median_cage <- data.frame(Predict_median_cage[,!names(Predict_median_cage) %in% 'Group.1'], row.names = Predict_median_cage$Group.1)
+#Merge OTU data with mouse/exp data
+Predict_df <- merge(rf_meta_df, rel_abund_day_0, by.x='RowNames', by.y='row.names')
+Predict_df <- Predict_df[,!names(Predict_df) %in% c('Mouse_ID','RowNames','cage_id')]
+
+#create function for random forest
+set.seed(1)
+run_rf_on <- function(DATAFRAME, RESPONSE, OTUs = OTU_list){
+     Predictor_df <- as.data.frame(DATAFRAME[!DATAFRAME[,RESPONSE] %in% NA,c(RESPONSE,OTUs)])
+     RF <- randomForest(as.formula(paste(RESPONSE, '~ .')), data = Predictor_df, importance = TRUE)
+     R2 <- rSquared(Predictor_df[,RESPONSE], Predictor_df[,RESPONSE] - predict(RF,Predictor_df))
+     MSE <- mean((Predictor_df[,RESPONSE] - predict(RF,Predictor_df))^2)
+     IMPORT <- importance(RF)
+     FOREST <- RF
+     PLOT<- ggplot(data = data.frame(actual=Predictor_df[,RESPONSE],pred=predict(RF,Predictor_df)),
+       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+     return(list(rf=FOREST,r2=R2,mse=MSE,import=IMPORT,plot=PLOT))
+}
 ```
 
-##Predict Day 1 C. difficile CFU by Day 0 Community 
+##Can we predict the endpoint C. difficile CFU with the community structure at Day 0?
+But endpoint has data from Day 2,3,10
+     Might be misleading since contains CFU from different data points
+     
+```{r, echo=FALSE}
+Day_Euth_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_Euth_cdiff_cfu')
+Day_Euth_cdiff_cfu_rf$plot
+```
+% Variance explained `r abs(Day_Euth_cdiff_cfu_rf$rf$rsq[length(Day_Euth_cdiff_cfu_rf$rf$rsq)]*100)`
+
+
+```{r, echo=FALSE}
+Day_Euth_cdiff_cfu_rf$rf
+
+```
+
+
+##Can we predict moribundity with the community structure at Day 0?
+Need to convert day euthanized to binary categorical
+```{r, echo=FALSE}
+##Fix to be categorical, and not regression
+Predict_early_euth_df <- Predict_df[!Predict_df$Euth_Early %in% NA,c('Euth_Early',OTU_list)]
+rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df)
+rf_early_euth
+```
+
+##Can we predict the Day 10 C. difficile CFU with the community structure at Day 0?
+
+```{r, echo=FALSE}
+Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
+Day_10_cdiff_cfu_rf$plot
+
+```
+
+Why day 10? What is significant about day 10?
+
+##Does Day 0 community structure predict the each day C. difficile CFU at a similar?
+
+##Can we predict the Day 1 C. difficile CFU with the community structure at Day 0?
+
 ```{r,echo=FALSE}
 #rf to predict 
-Predict_day_1_df <- Predict_df[!Predict_df$Day_1_cdiff_cfu %in% NA,c(1,10:117)]
-rf_day_1_cfu <- randomForest(Day_1_cdiff_cfu ~ ., data = Predict_day_1_df)
-r2 <- rSquared(Predict_day_1_df$Day_1_cdiff_cfu, Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))
-#0.826
-mse <- mean((Predict_day_1_df$Day_1_cdiff_cfu - predict(rf_day_1_cfu,Predict_day_1_df))^2)
-#1.243e+15
-ggplot(data = data.frame(actual=Predict_day_1_df$Day_1_cdiff_cfu,pred=predict(rf_day_1_cfu,Predict_day_1_df)),
-       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+Day_1_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_1_cdiff_cfu')
+Day_1_cdiff_cfu_rf$plot
+```
+```{r, echo=FALSE}
+Day_1_cdiff_cfu_rf$rf
+````
+
+
+# Day 2 C. difficile CFU
+```{r, echo=FALSE}
+Day_2_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_2_cdiff_cfu')
+Day_2_cdiff_cfu_rf$plot
+````
+```{r, echo=FALSE}
+Day_2_cdiff_cfu_rf$rf
+````
+
+# Day 3 C. difficile CFU
+```{r, echo=FALSE}
+Day_3_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_3_cdiff_cfu')
+Day_3_cdiff_cfu_rf$plot
+````
+```{r, echo=FALSE}
+Day_3_cdiff_cfu_rf$rf
+````
+
+# Day 4 C. difficile CFU
+```{r, echo=FALSE}
+Day_4_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_4_cdiff_cfu')
+Day_4_cdiff_cfu_rf$plot
+````
+```{r, echo=FALSE}
+Day_4_cdiff_cfu_rf$rf
+````
+
+# Day 5 C. difficile CFU
+```{r, echo=FALSE}
+Day_5_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_5_cdiff_cfu')
+Day_5_cdiff_cfu_rf$plot
+````
+```{r, echo=FALSE}
+Day_5_cdiff_cfu_rf$rf
+````
+
+# Day 6 C. difficile CFU
+```{r, echo=FALSE}
+Day_6_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_6_cdiff_cfu')
+Day_6_cdiff_cfu_rf$plot
+````
+```{r, echo=FALSE}
+Day_6_cdiff_cfu_rf$rf
+````
+
+# Day 7 C. difficile CFU
+```{r, echo=FALSE}
+Day_7_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_7_cdiff_cfu')
+Day_7_cdiff_cfu_rf$plot
+```
+```{r, echo=FALSE}
+Day_7_cdiff_cfu_rf$rf
 ```
 
-##Predict Endpoint C. difficile CFU by Day 0 Community 
+# Day 8 C. difficile CFU
 ```{r, echo=FALSE}
-Predict_euth_cfu_df <- Predict_df[!Predict_df$Day_Euth_cdiff_cfu %in% NA,c(5,10:117)]
-rf_day_euth_cfu <- randomForest(Day_Euth_cdiff_cfu ~ ., data = Predict_euth_cfu_df)
-r2 <- rSquared(Predict_euth_cfu_df$Day_Euth_cdiff_cfu, Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))
-#0.797
-mse <- mean((Predict_euth_cfu_df$Day_Euth_cdiff_cfu - predict(rf_day_euth_cfu,Predict_euth_cfu_df))^2)
-#3.663e+16
-ggplot(data = data.frame(actual=Predict_euth_cfu_df$Day_Euth_cdiff_cfu,pred=predict(rf_day_euth_cfu,Predict_euth_cfu_df)),
-       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+Day_8_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_8_cdiff_cfu')
+Day_8_cdiff_cfu_rf$plot
+```
+```{r, echo=FALSE}
+Day_8_cdiff_cfu_rf$rf
 ```
 
-##Predict Moribund/Persistent Infection by Day 0 Community 
-
+# Day 9 C. difficile CFU
 ```{r, echo=FALSE}
-Predict_euth_df <- Predict_df[!Predict_df$Euthanized %in% NA,c(9:117)]
-rf_day_euth <- randomForest(Euthanized ~ ., data = Predict_euth_df)
-r2 <- rSquared(Predict_euth_df$Euthanized, Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))
-#0.956
-mse <- mean((Predict_euth_df$Euthanized - predict(rf_day_euth,Predict_euth_df))^2)
-#0.504
-ggplot(data = data.frame(actual=Predict_euth_df$Euthanized,pred=predict(rf_day_euth,Predict_euth_df)),
-       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+Day_9_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_9_cdiff_cfu')
+Day_9_cdiff_cfu_rf$plot
+```
+```{r, echo=FALSE}
+Day_9_cdiff_cfu_rf$rf
+```
+
+# Day 10 C. difficile CFU
+```{r, echo=FALSE}
+Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
+Day_10_cdiff_cfu_rf$plot
+```
+```{r, echo=FALSE}
+Day_10_cdiff_cfu_rf$rf
+```
+
+
+Predicting CFU from day 1 to 10 based on Day 0 community
+There seems a flucuation in the % variance explained, from none to > 20%
+There s
+
+
+```{r knitr::kable, echo=FALSE}
+var_by_day <- data.frame(Day=c(1:10),
+                         Percent_Variance_Explained=c(21.86,43.56,4.810,-4.12,2.740,67.63,9.390,33.29,61.19,-6.21),
+                         Mean_of_squared_residuals=c(5.59e15,3.3e15,6.87e16,5.62e16,4.23e15,7.43e15,2.95e16,3.84e15,9.65e15,1.5e17))
+knitr::kable(var_by_day)
+```
+
+##Can we predict day 1 weight change with the community structure at Day 0?
+```{r, echo=FALSE}
+
+```
+
+##Can we predict day 10 weight change with the community structure at Day 0?
+```{r, echo=FALSE}
+
+```
+
+##Can we predict ___________ with the community structure at Day 0?
+```{r, echo=FALSE}
+
 ```
