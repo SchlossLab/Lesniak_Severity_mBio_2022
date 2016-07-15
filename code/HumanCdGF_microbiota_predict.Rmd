@@ -94,14 +94,10 @@ But endpoint has data from Day 2,3,10
 Day_Euth_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_Euth_cdiff_cfu')
 Day_Euth_cdiff_cfu_rf$plot
 ```
-% Variance explained `r abs(Day_Euth_cdiff_cfu_rf$rf$rsq[length(Day_Euth_cdiff_cfu_rf$rf$rsq)]*100)`
 
+% Variance explained `r Day_Euth_cdiff_cfu_rf$rf$rsq[length(Day_Euth_cdiff_cfu_rf$rf$rsq)]*100`
 
-```{r, echo=FALSE}
-Day_Euth_cdiff_cfu_rf$rf
-
-```
-
+***
 
 ##Can we predict moribundity with the community structure at Day 0?
 Need to convert day euthanized to binary categorical
@@ -120,7 +116,11 @@ Day_10_cdiff_cfu_rf$plot
 
 ```
 
+% Variance explained `r Day_10_cdiff_cfu_rf$rf$rsq[length(Day_10_cdiff_cfu_rf$rf$rsq)]*100`
+
 Why day 10? What is significant about day 10?
+
+***
 
 ##Does Day 0 community structure predict the each day C. difficile CFU at a similar?
 
@@ -131,104 +131,107 @@ Why day 10? What is significant about day 10?
 Day_1_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_1_cdiff_cfu')
 Day_1_cdiff_cfu_rf$plot
 ```
-```{r, echo=FALSE}
-Day_1_cdiff_cfu_rf$rf
-````
 
+% Variance explained `r Day_1_cdiff_cfu_rf$rf$rsq[length(Day_1_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 2 C. difficile CFU
 ```{r, echo=FALSE}
 Day_2_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_2_cdiff_cfu')
 Day_2_cdiff_cfu_rf$plot
-````
-```{r, echo=FALSE}
-Day_2_cdiff_cfu_rf$rf
-````
+```
+
+% Variance explained `r Day_2_cdiff_cfu_rf$rf$rsq[length(Day_2_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 3 C. difficile CFU
 ```{r, echo=FALSE}
 Day_3_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_3_cdiff_cfu')
 Day_3_cdiff_cfu_rf$plot
-````
-```{r, echo=FALSE}
-Day_3_cdiff_cfu_rf$rf
-````
+```
+
+% Variance explained `r Day_3_cdiff_cfu_rf$rf$rsq[length(Day_3_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 4 C. difficile CFU
 ```{r, echo=FALSE}
 Day_4_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_4_cdiff_cfu')
 Day_4_cdiff_cfu_rf$plot
-````
-```{r, echo=FALSE}
-Day_4_cdiff_cfu_rf$rf
-````
+```
+
+% Variance explained `r Day_4_cdiff_cfu_rf$rf$rsq[length(Day_4_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 5 C. difficile CFU
 ```{r, echo=FALSE}
 Day_5_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_5_cdiff_cfu')
 Day_5_cdiff_cfu_rf$plot
-````
-```{r, echo=FALSE}
-Day_5_cdiff_cfu_rf$rf
-````
+```
+
+% Variance explained `r Day_5_cdiff_cfu_rf$rf$rsq[length(Day_5_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 6 C. difficile CFU
 ```{r, echo=FALSE}
 Day_6_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_6_cdiff_cfu')
 Day_6_cdiff_cfu_rf$plot
-````
-```{r, echo=FALSE}
-Day_6_cdiff_cfu_rf$rf
-````
+```
+
+% Variance explained `r Day_6_cdiff_cfu_rf$rf$rsq[length(Day_6_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 7 C. difficile CFU
 ```{r, echo=FALSE}
 Day_7_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_7_cdiff_cfu')
 Day_7_cdiff_cfu_rf$plot
 ```
-```{r, echo=FALSE}
-Day_7_cdiff_cfu_rf$rf
-```
+
+% Variance explained `r Day_7_cdiff_cfu_rf$rf$rsq[length(Day_7_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 8 C. difficile CFU
 ```{r, echo=FALSE}
 Day_8_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_8_cdiff_cfu')
 Day_8_cdiff_cfu_rf$plot
 ```
-```{r, echo=FALSE}
-Day_8_cdiff_cfu_rf$rf
-```
+
+% Variance explained `r Day_8_cdiff_cfu_rf$rf$rsq[length(Day_8_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 9 C. difficile CFU
 ```{r, echo=FALSE}
 Day_9_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_9_cdiff_cfu')
 Day_9_cdiff_cfu_rf$plot
 ```
-```{r, echo=FALSE}
-Day_9_cdiff_cfu_rf$rf
-```
+
+% Variance explained `r Day_9_cdiff_cfu_rf$rf$rsq[length(Day_9_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 10 C. difficile CFU
 ```{r, echo=FALSE}
 Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
 Day_10_cdiff_cfu_rf$plot
 ```
-```{r, echo=FALSE}
-Day_10_cdiff_cfu_rf$rf
-```
+
+% Variance explained `r Day_10_cdiff_cfu_rf$rf$rsq[length(Day_10_cdiff_cfu_rf$rf$rsq)]*100`
 
 
 Predicting CFU from day 1 to 10 based on Day 0 community
-There seems a flucuation in the % variance explained, from none to > 20%
-There s
 
+There seems a flucuation in the % variance explained, which seems to coincide with the flutuations in cdiff cfu
 
-```{r knitr::kable, echo=FALSE}
-var_by_day <- data.frame(Day=c(1:10),
-                         Percent_Variance_Explained=c(21.86,43.56,4.810,-4.12,2.740,67.63,9.390,33.29,61.19,-6.21),
-                         Mean_of_squared_residuals=c(5.59e15,3.3e15,6.87e16,5.62e16,4.23e15,7.43e15,2.95e16,3.84e15,9.65e15,1.5e17))
+```{r knitr::kable, echo=FALSE, warning=F, message=F}
+var_by_day <- data.frame(Day=c(1:10),Percent_Variance_Explained=NA)
+cdiff_cfu <- vector()
+for (a in 1:10){
+          var_by_day$Percent_Variance_Explained[a] <- eval(parse(text = paste('Day_', a, '_cdiff_cfu_rf$rf$rsq[length(Day_', a, '_cdiff_cfu_rf$rf$rsq)]*100', sep='')))
+          cdiff_cfu <- c(cdiff_cfu,paste('Day_', a, '_cdiff_cfu', sep=''))
+     }
+
 knitr::kable(var_by_day)
+plot(var_by_day, type='n', xlab='Day',ylab='Percent Var Explained')
+lines(var_by_day$Day, var_by_day$Percent_Variance_Explained)
+
+cfu_plot <- cbind(Mouse = paste(Predict_df$human_source,Predict_df$mouse_eartag, sep='_'),Predict_df[, cdiff_cfu])
+names(cfu_plot) <- c('Mouse', c(1:10))
+cfu_plot <- reshape2::melt(cfu_plot, by='Mouse')
+
+ggplot(data=cfu_plot, aes(x=variable, y=value, group=Mouse)) + geom_line(aes(color=Mouse)) + geom_point() + scale_y_log10() +
+     theme_classic() + theme(legend.position='none') + labs(title='C. Difficile CFU by mouse',x='Day',y='CFU')
 ```
+
+
 
 ##Can we predict day 1 weight change with the community structure at Day 0?
 ```{r, echo=FALSE}
