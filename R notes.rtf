@@ -23,4 +23,25 @@ for tax dataframe, instead of continuing loop all the way to the top level, coul
 \b0 \ulnone  we can have it loop only until no more \'91unclassified\'92 are present\
 \
 q - to exit less\
-}
+\
+Loading packages\
+	require tries to attach a package and is a logic - T/F\
+\
+if(!require(PACKAGE)) install.packages(\'93PACKAGE\'94)\
+library(PACKAGE)\
+\
+or if only using one or two functions from package\
+PACKAGE :: FUNCTION\'92\
+\
+RMD\
+echo=F - hide R code\
+messages=F\
+warnings=F\
+\
+Linear regression\
+\
+squared error\
+	y=slope*x+y-intercept\
+	Error equals Yn - (slope*Xn+yintercept)\
+	squared error = (Y - (slope*X+yintercept))^2 + \'85 + (Yn - (slope*Xn+yintercept))^2\
+mean of squared residuals}
