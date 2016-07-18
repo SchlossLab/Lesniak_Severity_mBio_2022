@@ -72,35 +72,42 @@ Predict_df <- merge(rf_meta_df, rel_abund_day_0, by.x='RowNames', by.y='row.name
 Predict_df <- Predict_df[,!names(Predict_df) %in% c('Mouse_ID','RowNames','cage_id')]
 
 #create function for random forest
-set.seed(1)
-run_rf_on <- function(DATAFRAME, RESPONSE, OTUs = OTU_list){
+run_rf_on <- function(DATAFRAME, RESPONSE, SAMPLE_SPLIT = 2/3,  OTUs = OTU_list){
+set.seed(2)
+     #
      Predictor_df <- as.data.frame(DATAFRAME[!DATAFRAME[,RESPONSE] %in% NA,c(RESPONSE,OTUs)])
-     RF <- randomForest(as.formula(paste(RESPONSE, '~ .')), data = Predictor_df, importance = TRUE)
-     R2 <- rSquared(Predictor_df[,RESPONSE], Predictor_df[,RESPONSE] - predict(RF,Predictor_df))
-     MSE <- mean((Predictor_df[,RESPONSE] - predict(RF,Predictor_df))^2)
+     sample_set <- sample(seq_len(nrow(Predictor_df)), size = floor((SAMPLE_SPLIT)*nrow(Predictor_df)))
+     test <- Predictor_df[-sample_set,]
+     train <- Predictor_df[sample_set,] 
+          RF <- randomForest(as.formula(paste(RESPONSE, '~ .')), data = train, importance = TRUE)
+     R2 <- rSquared(test[,RESPONSE], test[,RESPONSE] - predict(RF,test))
+     MSE <- mean((test[,RESPONSE] - predict(RF,test))^2)
      IMPORT <- importance(RF)
      FOREST <- RF
-     PLOT<- ggplot(data = data.frame(actual=Predictor_df[,RESPONSE],pred=predict(RF,Predictor_df)),
+     PLOT<- ggplot(data = data.frame(actual=test[,RESPONSE],pred=predict(RF,test)),
        aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
+     ##MEAN_DECREASE <- varImpPlot(RF)
      return(list(rf=FOREST,r2=R2,mse=MSE,import=IMPORT,plot=PLOT))
 }
 ```
 
 ##Can we predict the endpoint C. difficile CFU with the community structure at Day 0?
 But endpoint has data from Day 2,3,10
-     Might be misleading since contains CFU from different data points
+
+Might be misleading since contains CFU from different data points
      
 ```{r, echo=FALSE}
 Day_Euth_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_Euth_cdiff_cfu')
 Day_Euth_cdiff_cfu_rf$plot
 ```
 
-% Variance explained `r Day_Euth_cdiff_cfu_rf$rf$rsq[length(Day_Euth_cdiff_cfu_rf$rf$rsq)]*100`
+% Variance explained `r Day_Euth_cdiff_cfu_rf$rf$rsq[length(Day_Euth_cdiff_cfu_rf$rf$rsq)]*100`  
+r^2^ = `r Day_Euth_cdiff_cfu_rf$r2`  
+MSE = `r Day_Euth_cdiff_cfu_rf$mse`  
 
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
-Need to convert day euthanized to binary categorical
 ```{r, echo=FALSE}
 ##Fix to be categorical, and not regression
 Predict_early_euth_df <- Predict_df[!Predict_df$Euth_Early %in% NA,c('Euth_Early',OTU_list)]
@@ -113,7 +120,6 @@ rf_early_euth
 ```{r, echo=FALSE}
 Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
 Day_10_cdiff_cfu_rf$plot
-
 ```
 
 % Variance explained `r Day_10_cdiff_cfu_rf$rf$rsq[length(Day_10_cdiff_cfu_rf$rf$rsq)]*100`
@@ -209,7 +215,10 @@ Day_10_cdiff_cfu_rf$plot
 
 Predicting CFU from day 1 to 10 based on Day 0 community
 
-There seems a flucuation in the % variance explained, which seems to coincide with the flutuations in cdiff cfu
+There seems a flucuation in the % variance explained, which seems to coincide with the fluctuations in cdiff cfu  
+
+##seed greatly affects variance, likely due to data split, sample size might be too small to make reliable predictions
+
 
 ```{r knitr::kable, echo=FALSE, warning=F, message=F}
 var_by_day <- data.frame(Day=c(1:10),Percent_Variance_Explained=NA)
@@ -231,7 +240,8 @@ ggplot(data=cfu_plot, aes(x=variable, y=value, group=Mouse)) + geom_line(aes(col
      theme_classic() + theme(legend.position='none') + labs(title='C. Difficile CFU by mouse',x='Day',y='CFU')
 ```
 
-
+***
+***
 
 ##Can we predict day 1 weight change with the community structure at Day 0?
 ```{r, echo=FALSE}
