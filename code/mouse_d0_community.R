@@ -1,76 +1,66 @@
-##GET NEW SHARED FILE !!!
+#############
+#
+# mouse_d0_community.R
+#
+# Create microbiota files for day 0 and plot different ways
+#
+#
+#
+#############
 
-##what bacteria were present in the mice on day 0?
-
-setwd("~/Documents/Schloss_Lab/Schubert_humanCdGF_XXXX_2016")
+#start by making metadata file
+source('code/make_HumanCdGF_metadata_file.R')
 
 #import Nick's awesome combined metadata file
-meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=2)
-shared_file <- read.table("data/process/human_CdGF.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
-tax_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
+meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
+shared_file <- read.table("data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
+tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
 
-####Use Nick's awesome code to get the OTU abundance table sorted out right###
+#make OTU abundance file
+
+#this fixes it! 
+met_or <- meta_file[order(rownames(meta_file)),]
 
 #Create df with relative abundances
 rel_abund <- 100*shared_file/unique(apply(shared_file, 1, sum))
 
 #Create vector of OTUs with median abundances >1%
-med_rel_abund_cage <- aggregate(rel_abund, by=list(meta_file$cage_id),median)
+med_rel_abund_cage <- aggregate(rel_abund, by=list(met_or$cage_id),median)
 cage_IDs <- med_rel_abund_cage[,"Group.1"]
 med_rel_abund_cage <- med_rel_abund_cage[,!colnames(med_rel_abund_cage) %in% 'Group.1']
+
+#this also isnt working, maybe this is part of the problem probably the rownames bullshit!
 OTUs_1 <- apply(med_rel_abund_cage, 2, max) > 1
 OTU_list <- colnames(rel_abund)[OTUs_1]
 
-#df of OTUs with abundances >1% - by cage and inoculum
-rel_abund_cage <- rel_abund[!meta_file$cage_id=='inoculum',OTUs_1]
-inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
 
+#df of OTUs with abundances >1% - by cage and inoculum
+rel_abund_cage <- rel_abund[!met_or$cage_id=='inoculum',OTUs_1]
+inoculum_rel_abund <- rel_abund[met_or$cage_id=='inoculum',OTUs_1]
+
+#this step isnt working and it is fucking annoying, probably because the two things (rel_abund and metafile) are out of order 
 #df of OTUs w abundances >1% 
-rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
+rel_abund_d0 <- rel_abund[met_or$day == 0, OTUs_1]
 #it's adding weird NAs, idk why but remove them:
 rel_d0 <- na.omit(rel_abund_d0)
 
-#get taxonomy - df with columns for each level - 
-# level - 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum), 6 (kingdom)
-## - convert taxonomy text list to df, remove percentages
-## - subset df by desired tax level, then replace any unclassified with next level up
-get_tax <- function(tax_level=1){
-  if (tax_level %in% c(1:5)){
-    taxonomy <- tax_file[OTU_list,]
-    taxonomy <-  data.frame(do.call('rbind', strsplit(as.character(taxonomy$Taxonomy),';',fixed=TRUE)))
-    taxonomy <- data.frame(sapply(taxonomy,gsub,pattern="\\(\\d*\\)",replacement=""))
-    level <- 7-tax_level
-    tax_out <- as.character(taxonomy[,level])
-    for (i in level:2){
-      next_level <- i-1
-      tax_out[tax_out=='unclassified'] <- 
-        as.character(taxonomy[tax_out=='unclassified',next_level])
-    }
-    return(data.frame(tax= tax_out, row.names=OTU_list))
-  } else {print(
-    'Error: Level must be 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum)')
-  }
-}
 
-taxonomy_genus <- get_tax(1)
-taxonomy_family <- get_tax(2)
-taxonomy_phylum <- get_tax(5)
+# Create dataframe with tax level as 
+#  get_tax(
+#    tax_level = level - 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum), 6 (kingdom),
+#    subsets rows by row_list (default = all OTUs),
+#    dataframe dataframe (default = tax_file),
+#    )
+#
+source('code/Sum_OTU_by_Tax.R')
 
-sum_OTU_by_tax_level <- function(TAX_DF,OTU_DF){
-  tax_levels <- as.character(unique(TAX_DF$tax))
-  OUTPUT_DF <- data.frame(rep(0,length(rownames(OTU_DF))), row.names=rownames(OTU_DF))
-  for (i in 1:length(tax_levels)){
-    OTU_by_level <- rownames(TAX_DF)[TAX_DF$tax %in% tax_levels[i]]
-    if (length(OTU_by_level)>1){
-      level_column <- apply(OTU_DF[,names(OTU_DF)[names(OTU_DF) %in% OTU_by_level]],1,sum)
-    } else {
-      level_column <- OTU_DF[,names(OTU_DF)[names(OTU_DF) %in% OTU_by_level]]
-    }     
-    OUTPUT_DF[,i] <- level_column
-    colnames(OUTPUT_DF)[i] <- tax_levels[i]
-  }
-  return(OUTPUT_DF)
-}
+#ok but this stuff is giving me more than just d0
+taxonomy_genus <- sum_OTU_by_tax_level(1, rel_d0, tax_file)
+taxonomy_family <- sum_OTU_by_tax_level(2, rel_d0, tax_file)
+taxonomy_phylum <- sum_OTU_by_tax_level(5, rel_d0, tax_file)
+
+#merge w metadata step to then subset day 0? this is a pain to figure out 
+
 
 #get phylum level for D0 only
 
@@ -110,7 +100,6 @@ legend_labels[5] <- "Other"
 legend('right',fill=colors,legend_labels, inset=c(-0.2,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
 
 #run this whole command to make figure of family by cage/donor
-
 d0_med_fam <- sum_OTU_by_tax_level(taxonomy_family, d0_med)
 d0_med_fam[20] <- cage_only_char
 n=19
