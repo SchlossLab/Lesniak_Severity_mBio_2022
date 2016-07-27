@@ -1,0 +1,21 @@
+#get taxonomy - df with columns for each level - 
+# level - 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum), 6 (kingdom)
+## - convert taxonomy text list to df, remove percentages
+## - subset df by desired tax level, then replace any unclassified with next level up
+get_tax <- function(tax_level=1,row_list=1:length(rownames(tax_file)),df=tax_file){
+     if (tax_level %in% c(1:5)){
+          taxonomy <- df[row_list,]
+          taxonomy <-  data.frame(do.call('rbind', strsplit(as.character(taxonomy$Taxonomy),';',fixed=TRUE)))
+          taxonomy <- data.frame(sapply(taxonomy,gsub,pattern="\\(\\d*\\)",replacement=""))
+          level <- 7-tax_level
+          tax_out <- as.character(taxonomy[,level])
+          for (i in level:2){
+               next_level <- i-1
+               tax_out[tax_out=='unclassified'] <- 
+                    as.character(taxonomy[tax_out=='unclassified',next_level])
+          }
+          return(data.frame(tax= tax_out, row.names=row_list))
+     } else {print(
+          'Error: Level must be 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum)')
+     }
+}
