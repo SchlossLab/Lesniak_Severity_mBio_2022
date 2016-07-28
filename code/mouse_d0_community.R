@@ -8,6 +8,9 @@
 #
 #############
 
+install.packages("RColorBrewer")
+library(RColorBrewer)
+
 #import Nick's awesome combined metadata file
 meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
 shared_file <- read.table("data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
@@ -32,7 +35,6 @@ OTU_list <- colnames(rel_abund)[OTUs_1]
 rel_abund_cage <- rel_abund[!met_or$cage_id=='inoculum',OTUs_1]
 inoculum_rel_abund <- rel_abund[met_or$cage_id=='inoculum',OTUs_1]
 
-#this step isnt working and it is fucking annoying, probably because the two things (rel_abund and metafile) are out of order 
 #df of OTUs w abundances >1% 
 rel_abund_d0 <- rel_abund[met_or$day == 0, OTUs_1]
 #it's adding weird NAs, idk why but remove them:
@@ -88,18 +90,24 @@ legend('right',fill=colors,legend_labels, bty='n', inset=c(-0.1,0), border=color
 
 #make dataframe of median family abundances and organize it 
 d0_med_fam <- sum_OTU_by_tax_level(2, d0_med, tax_file)
-d0_med_fam[20] <- cage_only_char
+rownames(d0_med_fam) <- cage_only_char
+d0_med_fam <- d0_med_fam[,-1]
 
-#run this whole command to make figure of family by cage/donor
+#colorbrewer
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+#run this whole command to make figure of family by cage/donor - add colorbrewer!
 n=19
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(d0_med_fam[,1:19]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
-        col = rainbow(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", names.arg=d0_med_fam$V20, cex.names=0.5)
-fam_labels <- as.character(unique(taxonomy_family$tax))
-legend('right', fill = rainbow(n), fam_labels, inset=c(-0.15,0), cex=0.6)
+barplot(t(d0_med_fam), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
+        col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", cex.names=0.5)
+fam_labels <- colnames(d0_med_fam)
+legend('right', fill = getPalette(n), fam_labels, inset=c(-0.15,0), cex=0.6)
 
 
-#col = fam_col
+#barplots for individual families
 
-#what kind of plots do we want? line plots of diversity? 
+
+
+
 
