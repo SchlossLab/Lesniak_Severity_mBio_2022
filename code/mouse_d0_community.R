@@ -19,7 +19,7 @@ tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filte
 #make OTU abundance file
 
 #this fixes it! 
-met_or <- meta_file[order(rownames(meta_file)),]
+#met_or <- meta_file[order(rownames(meta_file)),]
 
 #Create df with relative abundances
 rel_abund <- 100*shared_file/unique(apply(shared_file, 1, sum))
