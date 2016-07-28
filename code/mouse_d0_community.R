@@ -8,18 +8,12 @@
 #
 #############
 
-#start by making metadata file
-source('code/make_HumanCdGF_metadata_file.R')
-
 #import Nick's awesome combined metadata file
 meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
 shared_file <- read.table("data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
 tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
 
 #make OTU abundance file
-
-#this fixes it! 
-#met_or <- meta_file[order(rownames(meta_file)),]
 
 #Create df with relative abundances
 rel_abund <- 100*shared_file/unique(apply(shared_file, 1, sum))
@@ -59,20 +53,13 @@ taxonomy_genus <- sum_OTU_by_tax_level(1, rel_d0, tax_file)
 taxonomy_family <- sum_OTU_by_tax_level(2, rel_d0, tax_file)
 taxonomy_phylum <- sum_OTU_by_tax_level(5, rel_d0, tax_file)
 
-#merge w metadata step to then subset day 0? this is a pain to figure out 
-
-
-#get phylum level for D0 only
-
-phylum_d0 <- sum_OTU_by_tax_level(taxonomy_phylum, rel_d0)
-
 #plot each mouse individually
 
 colors <- c('red', 'blue', 'green', 'orange', 'purple', 'pink')
 legend_labels <- as.character(taxonomy_phylum$tax)
 legend_labels[5] <- "Other"
 
-barplot(t(phylum_d0), ylab='Relative Abundance', main="Taxonomic composition of mice on D0", 
+barplot(t(taxonomy_phylum), ylab='Relative Abundance', main="Taxonomic composition of mice on D0", 
         col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7)
 
 #combine by cages/donors/ median per cage 
@@ -80,28 +67,30 @@ barplot(t(phylum_d0), ylab='Relative Abundance', main="Taxonomic composition of 
 #add a column for cages to the df
 cages <- meta_file$cage_id[meta_file$day==0]
 cages <- na.omit(cages)
-rel_d0[90] <- cages
-colnames(rel_d0)[90] <- "cage"
+rel_d0[82] <- cages
+colnames(rel_d0)[82] <- "cage"
 
-d0_med <- aggregate(rel_d0[, 1:89], list(rel_d0$cage), median)
-d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
+d0_med <- aggregate(rel_d0[, 1:81], list(rel_d0$cage), median)
+d0_med_phy <- sum_OTU_by_tax_level(5, d0_med, tax_file)
+#removes inoculum cage
 cage_only <- cage_IDs[-15]
+cage_only_char <- as.character(cage_only)
 
+#use these to change dataframe rownames, cleans up for plotting later
+rownames(d0_med_phy) <- cage_only_char
+d0_med_phy <- d0_med_phy[,-1]
 
 #run this whole command to make the figure of phylum by cage/donor
+barplot(t(d0_med_phy), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
+        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7, xlab="cage")
+legend_labels <- colnames(d0_med_phy)
+legend('right',fill=colors,legend_labels, bty='n', inset=c(-0.1,0), border=colors, y.intersp = 0.8, cex=0.9)
 
-d0_med_phy <- sum_OTU_by_tax_level(taxonomy_phylum, d0_med)
-cage_only_char <- as.character(cage_only)
-d0_med_phy[7] <- cage_only_char
-barplot(t(d0_med_phy[,1:6]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage", 
-        col = colors, ylim=c(0,100), cex.lab=0.9, cex.axis=0.7, cex.names=0.7, xlab="cage", names.arg=d0_med_phy$V7)
-legend_labels <- as.character(unique(taxonomy_phylum$tax))
-legend_labels[5] <- "Other"
-legend('right',fill=colors,legend_labels, inset=c(-0.2,0), bty='n', border=colors, y.intersp = 0.8, cex=0.9)
+#make dataframe of median family abundances and organize it 
+d0_med_fam <- sum_OTU_by_tax_level(2, d0_med, tax_file)
+d0_med_fam[20] <- cage_only_char
 
 #run this whole command to make figure of family by cage/donor
-d0_med_fam <- sum_OTU_by_tax_level(taxonomy_family, d0_med)
-d0_med_fam[20] <- cage_only_char
 n=19
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
 barplot(t(d0_med_fam[,1:19]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
