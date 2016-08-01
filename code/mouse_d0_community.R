@@ -106,8 +106,7 @@ legend('right', fill = getPalette(n), fam_labels, inset=c(-0.15,0), cex=0.6)
 
 
 #barplots for individual families
-#dont need as much information/comparison as Alyx's mBio paper did
-# combine into loop and output plots to a main figure looking file 
+#combine into loop and output plots to a main figure looking file 
 
 #calculates upper and lower quantiles, then combines by family. 
 d0_upper <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.75)
@@ -116,24 +115,32 @@ d0_upper_fam <- sum_OTU_by_tax_level(2, d0_upper, tax_file)
 d0_lower_fam <- sum_OTU_by_tax_level(2, d0_lower, tax_file)
 colnames(d0_upper_fam)[1] <- "donor"
 colnames(d0_lower_fam)[1] <- "donor"
-
-#just subsets and plots one thing. tweak this to look right then throw in loop for all donors! also error bars 
 fam_list <- as.vector(fam_labels)
-one_don <- subset(d0_med_fam, donor == 369)
 
-z <- barplot(t(one_don[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(one_don[,2:20] +15)), ylab = "Relative Abundance (%)", main="Donor 369")
-axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
-text(seq(1,19, by=1), par("usr")[3] - 10, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.7)
-box()
 
-#plot error bars 
-#subset to plot, for now do it this way. later: loop? 
-one_uci <- subset(d0_upper_fam, donor == 369)
-one_lci <- subset(d0_lower_fam, donor == 369)
-medians <- t(one_don[,2:20])
-uci <- t(one_uci[,2:20])
-lci <- t(one_lci[,2:20])
-arrows(x0=z, y0=medians, z, y1=uci, angle=90, length=0.05)
-arrows(x0=z, y0=medians, z, y1=lci, angle=90, length=0.05)
+#set up layout
+par(mar=c(7,2,1,1))
+layout(matrix(1:25, nrow=5))
+
+#loop to plot all donors 
+for(d in d0_med_fam$donor){
+  one_d <- subset(d0_med_fam, donor == d)
+  one_uci <- subset(d0_upper_fam, donor == d)
+  one_lci <- subset(d0_lower_fam, donor == d)
+  medians <- t(one_d[,2:20])
+  uci <- t(one_uci[,2:20])
+  lci <- t(one_lci[,2:20])
+  #make barplot
+  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Donor", d))
+  axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
+  text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
+  box()
+  #plot error bars
+  arrows(x0=z, y0=medians, z, y1=uci, angle=90, length=0.05)
+  arrows(x0=z, y0=medians, z, y1=lci, angle=90, length=0.05)
+}
+
+
+#add layout call to put all donors on one page
 
 
