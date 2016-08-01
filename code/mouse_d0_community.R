@@ -73,6 +73,7 @@ rel_d0[82] <- cages
 colnames(rel_d0)[82] <- "cage"
 
 d0_med <- aggregate(rel_d0[, 1:81], list(rel_d0$cage), median)
+d0_med_uci <- apply(rel_d0, 2, function(x){quantile(x, prob=0.75)})
 d0_med_phy <- sum_OTU_by_tax_level(5, d0_med, tax_file)
 #removes inoculum cage
 cage_only <- cage_IDs[-15]
@@ -91,7 +92,7 @@ legend('right',fill=colors,legend_labels, bty='n', inset=c(-0.1,0), border=color
 #make dataframe of median family abundances and organize it 
 d0_med_fam <- sum_OTU_by_tax_level(2, d0_med, tax_file)
 rownames(d0_med_fam) <- cage_only_char
-d0_med_fam <- d0_med_fam[,-1]
+colnames(d0_med_fam)[1] <- "donor"
 
 #colorbrewer
 getPalette = colorRampPalette(brewer.pal(9, "Set1"))
@@ -99,15 +100,27 @@ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 #run this whole command to make figure of family by cage/donor - add colorbrewer!
 n=19
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(d0_med_fam), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
+barplot(t(d0_med_fam[2:20]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
         col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", cex.names=0.5)
-fam_labels <- colnames(d0_med_fam)
+fam_labels <- colnames(d0_med_fam[2:20])
 legend('right', fill = getPalette(n), fam_labels, inset=c(-0.15,0), cex=0.6)
 
 
 #barplots for individual families
+#dont need as much information/comparison as Alyx's mBio paper did
+# so we will need to plot each family as it's own bar on different plots for each donor. 
+# already computed median, will be easy then to compute p values
 
+#but first, let me make a plot:
 
+#just subsets and plots one thing. tweak this to look right then throw in loop for all donors! also error bars 
+fam_list <- as.vector(fam_labels)
+one_don <- subset(d0_med_fam, donor == 369)
+
+barplot(t(one_don[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(one_don[,2:20] +10)), ylab = "Relative Abundance (%)", main="Donor 369")
+axis(1, at=seq(1,20, by=1), labels=FALSE, tick=FALSE)
+text(seq(1,19, by=1), par("usr")[3] - 10, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.7)
+box()
 
 
 
