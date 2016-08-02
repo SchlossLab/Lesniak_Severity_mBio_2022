@@ -134,7 +134,7 @@ for(d in d0_med_fam$donor){
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
   #make barplot
-  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Donor", d))
+  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Cage", d))
   #axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
   #text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
   box()
@@ -150,6 +150,6 @@ text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
 text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
 text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
 mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=1, padj=-78)
-mtext("Mouse community on day 0, by donor", side = 3, cex = 1, adj =7, padj=-22)
+mtext("Mouse community on day 0, by cage", side = 3, cex = 1, adj =7, padj=-22)
 
 dev.off()
