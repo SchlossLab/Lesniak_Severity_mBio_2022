@@ -117,10 +117,13 @@ colnames(d0_upper_fam)[1] <- "donor"
 colnames(d0_lower_fam)[1] <- "donor"
 fam_list <- as.vector(fam_labels)
 
+#to save as pdf to results, can't get the size right to render but fine for now
+pdf(file="results/figures/figure2.pdf", width=25, height=15)
 
+#run this entire code to the end to plot the multipanel plot for all donors
 #set up layout
-par(mar=c(7,2,1,1))
-layout(matrix(1:25, nrow=5))
+par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
+layout(matrix(1:30, nrow=5))
 
 #loop to plot all donors 
 for(d in d0_med_fam$donor){
@@ -132,15 +135,21 @@ for(d in d0_med_fam$donor){
   lci <- t(one_lci[,2:20])
   #make barplot
   z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Donor", d))
-  axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
-  text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
+  #axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
+  #text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
   box()
   #plot error bars
   arrows(x0=z, y0=medians, z, y1=uci, angle=90, length=0.05)
   arrows(x0=z, y0=medians, z, y1=lci, angle=90, length=0.05)
 }
 
+#tweak final plot so it looks nice 
+text(x=z+0.8, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=1, padj=-78)
+mtext("Mouse community on day 0, by donor", side = 3, cex = 1, adj =7, padj=-22)
 
-#add layout call to put all donors on one page
-
-
+dev.off()
