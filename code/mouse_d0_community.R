@@ -13,7 +13,7 @@ library(RColorBrewer)
 
 #import Nick's awesome combined metadata file
 meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
-shared_file <- read.table("data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
+shared_file <- read.table("data/process/human_CdGF.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
 tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
 
 #make OTU abundance file
@@ -26,10 +26,8 @@ med_rel_abund_cage <- aggregate(rel_abund, by=list(met_or$cage_id),median)
 cage_IDs <- med_rel_abund_cage[,"Group.1"]
 med_rel_abund_cage <- med_rel_abund_cage[,!colnames(med_rel_abund_cage) %in% 'Group.1']
 
-#this also isnt working, maybe this is part of the problem probably the rownames bullshit!
 OTUs_1 <- apply(med_rel_abund_cage, 2, max) > 1
 OTU_list <- colnames(rel_abund)[OTUs_1]
-
 
 #df of OTUs with abundances >1% - by cage and inoculum
 rel_abund_cage <- rel_abund[!met_or$cage_id=='inoculum',OTUs_1]
