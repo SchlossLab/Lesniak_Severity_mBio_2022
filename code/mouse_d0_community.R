@@ -22,7 +22,7 @@ tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filte
 rel_abund <- 100*shared_file/unique(apply(shared_file, 1, sum))
 
 #Create vector of OTUs with median abundances >1%
-med_rel_abund_cage <- aggregate(rel_abund, by=list(met_or$cage_id),median)
+med_rel_abund_cage <- aggregate(rel_abund, by=list(meta_file$cage_id),median)
 cage_IDs <- med_rel_abund_cage[,"Group.1"]
 med_rel_abund_cage <- med_rel_abund_cage[,!colnames(med_rel_abund_cage) %in% 'Group.1']
 
@@ -30,11 +30,11 @@ OTUs_1 <- apply(med_rel_abund_cage, 2, max) > 1
 OTU_list <- colnames(rel_abund)[OTUs_1]
 
 #df of OTUs with abundances >1% - by cage and inoculum
-rel_abund_cage <- rel_abund[!met_or$cage_id=='inoculum',OTUs_1]
-inoculum_rel_abund <- rel_abund[met_or$cage_id=='inoculum',OTUs_1]
+rel_abund_cage <- rel_abund[!meta_file$cage_id=='inoculum',OTUs_1]
+inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
 
 #df of OTUs w abundances >1% 
-rel_abund_d0 <- rel_abund[met_or$day == 0, OTUs_1]
+rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
 #it's adding weird NAs, idk why but remove them:
 rel_d0 <- na.omit(rel_abund_d0)
 
