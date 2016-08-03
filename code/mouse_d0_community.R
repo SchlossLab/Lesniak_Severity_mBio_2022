@@ -127,7 +127,7 @@ layout(matrix(1:30, nrow=5))
 for(d in d0_med_fam$donor){
   one_d <- subset(d0_med_fam, donor == d)
   one_uci <- subset(d0_upper_fam, donor == d)
-  one_lci <- subset(d0_lower_fam, donor == d)
+  one_lci <- subset(d0_lower_fam, donor == d) 
   medians <- t(one_d[,2:20])
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
