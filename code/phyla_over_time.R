@@ -31,21 +31,44 @@ OTUs_1 <- apply(med_rel_abund_cage, 2, max) > 1
 OTU_list <- colnames(rel_abund)[OTUs_1]
 
 #df of OTUs with abundances >1% - by cage and inoculum
-rel_abund_cage <- rel_abund[!meta_file$cage_id=='inoculum',OTUs_1]
-inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
+rel_abund <- rel_abund[,OTUs_1]
 
 #then sum OTU by tax level to get species names
 source('code/Sum_OTU_by_Tax.R')
-cage_fam <- sum_OTU_by_tax_level(2, rel_abund_cage, tax_file)
-cage_phy <- sum_OTU_by_tax_level(5, rel_abund_cage, tax_file)
-
-#does anything else need to go here? 
-
-
-#get median and IQR by cage and day
-relabund_cageday <- na.omit(relabund_cageday)
+cage_fam <- sum_OTU_by_tax_level(2, rel_abund, tax_file)
+cage_phy <- sum_OTU_by_tax_level(5, rel_abund, tax_file)
 
 # transform <- t(relabund_cageday), try a solution without transforming
 lci <- aggregate(rel_abund, by = list(meta_file$cage_id, meta_file$day), function(x){quantile(x, probs=c(0.25), na.rm=TRUE)})
 uci <- aggregate(rel_abund, by = list(meta_file$cage_id, meta_file$day), function(x){quantile(x, probs=c(0.75), na.rm=TRUE)})
+
+#going to need some kind of loop to plot. i guess this is why transforming it is a good idea 
+
+#reorganize df to get a column of cages and days. 
+#first need to extract rownames, then some kind of subsetting or indexing to get other values
+cage_fam <- cbind(rownames(cage_fam), cage_fam[,1:19])
+colnames(cage_fam)[1] <- "sample_id"
+
+#want to get days and cage info into columns
+#best to make smaller metadata file, then merge columns i want 
+#to make smaller metadatafile, cbind maybe
+small_met <- cbind(rownames(meta_file), meta_file[,1:4], meta_file[,9], meta_file[,13:18])
+colnames(small_met)[1] <- "sample_id"
+full_fam <- merge(small_met, cage_fam, by.x="sample_id", by.y="sample_id")
+colnames(full_fam)[6] <- "day"
+
+#then take innoculum out
+full_fam <- full_fam[!full_fam$cage_id == "inoculum",]
+
+#only want positive days
+full_fam <- full_fam[!full_fam$day < 0,]
+
+
+
+
+
+
+
+###############Maybe let's try Alyx's old code instead########
+#give it a good effort with kaitlin's code until friday then maybe change. you can do it!
 

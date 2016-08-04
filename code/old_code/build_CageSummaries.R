@@ -7,20 +7,21 @@
 # levels observed, phylum changes over time. 
 # 
 # * Toxin graph to be added
+# * this is Alyx's old code, I'm going to try using it instead of my phyla over time graph. let's see...
 #
 # Dependencies...
-#   * data/process/humanGF.final.tx.5.subsample.shared
-#   * data/process/humanGF.final.tx.5.cons.taxonomy
-#   * data/process/humanGF_metadata.txt
+#     * data/process/human_CdGF_metadata.txt
+#     * data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared
+#     * data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy
+#
 #
 # Output...
 #   * results/figures/CAGENAME_summary.tiff
 #
 ################################################################################
-setwd("~/Documents/Github/Schubert_humanCdGF_2015")
 
 # read in the metadata file
-all_metadata <- read.table(file="data/process/humanGF_metadata.txt", header=T, colClasses="character")
+meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
 numCages <- length(unique(all_metadata$cage_id))
 cageIds <- unique(all_metadata$cage_id)
 rownames(all_metadata) <- all_metadata$group
