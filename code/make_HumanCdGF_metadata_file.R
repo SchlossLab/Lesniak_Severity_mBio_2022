@@ -16,7 +16,7 @@
 #         data/process/human_CdGF.an.unique_list.0.03.subsample.shared
 #
 ###################
-setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
+#setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 #need gdata to read excel files
 install.packages('gdata')
@@ -45,6 +45,7 @@ human_GF_mouse <- human_GF_mouse[,!colnames(human_GF_mouse) %in% 'file']
 human_GF_mouse <- human_GF_mouse[!human_GF_mouse$human_source=='AMS',]
 
 #Combine Toxin, Exp, and metadata
+#this next line is where the reordering happens - will correct before writing to new file (KF)
 human_CdGF_metadata <- merge(human_GF_mouse, human_GF_toxin,by.x='group',by.y='Cage_Mouse',
                                incomparables=NA, all.x=T)
 human_CdGF_metadata <- merge(human_CdGF_metadata,human_GF_clinical,by.x='human_source',by.y='sample_id',
@@ -67,6 +68,9 @@ Euthanized[Euthanized$Mouse_ID=='NT LINE','day_end'] <- 10
 # add day euthanized data to metadata
 human_CdGF_metadata <- merge(human_CdGF_metadata, Euthanized, by='Mouse_ID')
 names(human_CdGF_metadata)[names(human_CdGF_metadata) %in% c('mouse_id','day_end.x','day_end.y')] <- c('mouse_eartag','day_end','Euthanized')
+
+#reorder file so it matches organization of shared file
+human_CdGF_metadata <- human_CdGF_metadata[order(human_CdGF_metadata[,3]), ]
 
 #output metadata file
 write.table(human_CdGF_metadata, file='data/process/human_CdGF_metadata.txt',quote=F,sep='\t',row.names=F)
