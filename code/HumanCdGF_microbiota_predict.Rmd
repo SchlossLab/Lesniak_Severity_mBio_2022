@@ -6,10 +6,10 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
-```{r, echo=FALSE, message=FALSE}
+```{r, message=FALSE}
 if(!require(randomForest)) install.packages('randomForest', repos = 'http://cran.us.r-project.org')
 library(randomForest)
 if(!require(miscTools)) install.packages('miscTools', repos = 'http://cran.us.r-project.org')
@@ -18,7 +18,7 @@ if(!require(ggplot2)) install.packages('ggplot2', repos = 'http://cran.us.r-proj
 library(ggplot2)
 ```
 
-```{r, echo=FALSE}
+```{r}
 setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 #read in files
@@ -45,10 +45,8 @@ combine_days_by_mouse <- function(DATAFRAME, INPUT){
      }
      return(OUTPUT)
 }
-
-test <- merge(day_0_meta,meta_file[which(meta_file$day==3),c(cdiff_effect, 'Mouse_ID')], by='Mouse_ID')
-
 rf_meta_df <- combine_days_by_mouse(meta_file[!meta_file$sample_type=='cecum',], day_0_meta)
+
 # remove all columns with no data - toxin missing from some days
 rf_meta_df <- rf_meta_df[,colSums(is.na(rf_meta_df)) != nrow(rf_meta_df)]
 # add columns for data from day euthanized
@@ -96,7 +94,7 @@ But endpoint has data from Day 2,3,10
 
 Might be misleading since contains CFU from different data points
      
-```{r, echo=FALSE}
+```{r}
 Day_Euth_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_Euth_cdiff_cfu')
 Day_Euth_cdiff_cfu_rf$plot
 ```
@@ -108,7 +106,7 @@ MSE = `r Day_Euth_cdiff_cfu_rf$mse`
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
-```{r, echo=FALSE}
+```{r}
 ##Fix to be categorical, and not regression
 Predict_early_euth_df <- Predict_df[!Predict_df$Euth_Early %in% NA,c('Euth_Early',OTU_list)]
 rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df)
@@ -117,7 +115,7 @@ rf_early_euth
 
 ##Can we predict the Day 10 C. difficile CFU with the community structure at Day 0?
 
-```{r, echo=FALSE}
+```{r}
 Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
 Day_10_cdiff_cfu_rf$plot
 ```
@@ -132,7 +130,7 @@ Why day 10? What is significant about day 10?
 
 ##Can we predict the Day 1 C. difficile CFU with the community structure at Day 0?
 
-```{r,echo=FALSE}
+```{r}
 #rf to predict 
 Day_1_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_1_cdiff_cfu')
 Day_1_cdiff_cfu_rf$plot
@@ -141,7 +139,7 @@ Day_1_cdiff_cfu_rf$plot
 % Variance explained `r Day_1_cdiff_cfu_rf$rf$rsq[length(Day_1_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 2 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_2_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_2_cdiff_cfu')
 Day_2_cdiff_cfu_rf$plot
 ```
@@ -149,7 +147,7 @@ Day_2_cdiff_cfu_rf$plot
 % Variance explained `r Day_2_cdiff_cfu_rf$rf$rsq[length(Day_2_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 3 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_3_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_3_cdiff_cfu')
 Day_3_cdiff_cfu_rf$plot
 ```
@@ -157,7 +155,7 @@ Day_3_cdiff_cfu_rf$plot
 % Variance explained `r Day_3_cdiff_cfu_rf$rf$rsq[length(Day_3_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 4 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_4_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_4_cdiff_cfu')
 Day_4_cdiff_cfu_rf$plot
 ```
@@ -165,7 +163,7 @@ Day_4_cdiff_cfu_rf$plot
 % Variance explained `r Day_4_cdiff_cfu_rf$rf$rsq[length(Day_4_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 5 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_5_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_5_cdiff_cfu')
 Day_5_cdiff_cfu_rf$plot
 ```
@@ -173,7 +171,7 @@ Day_5_cdiff_cfu_rf$plot
 % Variance explained `r Day_5_cdiff_cfu_rf$rf$rsq[length(Day_5_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 6 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_6_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_6_cdiff_cfu')
 Day_6_cdiff_cfu_rf$plot
 ```
@@ -181,7 +179,7 @@ Day_6_cdiff_cfu_rf$plot
 % Variance explained `r Day_6_cdiff_cfu_rf$rf$rsq[length(Day_6_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 7 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_7_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_7_cdiff_cfu')
 Day_7_cdiff_cfu_rf$plot
 ```
@@ -189,7 +187,7 @@ Day_7_cdiff_cfu_rf$plot
 % Variance explained `r Day_7_cdiff_cfu_rf$rf$rsq[length(Day_7_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 8 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_8_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_8_cdiff_cfu')
 Day_8_cdiff_cfu_rf$plot
 ```
@@ -197,7 +195,7 @@ Day_8_cdiff_cfu_rf$plot
 % Variance explained `r Day_8_cdiff_cfu_rf$rf$rsq[length(Day_8_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 9 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_9_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_9_cdiff_cfu')
 Day_9_cdiff_cfu_rf$plot
 ```
@@ -205,7 +203,7 @@ Day_9_cdiff_cfu_rf$plot
 % Variance explained `r Day_9_cdiff_cfu_rf$rf$rsq[length(Day_9_cdiff_cfu_rf$rf$rsq)]*100`
 
 # Day 10 C. difficile CFU
-```{r, echo=FALSE}
+```{r}
 Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
 Day_10_cdiff_cfu_rf$plot
 ```
@@ -217,10 +215,10 @@ Predicting CFU from day 1 to 10 based on Day 0 community
 
 There seems a flucuation in the % variance explained, which seems to coincide with the fluctuations in cdiff cfu  
 
-##seed greatly affects variance, likely due to data split, sample size might be too small to make reliable predictions
+## seed greatly affects variance, likely due to data split, sample size might be too small to make reliable predictions
 
 
-```{r knitr::kable, echo=FALSE, warning=F, message=F}
+```{r knitr::kable, warning=F, message=F}
 var_by_day <- data.frame(Day=c(1:10),Percent_Variance_Explained=NA)
 cdiff_cfu <- vector()
 for (a in 1:10){
@@ -244,16 +242,16 @@ ggplot(data=cfu_plot, aes(x=variable, y=value, group=Mouse)) + geom_line(aes(col
 ***
 
 ##Can we predict day 1 weight change with the community structure at Day 0?
-```{r, echo=FALSE}
+```{r}
 
 ```
 
 ##Can we predict day 10 weight change with the community structure at Day 0?
-```{r, echo=FALSE}
+```{r}
 
 ```
 
 ##Can we predict ___________ with the community structure at Day 0?
-```{r, echo=FALSE}
+```{r}
 
 ```
