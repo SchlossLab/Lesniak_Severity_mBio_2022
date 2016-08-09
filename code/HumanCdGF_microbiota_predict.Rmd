@@ -22,12 +22,13 @@ library(ggplot2)
 setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 # read in files
-meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 'group')
-shared_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header = T, row.names='Group')
+meta_file   <- read.table('data/process/human_CdGF_metadata.txt', sep = '\t',
+                        header = T, row.names = 'group')
+shared_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
+                          sep='\t',header = T, row.names='Group')
 
 # add log transformed CFU
 meta_file$log_cfu <- log10(meta_file$cdiff_cfu + 1)
-
 # remove cecum samples
 meta_file <- meta_file[! meta_file$sample_type == 'cecum', ]
 
@@ -36,38 +37,62 @@ meta_file <- meta_file[! meta_file$sample_type == 'cecum', ]
 stool_shared <- shared_file[rownames(meta_file[meta_file$day %in% 0, ]) ,]
 # use %in% instead of == because to ignore NA
 # rename day 0 communities by mouse id
-rownames(stool_shared) <- meta_file$Mouse_ID[rownames(meta_file) %in% rownames(stool_shared) ]
-rel_abund_stool <- 100*stool_shared/unique(apply(stool_shared, 1, sum))
+rownames(stool_shared) <- meta_file$Mouse_ID[rownames(meta_file) %in% 
+                                               rownames(stool_shared) ]
+rel_abund_stool <- 100 * stool_shared / unique(apply(stool_shared, 1, sum))
 #Create vector of OTUs with median abundances >1%
 OTUs_stool_0_01 <- apply(rel_abund_stool, 2, max) > 1
 #df of OTUs with abundances >1% - by cage and inoculum
-rel_abund_stool <- rel_abund_stool[,OTUs_stool_0_01]
+rel_abund_stool <- rel_abund_stool[ ,OTUs_stool_0_01]
 OTU_list <- colnames(rel_abund_stool)
 
-#Merge OTU data with mouse/exp data
-#Predict_df <- merge(rf_meta_df, rel_abund_stool, by.x='RowNames', by.y='row.names')
-#Predict_df <- Predict_df[,!names(Predict_df) %in% c('Mouse_ID','RowNames','cage_id')]
+#random forest regression model to determine Day 0 OTU correlated with increased CFU
+seed <- 18
+n_trees <- 2000
+set.seed(seed)
 
-#predict day cfu by day 0 community
-predict_df <- merge(meta_file[meta_file$day==2, c('Mouse_ID', 'log_cfu') ], stool_shared, by='Mouse_ID', by.y='row.names', all.y = T)
-predict_df <- predict_df[ ,!(colnames(predict_df) %in% "Mouse_ID")]
+#log_cfu_obs <- meta_file[meta_file$day %in% c(0:10), c('Mouse_ID', 'day', 'log_cfu') ]
+#log_cfu_obs$predict <- NA
+#log_cfu_obs[log_cfu_obs$day==2, ] <- predict(RF, rel_abund_stool)
 
-RF <- randomForest(log_cfu ~ ., data = predict_df[!is.na(predict_df$log_cfu),], importance = TRUE)
+importance_df <- data.frame(matrix(nrow = length(OTU_list), 
+                                   ncol = max(meta_file$day, na.rm = T)),
+                            row.names = OTU_list)
+rsq_df <- data.frame(matrix(nrow = 1, ncol = max(meta_file$day, na.rm = T)),
+                         row.names = 'RSQ')
+prediction_df <- data.frame(matrix(nrow = 0, ncol = 4))
 
-varImpPlot(RF)
-ggplot(data = data.frame(actual=predict_df[,'log_cfu'],pred=predict(RF,predict_df)),
-       aes(x=actual, y=pred)) + geom_point() + geom_abline(color='red')
-percent_var_expl <- RF$rsq[length(RF$rsq)]*100
+for (i in 1:10){
+  predict_df <- merge(meta_file[meta_file$day==i, c('Mouse_ID', 'log_cfu') ],
+                    rel_abund_stool, by='Mouse_ID', by.y='row.names', all.y = T)
+  predict_df <- predict_df[ ,!(colnames(predict_df) %in% "Mouse_ID")]
+  RF <- randomForest(log_cfu ~ ., data = predict_df[!is.na(predict_df$log_cfu), ],
+                   importance = TRUE, ntree = n_trees)
+  rsq_df[i] <- RF$rsq[length(RF$rsq)]
+  # sort the features by their effect on % increase in the standard error
+  importance_df[ , i] <- importance(RF)[,1]
+  colnames(importance_df)[i] <- paste('day', i, 'importance', sep = '_')
+# fit the model back on the datar and tack it to the end of the counts file
+  random_forest_output <- merge(meta_file[meta_file$day==i, c('Mouse_ID', 'day', 'log_cfu') ],
+                              as.data.frame(predict(RF, rel_abund_stool)), 
+                              by='Mouse_ID', by.y='row.names')
+  colnames(random_forest_output)[3:4] <- c('observed', 'predicted')
+  prediction_df <- rbind(prediction_df, random_forest_output)  
+}
+
+ggplot(data = prediction_df, aes(x=observed, y=predicted, color = day)) + geom_point()
+
+rsq_df <- t(rsq_df)
+rsq_df <- as.data.frame(cbind(rsq_df, day = c(1:10)))
+ggplot(data = rsq_df, aes(x = factor(day), y = RSQ)) + geom_bar(stat = 'identity')
+
 
 #create function for random forest
-run_rf_on <- function(DATAFRAME, RESPONSE, SAMPLE_SPLIT = 2/3,  OTUs = OTU_list){
+run_rf_on <- function(DATAFRAME, RESPONSE,  OTUs = OTU_list){
 set.seed(2)
      #
      Predictor_df <- as.data.frame(DATAFRAME[!DATAFRAME[,RESPONSE] %in% NA,c(RESPONSE,OTUs)])
-     sample_set <- sample(seq_len(nrow(Predictor_df)), size = floor((SAMPLE_SPLIT)*nrow(Predictor_df)))
-     test <- Predictor_df[-sample_set,]
-     train <- Predictor_df[sample_set,] 
-          RF <- randomForest(as.formula(paste(RESPONSE, '~ .')), data = train, importance = TRUE)
+    RF <- randomForest(as.formula(paste(RESPONSE, '~ .')), data = train, importance = TRUE)
      R2 <- rSquared(test[,RESPONSE], test[,RESPONSE] - predict(RF,test))
      MSE <- mean((test[,RESPONSE] - predict(RF,test))^2)
      IMPORT <- importance(RF)
@@ -77,6 +102,25 @@ set.seed(2)
      ##MEAN_DECREASE <- varImpPlot(RF)
      return(list(rf=FOREST,r2=R2,mse=MSE,import=IMPORT,plot=PLOT))
 }
+
+
+
+# let's plot the top 12 features
+#n_features <- 12
+#importance_subset <- importance_sorted[1:n_features]
+
+# let's get Rsq for the subset
+#rf_partial <- randomForest(log_cfu ~ ., data=predict_df[!is.na(predict_df$log_cfu),
+                            c( 'log_cfu', names(importance_sorted)[1:n_features])], 
+                           importance=TRUE, ntree=n_trees)
+# write(paste("partial", n_features, rf_partial$rsq[n_trees], "\t"), file="data/process/random_forest.data", append=T)
+
+
+
+
+
+
+
 ```
 
 ##Can we predict the endpoint C. difficile CFU with the community structure at Day 0?
@@ -98,8 +142,15 @@ MSE = `r Day_Euth_cdiff_cfu_rf$mse`
 ##Can we predict moribundity with the community structure at Day 0?
 ```{r}
 ##Fix to be categorical, and not regression
-Predict_early_euth_df <- Predict_df[!Predict_df$Euth_Early %in% NA,c('Euth_Early',OTU_list)]
-rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df)
+Predict_early_euth_df <- data.frame(Euth_Early = ifelse(meta_file[meta_file$day %in% 0,
+                                                                  'Euthanized'] %in% 10,
+                                                        'No','Yes'), 
+                                    row.names = meta_file[meta_file$day %in% 0, 'Mouse_ID'])
+Predict_early_euth_df <- merge(Predict_early_euth_df, rel_abund_stool, by='row.names')
+Predict_early_euth_df <- Predict_early_euth_df[,!(colnames(Predict_early_euth_df) %in% "Row.names")]
+rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df, 
+                              importance = TRUE, ntree = n_trees)
+# write(paste("binary", ncol(rel_abund_stool), rf_early_euth$err.rate[n_trees], "\t"), file="data/process/random_forest.data", append=T)
 rf_early_euth
 ```
 
