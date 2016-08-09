@@ -8,6 +8,9 @@
 #
 ###################
 
+install.packages("RColorBrewer")
+library(RColorBrewer)
+
 setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
 
 #read in files
@@ -42,12 +45,17 @@ source('code/Sum_OTU_by_Tax.R')
 family_level_RA <- sum_OTU_by_tax_level(2,rel_abund_0.01,tax_file)
 
 #reorganize the file a bit 
+inoc <- meta_file$human_source[meta_file$cage_id=='inoculum']
+inoc <- as.vector(inoc)
 family_level_RA[25] <- inoc
 colnames(family_level_RA)[25] <- "donor"
 
-#remove donor 810 because we can't use it anymore
+#remove donor 810 and duplicates of others
 
 family_level_RA <- family_level_RA[-8,]
+family_level_RA <- family_level_RA[-1,]
+family_level_RA <- family_level_RA[-4,]
+family_level_RA <- family_level_RA[-17,]
 
 inoc_labels <- colnames(family_level_RA[1:24])
 inoc_list <- as.vector(inoc_labels)
@@ -55,8 +63,8 @@ inoc_list <- as.vector(inoc_labels)
 #make multiplot of family plots for each donor
 #run this entire code to the end to plot the multipanel plot for all donors
 #set up layout
-par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
-layout(matrix(1:30, nrow=5))
+par(mar=c(2,1.5,1.1,1), oma=c(7,7,7,0.5))
+layout(matrix(1:24, nrow=6))
 
 #loop to plot all donors 
 for(d in family_level_RA$donor){
@@ -65,20 +73,23 @@ for(d in family_level_RA$donor){
   #make barplot
   z <- barplot(t(one_d[,1:24]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(one_d[,1:24])+5), ylab = "Relative Abundance (%)", main=paste("Donor", d))
   axis(1, at=seq(1,24, by=1), labels=FALSE, tick=FALSE)
-  text(seq(1,24, by=1), par("usr")[3] - 11, labels=inoc_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
+  #text(seq(1,24, by=1), par("usr")[3] - 11, labels=inoc_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
   box()
 }
 
 #tweak final plot so it looks nice 
-text(x=z+0.8, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=1, padj=-78)
-mtext("Mouse community on day 0, by cage", side = 3, cex = 1, adj =7, padj=-22)
+text(x=z+0.8, y=-3, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+text(x=z-28.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+text(x=z-57.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=0, padj=-55)
+mtext("Donor Inocula Communities", side = 3, cex = 1, las = 1, adj =6.5, padj=-48)
 
+dev.off()
 
+#barplot of donors for comparison of figure types 
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+p = 17
+barplot(t(family_level_RA[,1:24]), ylim=c(0,100), col = getPalette(p), names.arg=family_level_RA$donor, cex.names = 0.8)
 
 
 
