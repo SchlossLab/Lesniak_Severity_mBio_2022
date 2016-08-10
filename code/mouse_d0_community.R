@@ -137,8 +137,8 @@ d0_upper <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.7
 d0_lower <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.25)
 d0_upper_fam <- sum_OTU_by_tax_level(2, d0_upper, tax_file)
 d0_lower_fam <- sum_OTU_by_tax_level(2, d0_lower, tax_file)
-colnames(d0_upper_fam)[1] <- "donor"
-colnames(d0_lower_fam)[1] <- "donor"
+colnames(d0_upper_fam)[1] <- "cage"
+colnames(d0_lower_fam)[1] <- "cage"
 fam_list <- as.vector(fam_labels)
 
 #to save as pdf to results, can't get the size right to render but fine for now
@@ -147,18 +147,20 @@ pdf(file="results/figures/figure2.pdf", width=25, height=15)
 #run this entire code to the end to plot the multipanel plot for all donors
 #set up layout
 par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
-layout(matrix(1:30, nrow=5))
+layout(matrix(1:16, nrow=4))
 
 #loop to plot all donors 
-for(d in d0_med_fam$cage){
-  one_d <- subset(d0_med_fam, cage == d)
-  one_uci <- subset(d0_upper_fam, cage == d)
-  one_lci <- subset(d0_lower_fam, cage == d) 
+for(d in d0_med_fam$human_source){
+  one_d <- subset(d0_med_fam, human_source == d)
+  for(c in one_d$cage){
+  one_uci <- subset(d0_upper_fam, cage == c)
+  one_lci <- subset(d0_lower_fam, cage == c) 
   medians <- t(one_d[,2:20])
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
+  }
   #make barplot
-  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Cage", d))
+  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste('Donor', d))
   #axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
   #text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
   box()
@@ -167,13 +169,19 @@ for(d in d0_med_fam$cage){
   arrows(x0=z, y0=medians, z, y1=lci, angle=90, length=0.05)
 }
 
+
 #tweak final plot so it looks nice 
 text(x=z+0.8, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=1, padj=-78)
-mtext("Mouse community on day 0, by cage", side = 3, cex = 1, adj =7, padj=-22)
+text(x=z-22.5, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-45.75, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-69, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=-2, padj=-75)
+mtext("Mouse community on day 0, by donor", side = 3, cex = 1, adj =15, padj=-45)
 
 dev.off()
+
+
+#text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
