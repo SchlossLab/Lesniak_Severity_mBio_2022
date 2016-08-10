@@ -70,6 +70,12 @@ cages <- na.omit(cages)
 rel_d0[82] <- cages
 colnames(rel_d0)[82] <- "cage"
 
+#add a column of donors to the df
+donors <- meta_file$human_source[meta_file$day==0]
+donors <- na.omit(donors)
+rel_d0[83] <- donors
+colnames(rel_d0)[83] <- "donor"
+ 
 d0_med <- aggregate(rel_d0[, 1:81], list(rel_d0$cage), median)
 d0_med_phy <- sum_OTU_by_tax_level(5, d0_med, tax_file)
 #removes inoculum cage
@@ -89,18 +95,38 @@ legend('right',fill=colors,legend_labels, bty='n', inset=c(-0.1,0), border=color
 #make dataframe of median family abundances and organize it 
 d0_med_fam <- sum_OTU_by_tax_level(2, d0_med, tax_file)
 rownames(d0_med_fam) <- cage_only_char
-colnames(d0_med_fam)[1] <- "donor"
+colnames(d0_med_fam)[1] <- "cage"
+
+#just make table of human source and cage unique and then merge by cage, take out unused ones after 
+
+dc <- meta_file[!meta_file$cage_id=='inoculum',2:3]
+uc <- unique(dc)
+d0_med_fam <- merge(d0_med_fam, uc, by.x='cage', by.y='cage_id')
+
+#get rid of samples/cages not used here: 
+d0_med_fam <- d0_med_fam[-23,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-3,]
+d0_med_fam <- d0_med_fam[-6,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-12,]
+
+
 
 #colorbrewer
 getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
 #run this whole command to make figure of family by cage/donor - add colorbrewer!
-n=19
+#main="Taxonomic composition of mice on D0 by donor, family level"
+n=16
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(d0_med_fam[2:20]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
-        col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", cex.names=0.5)
+barplot(t(d0_med_fam[2:20]), ylab='Relative Abundance', 
+        col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.8, cex.names=0.8, xaxt = 'n')
 fam_labels <- colnames(d0_med_fam[2:20])
 legend('right', fill = getPalette(n), fam_labels, inset=c(-0.15,0), cex=0.6)
+text(cex=0.8, x=x+0.5, y=-4, label=d0_med_fam$human_source, xpd=TRUE, srt=45, pos=2)
+box()
 
 
 #barplots for individual families
@@ -124,10 +150,10 @@ par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
 layout(matrix(1:30, nrow=5))
 
 #loop to plot all donors 
-for(d in d0_med_fam$donor){
-  one_d <- subset(d0_med_fam, donor == d)
-  one_uci <- subset(d0_upper_fam, donor == d)
-  one_lci <- subset(d0_lower_fam, donor == d) 
+for(d in d0_med_fam$cage){
+  one_d <- subset(d0_med_fam, cage == d)
+  one_uci <- subset(d0_upper_fam, cage == d)
+  one_lci <- subset(d0_lower_fam, cage == d) 
   medians <- t(one_d[,2:20])
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
