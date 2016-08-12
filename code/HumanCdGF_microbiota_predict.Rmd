@@ -1,5 +1,5 @@
 ---
-title: "Predictions From Day 0 Community Structures"
+title: "Predict Disease Outcome by Community Structures"
 author: "Nicholas Lesniak"
 date: "July 13, 2016"
 output: html_document
@@ -61,6 +61,8 @@ importance_df <- data.frame(matrix(nrow = length(OTU_list),
                             row.names = OTU_list)
 rsq_df <- data.frame(matrix(nrow = 1, ncol = max(meta_file$day, na.rm = T)),
                          row.names = 'RSQ')
+mse_df <- data.frame(matrix(nrow = 1, ncol = max(meta_file$day, na.rm = T)),
+                         row.names = 'MSE')
 prediction_df <- data.frame(matrix(nrow = 0, ncol = 4))
 
 for (i in 1:10){
@@ -71,6 +73,8 @@ for (i in 1:10){
   RF <- randomForest(log_cfu ~ ., data = predict_df[!is.na(predict_df$log_cfu), ],
                    importance = TRUE, ntree = n_trees)
   rsq_df[i] <- RF$rsq[length(RF$rsq)]
+  mse_df[i] <- RF$mse[length(RF$mse)]
+
   # sort the features by their effect on % increase in the standard error
   importance_df[ , i] <- importance(RF)[,1]
   colnames(importance_df)[i] <- paste('day', i, 'importance', sep = '_')
@@ -92,6 +96,12 @@ ggplot(data = rsq_df, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw()
         labs(title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
         x= 'Day', y = 'Variance Explained')
 
+mse_df <- t(mse_df)
+mse_df <- as.data.frame(cbind(mse_df, day = c(1:10)))
+ggplot(data = mse_df, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
+        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
+        x= 'Day', y = 'Variance Explained')
+
 n_important <- 20
 median_importance <- names(head(sort((apply(importance_df,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_df), importance_df)[median_importance, ])
@@ -100,8 +110,6 @@ ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap(
         geom_point() + scale_x_discrete(labels = c(1:10)) +
         labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community\n (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
-        coord_flip()
-        
 
 #let's plot the top 12 features
 #n_features <- 12
@@ -114,9 +122,7 @@ ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap(
 ```
 
 ##Can we predict the endpoint C. difficile CFU with the community structure at Day 0?
-But endpoint has data from Day 2,3,10
-
-Might be misleading since contains CFU from different data points
+Endpoint has data from Day 2,3,10 - might be misleading since contains CFU from different data points
      
 ```{r}
 
@@ -126,25 +132,19 @@ CFU_euth <- CFU_euth[ ,!(colnames(CFU_euth) %in% "Mouse_ID")]
 
 RF_CFU_day_euth <- randomForest(log_cfu ~ ., data = CFU_euth[!is.na(CFU_euth$log_cfu), ],
                    importance = TRUE, ntree = n_trees)
-rsq_day_euth <- RF_CFU_day_euth$rsq[length(RF_CFU_day_euth$rsq)]
+rsq_day_euth <- round(RF_CFU_day_euth$rsq[length(RF_CFU_day_euth$rsq)], 2)
+mse_day_euth <- round(RF_CFU_day_euth$mse[length(RF_CFU_day_euth$mse)], 2)
 # sort the features by their effect on % increase in the standard error
 importance_day_euth <- importance(RF_CFU_day_euth)[,1]
 # fit the model back on the datar and tack it to the end of the counts file
-rf_predict_cfu_output <- merge(meta_file[meta_file$day==meta_file$Euthanized, c('Mouse_ID', 'day', 'log_cfu') ],
-                              as.data.frame(predict(RF_CFU_day_euth, rel_abund_stool)), 
-                              by='Mouse_ID', by.y='row.names')
-colnames(rf_predict_cfu_output)[3:4] <- c('observed', 'predicted')
-
-str(RF_CFU_day_euth)
-TEST <- cbind(CFU_euth[!is.na(CFU_euth$log_cfu), 'log_cfu'], data.frame(RF_CFU_day_euth$predicted))
-colnames(TEST) <- c('observed', 'predicted')
-ggplot(data = TEST, aes(x=observed, y=predicted)) + geom_point() 
+rf_predict_cfu_output <- cbind(CFU_euth[!is.na(CFU_euth$log_cfu), 'log_cfu'], data.frame(RF_CFU_day_euth$predicted))
+colnames(rf_predict_cfu_output) <- c('observed', 'predicted')
 
 ggplot(data = rf_predict_cfu_output, aes(x=observed, y=predicted)) + geom_point() + 
-        labs(title = 'Random Forest Prediction of C Diff CFU on Day Euthanized from Day 0 Community',
-        x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw()
-        ggtitle(expression(atop("Random Forest Prediction of C Diff CFU on Day Euthanized from Day 0 Community",
-                                atop(paste('% Var Explained = ', rsq_day_euth), ""))))
+        labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw() + 
+        ggtitle("Random Forest Prediction of C Diff CFU on Day Euthanized from Day 0 Community") +
+        annotate('text', x=0.15*(max(rf_predict_cfu_output$observed)), y=0.95*(max(rf_predict_cfu_output$predicted)), 
+                 label=paste('R^2 = ', rsq_day_euth,'\nMSE = ', mse_day_euth, sep = ''))
 
 top_important_OTU <- data.frame(head(sort(importance_day_euth, decreasing = T), n_important))
 colnames(top_important_OTU) <- 'Importance'
@@ -152,9 +152,8 @@ top_important_OTU$OTU <- rownames(top_important_OTU)
 
 ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
         geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU)) +
-        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community\n (Top 20 Median OTUs)',
+        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community',
         x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
-
 ```
 
 
@@ -178,145 +177,10 @@ rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_eu
 #plot(ROC_euth)
 ```
 
-##Can we predict the Day 10 C. difficile CFU with the community structure at Day 0?
-
-```{r}
-Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
-Day_10_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_10_cdiff_cfu_rf$rf$rsq[length(Day_10_cdiff_cfu_rf$rf$rsq)]*100`
-
-Why day 10? What is significant about day 10?
 
 ***
 
-##Does Day 0 community structure predict the each day C. difficile CFU at a similar?
+##Does Day Community structure predict the each day C. difficile CFU?
 
-##Can we predict the Day 1 C. difficile CFU with the community structure at Day 0?
-
-```{r}
-#rf to predict 
-Day_1_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_1_cdiff_cfu')
-Day_1_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_1_cdiff_cfu_rf$rf$rsq[length(Day_1_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 2 C. difficile CFU
-```{r}
-Day_2_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_2_cdiff_cfu')
-Day_2_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_2_cdiff_cfu_rf$rf$rsq[length(Day_2_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 3 C. difficile CFU
-```{r}
-Day_3_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_3_cdiff_cfu')
-Day_3_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_3_cdiff_cfu_rf$rf$rsq[length(Day_3_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 4 C. difficile CFU
-```{r}
-Day_4_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_4_cdiff_cfu')
-Day_4_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_4_cdiff_cfu_rf$rf$rsq[length(Day_4_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 5 C. difficile CFU
-```{r}
-Day_5_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_5_cdiff_cfu')
-Day_5_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_5_cdiff_cfu_rf$rf$rsq[length(Day_5_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 6 C. difficile CFU
-```{r}
-Day_6_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_6_cdiff_cfu')
-Day_6_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_6_cdiff_cfu_rf$rf$rsq[length(Day_6_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 7 C. difficile CFU
-```{r}
-Day_7_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_7_cdiff_cfu')
-Day_7_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_7_cdiff_cfu_rf$rf$rsq[length(Day_7_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 8 C. difficile CFU
-```{r}
-Day_8_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_8_cdiff_cfu')
-Day_8_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_8_cdiff_cfu_rf$rf$rsq[length(Day_8_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 9 C. difficile CFU
-```{r}
-Day_9_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_9_cdiff_cfu')
-Day_9_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_9_cdiff_cfu_rf$rf$rsq[length(Day_9_cdiff_cfu_rf$rf$rsq)]*100`
-
-# Day 10 C. difficile CFU
-```{r}
-Day_10_cdiff_cfu_rf <- run_rf_on(Predict_df,'Day_10_cdiff_cfu')
-Day_10_cdiff_cfu_rf$plot
-```
-
-% Variance explained `r Day_10_cdiff_cfu_rf$rf$rsq[length(Day_10_cdiff_cfu_rf$rf$rsq)]*100`
-
-
-Predicting CFU from day 1 to 10 based on Day 0 community
-
-There seems a flucuation in the % variance explained, which seems to coincide with the fluctuations in cdiff cfu  
-
-## seed greatly affects variance, likely due to data split, sample size might be too small to make reliable predictions
-
-
-```{r knitr::kable, warning=F, message=F}
-var_by_day <- data.frame(Day=c(1:10),Percent_Variance_Explained=NA)
-cdiff_cfu <- vector()
-for (a in 1:10){
-          var_by_day$Percent_Variance_Explained[a] <- eval(parse(text = paste('Day_', a, '_cdiff_cfu_rf$rf$rsq[length(Day_', a, '_cdiff_cfu_rf$rf$rsq)]*100', sep='')))
-          cdiff_cfu <- c(cdiff_cfu,paste('Day_', a, '_cdiff_cfu', sep=''))
-     }
-
-knitr::kable(var_by_day)
-plot(var_by_day, type='n', xlab='Day',ylab='Percent Var Explained')
-lines(var_by_day$Day, var_by_day$Percent_Variance_Explained)
-
-cfu_plot <- cbind(Mouse = paste(Predict_df$human_source,Predict_df$mouse_eartag, sep='_'),Predict_df[, cdiff_cfu])
-names(cfu_plot) <- c('Mouse', c(1:10))
-cfu_plot <- reshape2::melt(cfu_plot, by='Mouse')
-
-ggplot(data=cfu_plot, aes(x=variable, y=value, group=Mouse)) + geom_line(aes(color=Mouse)) + geom_point() + scale_y_log10() +
-     theme_classic() + theme(legend.position='none') + labs(title='C. Difficile CFU by mouse',x='Day',y='CFU')
-```
-
-***
-***
-
-##Can we predict day 1 weight change with the community structure at Day 0?
-```{r}
-
-```
-
-##Can we predict day 10 weight change with the community structure at Day 0?
-```{r}
-
-```
-
-##Can we predict ___________ with the community structure at Day 0?
-```{r}
-
-```
+RF all mice/days together
+RF cfu vs community by day
