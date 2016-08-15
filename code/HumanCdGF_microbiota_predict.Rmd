@@ -13,11 +13,13 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
-    install.packages(as.character(dep), quiet=TRUE);
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
   }
   library(dep, verbose=FALSE, character.only=TRUE)
 }
 ```
+
 
 ```{r}
 setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
@@ -88,7 +90,7 @@ for (i in 1:10){
                               RF$predicted)
   colnames(random_forest_output) <- c('day', 'observed', 'predicted')
   prediction_df <- rbind(prediction_df, random_forest_output) 
-  for (k in 1:50){
+  for (k in 1:25){
     n_features <- k
     rf_partial <- randomForest(log_cfu ~ ., data=predict_df[!is.na(predict_df$log_cfu),
                             c( 'log_cfu', names(importance_sorted)[1:n_features])], 
@@ -117,7 +119,7 @@ ggplot(data = mse_df, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw()
         x= 'Day', y = 'MSE')
 
 ggplot(rsq_features, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  xlim(0,15) + labs(title= 'R^2 from RF with top n features\n
+  labs(title= 'R^2 from RF with top n features\n
                     Day of C Diff CFU dpi from Day 0 Community', x = 'Features (n)', y = 'R^2') + 
   scale_color_discrete(name = 'Day') + theme_bw()
 
@@ -164,7 +166,7 @@ top_important_OTU$OTU <- rownames(top_important_OTU)
 n_feat_day_euth <- data.frame('Features (n)'= NA, 'RSQ'=NA, 'MSE'=NA)
 importance_sorted_euth <- sort(importance(RF)[,1], decreasing = T)
 
-for (k in 1:50){
+for (k in 1:25){
     n_features <- k
     rf_partial <- randomForest(log_cfu ~ ., data=CFU_euth[!is.na(CFU_euth$log_cfu),
                             c( 'log_cfu', names(importance_sorted_euth)[1:n_features])], 
@@ -174,14 +176,13 @@ for (k in 1:50){
 n_feat_day_euth <- n_feat_day_euth[-1,]
 
 ggplot(n_feat_day_euth, aes(x=Features..n., y=RSQ, )) + geom_line() +
-  xlim(0,15) + labs(title= 'R^2 from RF with top n features\n
-                    Day of C Diff CFU t euthanization from Day 0 Community', x = 'Features (n)', y = 'R^2') + 
-  theme_bw()
-
+  labs(title= 'R^2 from RF with top n features\n
+               Day euthanized C Diff CFU from Day 0 Community', 
+       x = 'Features (n)', y = 'R^2') + theme_bw()
 
 ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
         geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU)) +
-        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community',
+        labs(title = 'OTU Importance in Prediction of euthanized C Diff CFU from Day 0 Community',
         x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
 
 ```
@@ -234,7 +235,7 @@ for (i in 1:10){
                               RF$predicted)
   colnames(random_forest_output) <- c('day', 'observed', 'predicted')
   prediction_df_day <- rbind(prediction_df_day, random_forest_output) 
-  for (k in 1:50){
+  for (k in 1:25){
     n_features <- k
     rf_partial <- randomForest(log_cfu ~ ., 
                                data=predict_df[ , c( 'log_cfu', names(importance_sorted)[1:n_features])], 
@@ -263,7 +264,7 @@ ggplot(data = mse_df_day, aes(x = factor(day), y = MSE)) + geom_point() + theme_
         x= 'Day', y = 'MSE')
 
 ggplot(rsq_features_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  xlim(0,15) + labs(title= 'R^2 from RF with top n features\n
+  labs(title= 'R^2 from RF with top n features\n
                     Day of C Diff CFU dpi from Community on same day', x = 'Features (n)', y = 'R^2') + 
   scale_color_discrete(name = 'Day') + theme_bw()
 
@@ -320,7 +321,7 @@ for (i in 1:4){
                               RF$predicted)
   colnames(random_forest_output) <- c('day', 'observed', 'predicted')
   prediction_persist <- rbind(prediction_persist, random_forest_output) 
-  for (k in 1:50){
+  for (k in 1:25){
     n_features <- k
     rf_partial <- randomForest(log_cfu ~ ., 
                                data=predict_df[ , c( 'log_cfu', names(importance_sorted)[1:n_features])], 
@@ -333,24 +334,26 @@ features_persist <- features_persist[-1,]
 
 ggplot(data = prediction_persist, aes(x=observed, y=predicted)) + geom_point() + 
         facet_grid( ~ day) + 
-        labs(title = 'Random Forest Prediction of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early',
-        x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
+        labs(title = 'Random Forest Prediction of C Diff CFU dpi from Community on Day 0
+                      \nwithout mice euthanized early', x= 'Observed CFU (log10)', 
+             y = 'Predicted CFU (log10)')
 
 rsq_persist <- t(rsq_persist)
-rsq_persist <- as.data.frame(cbind(rsq_persist, day = c(1:10)))
+rsq_persist <- as.data.frame(cbind(rsq_persist, day = c(1:4)))
 ggplot(data = rsq_persist, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early',
-        x= 'Day', y = 'R^2')
+        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Community on Day 0
+                      \nwithout mice euthanized early', x= 'Day', y = 'R^2')
 
 mse_persist <- t(mse_persist)
-mse_persist <- as.data.frame(cbind(mse_persist, day = c(1:10)))
+mse_persist <- as.data.frame(cbind(mse_persist, day = c(1:4)))
 ggplot(data = mse_persist, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(title = 'MSE by Day of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early',
-        x= 'Day', y = 'MSE')
+        labs(title = 'MSE by Day of C Diff CFU dpi from Community on Day 0\n
+             without mice euthanized early', x = 'Day', y = 'MSE')
 
-ggplot(features_persist, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  xlim(0,15) + labs(title= 'R^2 from RF with top n features\n
-                    Day of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early', x = 'Features (n)', y = 'R^2') + 
+ggplot(features_persist, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + 
+  geom_line() + labs(title= 'R^2 from RF with top n features\n
+                              Day of C Diff CFU dpi from Community on Day 0\n
+                     without mice euthanized early', x = 'Features (n)', y = 'R^2') + 
   scale_color_discrete(name = 'Day') + theme_bw()
 
 n_important <- 20
@@ -358,9 +361,10 @@ median_importance <- names(head(sort((apply(importance_persist,1, median)), decr
 med_import_df <- melt(cbind(rownames(importance_persist), importance_persist)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
 
-ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
-        geom_point() + scale_x_discrete(labels = c(1:10)) +
-        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early - (Top 20 Median OTUs)',
+ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + 
+  facet_wrap( ~ OTU, nrow = 2) + geom_point() + scale_x_discrete(labels = c(1:10)) +
+        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Community
+             on Day 0\nwithout mice euthanized early - (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
 
@@ -395,7 +399,7 @@ for (i in 1:4){
                               RF$predicted)
   colnames(random_forest_output) <- c('day', 'observed', 'predicted')
   prediction_persist_day <- rbind(prediction_persist_day, random_forest_output) 
-  for (k in 1:50){
+  for (k in 1:25){
     n_features <- k
     rf_partial <- randomForest(log_cfu ~ ., 
                                data=predict_df[ , c( 'log_cfu', names(importance_sorted)[1:n_features])], 
@@ -424,8 +428,8 @@ ggplot(data = mse_persist_day, aes(x = factor(day), y = MSE)) + geom_point() + t
         x= 'Day', y = 'MSE')
 
 ggplot(features_persist_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  xlim(0,15) + labs(title= 'R^2 from RF with top n features\n
-                    Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early', x = 'Features (n)', y = 'R^2') + 
+  labs(title= 'R^2 from RF with top n features\n
+               Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early', x = 'Features (n)', y = 'R^2') + 
   scale_color_discrete(name = 'Day') + theme_bw()
 
 n_important <- 20
