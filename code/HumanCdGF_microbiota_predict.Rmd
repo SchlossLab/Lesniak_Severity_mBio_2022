@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
 ```{r, message=FALSE}
-pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC')
+pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -22,21 +22,23 @@ for (dep in pack_used){
 
 
 ```{r}
-setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016")
+setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code")
 
 # read in files
-meta_file   <- read.table('data/process/human_CdGF_metadata.txt', sep = '\t',
+meta_file   <- read.table('../data/process/human_CdGF_metadata.txt', sep = '\t',
                         header = T, row.names = 'group')
-shared_file <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
+shared_file <- read.table('../data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
                           sep='\t',header = T, row.names='Group')
-tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', 
+tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
                        sep='\t',header = T, row.names = 'OTU')
-#source('code/tax_level.R')
+#source('tax_level.R')
 
 # add log transformed CFU
 meta_file$log_cfu <- log10(meta_file$cdiff_cfu + 1)
 # remove cecum samples
 meta_file <- meta_file[! meta_file$sample_type == 'cecum', ]
+# remove unused cage P2 and non 431 cdiff
+meta_file <- meta_file[! meta_file$cage_id %in% c('P2', 'CON', 'CON2', 'CON3'), ]
 
 # subset shared
 #Create df with relative abundances
@@ -175,7 +177,7 @@ for (k in 1:25){
 }
 n_feat_day_euth <- n_feat_day_euth[-1,]
 
-ggplot(n_feat_day_euth, aes(x=Features..n., y=RSQ, )) + geom_line() +
+ggplot(n_feat_day_euth, aes(x=Features..n., y=RSQ)) + geom_line() +
   labs(title= 'R^2 from RF with top n features\n
                Day euthanized C Diff CFU from Day 0 Community', 
        x = 'Features (n)', y = 'R^2') + theme_bw()
@@ -453,21 +455,34 @@ At first glance, OTU135 (Coriobacteriaceae) seems to stand out for predicting cf
 
 ##Can we predict moribundity with the community structure at Day 0?
 ```{r}
-##Fix to be categorical, and not regression
 Predict_early_euth_df <- data.frame(Euth_Early = ifelse(meta_file[meta_file$day %in% 0,
                                                                   'Euthanized'] %in% 10,
                                                         'No','Yes'), 
                                     row.names = meta_file[meta_file$day %in% 0, 'Mouse_ID'])
 Predict_early_euth_df <- merge(Predict_early_euth_df, rel_abund_stool, by='row.names')
+mouse_list <- Predict_early_euth_df$Row.names
 Predict_early_euth_df <- Predict_early_euth_df[,!(colnames(Predict_early_euth_df) %in% "Row.names")]
 rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df, 
                               importance = TRUE, ntree = n_trees)
-# write(paste("binary", ncol(rel_abund_stool), rf_early_euth$err.rate[n_trees], "\t"), file="data/process/random_forest.data", append=T)
-#varImpPlot(rf_early_euth)
-#prediction_euth <- as.numeric(predict(rf_early_euth, Predict_early_euth_df[,-1]))
-#ROC_euth <- roc(as.numeric(Predict_early_euth_df$Euth_Early), prediction_euth)
-#plot(ROC_euth)
+
+unpredicted <- mouse_list[Predict_early_euth_df$Euth_Early != rf_early_euth$predicted]
+rf_euth_import <- data.frame(importance = head(
+  sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 30))
+ROC_euth <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth$predicted))
+plot(ROC_euth)
+
+ggplot(data = rf_euth_import, aes(x = factor(rownames(rf_euth_import)), y = importance)) + 
+        geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import))) +
+        labs(title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
+        x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
 ```
 
+Confusion Matrix  
+`r kable(rf_early_euth$confusion)`
+
+OOB error rate = `r 100*tail(rf_early_euth$err.rate[ , 1], 1)`
+
+Mice which were euthanized early, but the model predicts the will were not (Mouse Tag - Cage):
+`r unpredicted`
 
 ***
