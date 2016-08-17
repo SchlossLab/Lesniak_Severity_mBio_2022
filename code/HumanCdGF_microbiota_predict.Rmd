@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
 ```{r, message=FALSE}
-pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr')
+pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr', 'cowplot')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -21,7 +21,8 @@ for (dep in pack_used){
 ```
 
 
-```{r}
+```{r fig.height= 10, fig.width=10}
+
 setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code")
 
 # read in files
@@ -103,43 +104,46 @@ for (i in 1:10){
 rsq_features <- rsq_features[-1,]
 
 
-ggplot(data = prediction_df, aes(x=observed, y=predicted)) + geom_point() + 
+day_0_rf_plot <- ggplot(data = prediction_df, aes(x=observed, y=predicted)) + geom_point() + 
         facet_wrap( ~ day, nrow = 2) + 
         labs(title = 'Random Forest Prediction of C Diff CFU dpi from Day 0 Community',
         x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
 
 rsq_df <- t(rsq_df)
 rsq_df <- as.data.frame(cbind(rsq_df, day = c(1:10)))
-ggplot(data = rsq_df, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
-        x= 'Day', y = 'R^2')
+day_0_rsq_plot <- ggplot(data = rsq_df, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'R^2') #title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
 
 mse_df <- t(mse_df)
 mse_df <- as.data.frame(cbind(mse_df, day = c(1:10)))
-ggplot(data = mse_df, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(title = 'MSE by Day of C Diff CFU dpi from Day 0 Community',
-        x= 'Day', y = 'MSE')
-
-ggplot(rsq_features, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  labs(title= 'R^2 from RF with top n features\n
-                    Day of C Diff CFU dpi from Day 0 Community', x = 'Features (n)', y = 'R^2') + 
-  scale_color_discrete(name = 'Day') + theme_bw()
+day_0_mse_plot <- ggplot(data = mse_df, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'MSE') # title = 'MSE by Day of C Diff CFU dpi from Day 0 Community',
+day_0_r2feat_plot <- ggplot(rsq_features, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
+  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide=FALSE) + theme_bw()
+#  title= 'R^2 from RF with top n features\n
+#                    Day of C Diff CFU dpi from Day 0 Community', scale_color_discrete(name = 'Day')
 
 n_important <- 20
 median_importance <- names(head(sort((apply(importance_df,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_df), importance_df)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
-ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
+day_0_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
         geom_point() + scale_x_discrete(labels = c(1:10)) +
         labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community\n (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
+ggdraw()+
+  draw_plot(day_0_rf_plot, 0, 0.5, 0.75, 0.5) + 
+  draw_plot(day_0_rsq_plot, 0.875, 0.75, 0.125, 0.25) +
+  draw_plot(day_0_mse_plot, 0.75, 0.75, 0.125, 0.25) + 
+  draw_plot(day_0_r2feat_plot, 0.75, 0.5, 0.25, 0.25) + 
+  draw_plot(day_0_feat_plot, 0, 0, 1, 0.5)
 ```
 
 ##Can we predict the endpoint C. difficile CFU with the community structure at Day 0?
 Endpoint has data from Day 2,3,10 - might be misleading since contains CFU from different data points
      
-```{r}
+```{r fig.height= 5, fig.width=10}
 
 CFU_euth <- merge(meta_file[meta_file$day==meta_file$Euthanized, c('Mouse_ID', 'log_cfu') ],
                     rel_abund_stool, by='Mouse_ID', by.y='row.names', all.y = T)
@@ -155,9 +159,9 @@ importance_day_euth <- importance(RF_CFU_day_euth)[,1]
 rf_predict_cfu_output <- cbind(CFU_euth[!is.na(CFU_euth$log_cfu), 'log_cfu'], data.frame(RF_CFU_day_euth$predicted))
 colnames(rf_predict_cfu_output) <- c('observed', 'predicted')
 
-ggplot(data = rf_predict_cfu_output, aes(x=observed, y=predicted)) + geom_point() + 
+day_euth_rf_plot <- ggplot(data = rf_predict_cfu_output, aes(x=observed, y=predicted)) + geom_point() + 
         labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw() + 
-        ggtitle("Random Forest Prediction of C Diff CFU on Day Euthanized from Day 0 Community") +
+        ggtitle("Random Forest Prediction of C Diff CFU \n on Day Euthanized from Day 0 Community") +
         annotate('text', x=0.15*(max(rf_predict_cfu_output$observed)), y=0.95*(max(rf_predict_cfu_output$predicted)), 
                  label=paste('R^2 = ', rsq_day_euth,'\nMSE = ', mse_day_euth, sep = ''))
 
@@ -177,15 +181,19 @@ for (k in 1:25){
 }
 n_feat_day_euth <- n_feat_day_euth[-1,]
 
-ggplot(n_feat_day_euth, aes(x=Features..n., y=RSQ)) + geom_line() +
-  labs(title= 'R^2 from RF with top n features\n
-               Day euthanized C Diff CFU from Day 0 Community', 
-       x = 'Features (n)', y = 'R^2') + theme_bw()
+day_euth_r2feat_plot <- ggplot(n_feat_day_euth, aes(x=Features..n., y=RSQ)) + geom_line() +
+  labs(x = 'Features (n)', y = 'R^2') + theme_bw()
+#     title= 'R^2 from RF with top n features\n Day euthanized C Diff CFU from Day 0 Community',
 
-ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
+day_euth_feat_plot <- ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
         geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU)) +
-        labs(title = 'OTU Importance in Prediction of euthanized C Diff CFU from Day 0 Community',
-        x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+#        title = 'OTU Importance in Prediction of euthanized C Diff CFU from Day 0 Community',
+
+ggdraw()+
+  draw_plot(day_euth_rf_plot, 0, 0.5, 0.5, 0.5) + 
+  draw_plot(day_euth_r2feat_plot, 0, 0, 0.5, 0.5) +
+  draw_plot(day_euth_feat_plot, 0.5, 0, 0.5, 1)
 
 ```
 
@@ -195,7 +203,7 @@ ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) +
 RF all mice/days together
 RF cfu vs community by day
 
-```{r}
+```{r fig.height= 10, fig.width=10}
 
 #remove c diff from shared
 cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
@@ -248,44 +256,46 @@ for (i in 1:10){
 rsq_features_day <- rsq_features_day[-1,]
 
 
-ggplot(data = prediction_df_day, aes(x=observed, y=predicted)) + geom_point() + 
+day_rf_plot <- ggplot(data = prediction_df_day, aes(x=observed, y=predicted)) + geom_point() + 
         facet_wrap( ~ day, nrow = 2) + 
         labs(title = 'Random Forest Prediction of C Diff CFU dpi from Community on same day',
         x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
 
 rsq_df_day <- t(rsq_df_day)
 rsq_df_day <- as.data.frame(cbind(rsq_df_day, day = c(1:10)))
-ggplot(data = rsq_df_day, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Community on same day',
-        x= 'Day', y = 'R^2')
+day_rsq_plot <- ggplot(data = rsq_df_day, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'R^2') # title = 'Variation Explained by Day of C Diff CFU dpi from Community on same day',
 
 mse_df_day <- t(mse_df_day)
 mse_df_day <- as.data.frame(cbind(mse_df_day, day = c(1:10)))
-ggplot(data = mse_df_day, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(title = 'MSE by Day of C Diff CFU dpi from Community on same day',
-        x= 'Day', y = 'MSE')
+day_mse_plot <- ggplot(data = mse_df_day, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'MSE') # title = 'MSE by Day of C Diff CFU dpi from Community on same day',
 
-ggplot(rsq_features_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  labs(title= 'R^2 from RF with top n features\n
-                    Day of C Diff CFU dpi from Community on same day', x = 'Features (n)', y = 'R^2') + 
-  scale_color_discrete(name = 'Day') + theme_bw()
+day_r2feat_plot <- ggplot(rsq_features_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
+  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide = FALSE) + theme_bw()
+# title= 'R^2 from RF with top n features\n Day of C Diff CFU dpi from Community on same day', 
 
 n_important <- 20
 median_importance <- names(head(sort((apply(importance_df_day,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_df_day), importance_df_day)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
 
-ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
+day_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
         geom_point() + scale_x_discrete(labels = c(1:10)) +
         labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Community on same day\n (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
-
+ggdraw()+
+  draw_plot(day_rf_plot, 0, 0.5, 0.75, 0.5) + 
+  draw_plot(day_rsq_plot, 0.875, 0.75, 0.125, 0.25) +
+  draw_plot(day_mse_plot, 0.75, 0.75, 0.125, 0.25) + 
+  draw_plot(day_r2feat_plot, 0.75, 0.5, 0.25, 0.25) + 
+  draw_plot(day_feat_plot, 0, 0, 1, 0.5)
 ```
 
 ## Does removing the early euthanized samples improve prediction in days 1 to 3?
 
-```{r}
+```{r fig.height= 10, fig.width=10}
 
 without_early_euth <- meta_file[meta_file$Euthanized %in% 10 ,c('day', 'Mouse_ID', 'log_cfu')]
 without_early_euth <- without_early_euth[without_early_euth$day %in% c(1:4), ]
@@ -334,7 +344,7 @@ for (i in 1:4){
 features_persist <- features_persist[-1,]
 
 
-ggplot(data = prediction_persist, aes(x=observed, y=predicted)) + geom_point() + 
+day_0_persist_rf_plot <- ggplot(data = prediction_persist, aes(x=observed, y=predicted)) + geom_point() + 
         facet_grid( ~ day) + 
         labs(title = 'Random Forest Prediction of C Diff CFU dpi from Community on Day 0
                       \nwithout mice euthanized early', x= 'Observed CFU (log10)', 
@@ -342,34 +352,37 @@ ggplot(data = prediction_persist, aes(x=observed, y=predicted)) + geom_point() +
 
 rsq_persist <- t(rsq_persist)
 rsq_persist <- as.data.frame(cbind(rsq_persist, day = c(1:4)))
-ggplot(data = rsq_persist, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Community on Day 0
-                      \nwithout mice euthanized early', x= 'Day', y = 'R^2')
+day_0_persist_rsq_plot <- ggplot(data = rsq_persist, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'R^2') 
+#title = 'Variation Explained by Day of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early', 
 
 mse_persist <- t(mse_persist)
 mse_persist <- as.data.frame(cbind(mse_persist, day = c(1:4)))
-ggplot(data = mse_persist, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(title = 'MSE by Day of C Diff CFU dpi from Community on Day 0\n
-             without mice euthanized early', x = 'Day', y = 'MSE')
+day_0_persist_mse_plot <- ggplot(data = mse_persist, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
+        labs(x = 'Day', y = 'MSE')
+#title = 'MSE by Day of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early', 
 
-ggplot(features_persist, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + 
-  geom_line() + labs(title= 'R^2 from RF with top n features\n
-                              Day of C Diff CFU dpi from Community on Day 0\n
-                     without mice euthanized early', x = 'Features (n)', y = 'R^2') + 
-  scale_color_discrete(name = 'Day') + theme_bw()
+day_0_persist_r2feat_plot <- ggplot(features_persist, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + 
+  geom_line() + labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide = FALSE) + theme_bw()
+#title= 'R^2 from RF with top n features\nDay of C Diff CFU dpi from Community on Day 0\nwithout mice euthanized early', 
 
 n_important <- 20
 median_importance <- names(head(sort((apply(importance_persist,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_persist), importance_persist)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
 
-ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + 
+day_0_persist_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + 
   facet_wrap( ~ OTU, nrow = 2) + geom_point() + scale_x_discrete(labels = c(1:10)) +
         labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Community
              on Day 0\nwithout mice euthanized early - (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
-
+ggdraw()+
+  draw_plot(day_0_persist_rf_plot, 0, 0.5, 0.75, 0.5) + 
+  draw_plot(day_0_persist_rsq_plot, 0.875, 0.75, 0.125, 0.25) +
+  draw_plot(day_0_persist_mse_plot, 0.75, 0.75, 0.125, 0.25) + 
+  draw_plot(day_0_persist_r2feat_plot, 0.75, 0.5, 0.25, 0.25) + 
+  draw_plot(day_0_persist_feat_plot, 0, 0, 1, 0.5)
 
 
 
@@ -412,38 +425,43 @@ for (i in 1:4){
 features_persist_day <- features_persist_day[-1,]
 
 
-ggplot(data = prediction_persist_day, aes(x=observed, y=predicted)) + geom_point() + 
+day_persist_rf_plot <- ggplot(data = prediction_persist_day, aes(x=observed, y=predicted)) + geom_point() + 
         facet_grid( ~ day) + 
         labs(title = 'Random Forest Prediction of C Diff CFU dpi from Community on same day\nwithout mice euthanized early',
         x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
 
 rsq_persist_day <- t(rsq_persist_day)
 rsq_persist_day <- as.data.frame(cbind(rsq_persist_day, day = c(1:4)))
-ggplot(data = rsq_persist_day, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(title = 'Variation Explained by Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early',
-        x= 'Day', y = 'R^2')
+day_persist_rsq_plot <- ggplot(data = rsq_persist_day, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'R^2')
+#title = 'Variation Explained by Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early',
 
 mse_persist_day <- t(mse_persist_day)
 mse_persist_day <- as.data.frame(cbind(mse_persist_day, day = c(1:4)))
-ggplot(data = mse_persist_day, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(title = 'MSE by Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early',
-        x= 'Day', y = 'MSE')
+day_persist_mse_plot <- ggplot(data = mse_persist_day, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
+        labs(x= 'Day', y = 'MSE')
+#title = 'MSE by Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early',
 
-ggplot(features_persist_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  labs(title= 'R^2 from RF with top n features\n
-               Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early', x = 'Features (n)', y = 'R^2') + 
-  scale_color_discrete(name = 'Day') + theme_bw()
+day_persist_r2feat_plot <- ggplot(features_persist_day, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
+  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide  = FALSE) + theme_bw()
+# title= 'R^2 from RF with top n features\n Day of C Diff CFU dpi from Community on same day\nwithout mice euthanized early', 
 
 n_important <- 20
 median_importance <- names(head(sort((apply(importance_persist_day,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_persist_day), importance_persist_day)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
 
-ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
+day_persist_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
         geom_point() + scale_x_discrete(labels = c(1:10)) +
         labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Community on same day\nwithout mice euthanized early - (Top 20 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
+ggdraw()+
+  draw_plot(day_persist_rf_plot, 0, 0.5, 0.75, 0.5) + 
+  draw_plot(day_persist_rsq_plot, 0.875, 0.75, 0.125, 0.25) +
+  draw_plot(day_persist_mse_plot, 0.75, 0.75, 0.125, 0.25) + 
+  draw_plot(day_persist_r2feat_plot, 0.75, 0.5, 0.25, 0.25) + 
+  draw_plot(day_persist_feat_plot, 0, 0, 1, 0.5)
 
 ```
 
@@ -454,7 +472,7 @@ At first glance, OTU135 (Coriobacteriaceae) seems to stand out for predicting cf
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
-```{r}
+```{r fig.width=10, fig.height=5}
 Predict_early_euth_df <- data.frame(Euth_Early = ifelse(meta_file[meta_file$day %in% 0,
                                                                   'Euthanized'] %in% 10,
                                                         'No','Yes'), 
@@ -469,12 +487,18 @@ unpredicted <- mouse_list[Predict_early_euth_df$Euth_Early != rf_early_euth$pred
 rf_euth_import <- data.frame(importance = head(
   sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 30))
 ROC_euth <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth$predicted))
-plot(ROC_euth)
+roc_plot <- data.frame(Specificity = 1 - ROC_euth$specificities, Sensitivity = ROC_euth$sensitivities)
 
-ggplot(data = rf_euth_import, aes(x = factor(rownames(rf_euth_import)), y = importance)) + 
+euth_rf_plot <- ggplot(data = roc_plot, aes(x = Specificity, y = Sensitivity)) + geom_path() + 
+  geom_abline(intercept = 0, slope = 1, linetype = 'dashed', alpha = 0.5)
+euth_import_plot <- ggplot(data = rf_euth_import, aes(x = factor(rownames(rf_euth_import)), y = importance)) + 
         geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import))) +
-        labs(title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
-        x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+# title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
+
+ggdraw()+
+  draw_plot(euth_rf_plot, 0, 0, 0.5, 1) + 
+  draw_plot(euth_import_plot, 0.5, 0, 0.5, 1)
 ```
 
 Confusion Matrix  
@@ -486,3 +510,10 @@ Mice which were euthanized early, but the model predicts the will were not (Mous
 `r unpredicted`
 
 ***
+
+## Analysis By Day
+
+```{r fig.width=10, fig.height=5}
+layout(matrix(rep(c(1,1,1,1,2,2,2,2),4), ncol=8, nrow = 4, byrow = T))
+
+```
