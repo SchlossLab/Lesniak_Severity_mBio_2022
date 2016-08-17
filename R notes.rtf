@@ -4,7 +4,55 @@
 \margl1440\margr1440\vieww10800\viewh8400\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\fs24 \cf0 Subsetting\
+\f0\fs24 \cf0 pull from upstream (main repo)\
+	git fetch upstrem\
+	git checkout master\
+	git merge upstream/master \
+		-m \'91MESSAGE\'92\
+\
+\
+style guide (http://r-pkgs.had.co.nz/style.html)\
+	always file.R\
+	files run in sequence, prefix with numbers ( 0_file.R 1_file.R)\
+		attention to capitalization\
+	object names (concise and meaningful)\
+		lowercase with _ to separate words\
+			variable <- noun\
+			function <- verb\
+		aviod names of existing func/var\
+	spacing\
+		always space before and after operators  (=, +, -, <-, etc.), but only after commas\
+			none before or after :\
+		parathesis\
+			space surrounding unless a function\
+		align equal/assignment with extra spaces\
+	curly brace\
+		open curly never on its own and always followed by a new line\
+		closed curly always on its own line\
+			unless followed by else\
+	length\
+		limit to 80 ch\
+	indentation\
+		two space indent, never use tabs\
+		except where continuing previous line, indent to same place\
+	assignment\
+		use <- not =\
+	function\
+		should be verbs\
+		only use return() for early return\
+		strive to keep in one screen (max 20-30 lines)\
+	comments\
+		# Comment \'97\'97\'97\'97\'97\'97\'97\
+		Explain WHY not WHAT\
+\
+\
+lintr\
+	install/library lintr\
+	then run \
+		lint(\'91FILE\'92)\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Subsetting\
 	== searches column for vector in order and recycles\
 	%in% searches column for any in vector\
 		to subset by column name\
