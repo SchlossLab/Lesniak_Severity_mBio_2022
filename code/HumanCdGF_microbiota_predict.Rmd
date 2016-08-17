@@ -293,55 +293,10 @@ ggdraw()+
 ```
 
 
-### RF all mice/days together
+####
+RF all mice/days together
 
-```{r }
-predict_cfu_all_df <- CFU_community_by_day[!is.na(CFU_community_by_day$log_cfu),
-                                           ! colnames(CFU_community_by_day) %in% c('Row.names','day')]
-RF_cfu_all_rf <- randomForest(log_cfu ~ ., data = predict_cfu_all_df,
-                   importance = TRUE, ntree = n_trees)
-RF_cfu_all_df <- data.frame(cbind(CFU_community_by_day[!is.na(CFU_community_by_day$log_cfu), 
-                                                       c('day','log_cfu')], 
-                                  predicted = RF_cfu_all_rf$predicted))
-
-mse_all <- tail(RF_cfu_all_rf$mse, 1)
-rsq_all <- tail(RF_cfu_all_rf$rsq, 1)
-
-all_rf_plot <- ggplot(data = RF_cfu_all_df, aes(x = log_cfu, y = predicted)) + geom_point() +
-        labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw() + 
-        ggtitle("Random Forest Prediction of C Diff CFU") +
-        annotate('text', x=0.15*(max(RF_cfu_all_df$log_cfu)), y=0.95*(max(RF_cfu_all_df$predicted)), 
-                 label=paste('R^2 = ', tail(RF_cfu_all_rf$rsq, 1),'\nMSE = ', tail(RF_cfu_all_rf$mse, 1), sep = ''))
-
-importance_all <- sort(importance(RF_cfu_all_rf)[,1], decreasing = T)
-
-rsq_features_all <- data.frame('Features'= NA, 'RSQ'=NA, 'MSE'=NA)
-for (k in 1:25){
-    rf_partial <- randomForest(log_cfu ~ ., 
-                               data=predict_cfu_all_df[ , c( 'log_cfu', names(importance_all)[1:k])], 
-                               importance=TRUE, ntree=n_trees)
-    rsq_features_all <- rbind(rsq_features_all, c(k, tail(rf_partial$rsq, 1), tail(rf_partial$mse, 1)))
-}
-rsq_features_all <- rsq_features_all[-1,]
-all_r2feat_plot <- ggplot(rsq_features_all, aes(x=Features, y=RSQ)) + geom_line() +
-  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide = FALSE) + theme_bw()
-
-important_OTU_all <- data.frame(head(importance_all, n_important))
-colnames(important_OTU_all) <- 'Importance'
-important_OTU_all$OTU <- rownames(important_OTU_all)
-
-all_feat_plot <- ggplot(data = important_OTU_all, aes(x = factor(OTU), y = Importance)) + 
-        geom_point() + scale_x_discrete(limits = rev(important_OTU_all$OTU)) +
-        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
-
-ggdraw()+
-  draw_plot(all_rf_plot, 0, 0.5, 0.5, 0.5) + 
-  draw_plot(all_r2feat_plot, 0, 0, 0.5, 0.5) +
-  draw_plot(all_feat_plot, 0.5, 0, 0.5, 1)
-
-```
-
-```{r fig.width=10, fig.height=5}
+```{r fig.height= 7, fig.width=10}
 predict_cfu_all_df <- CFU_community_by_day[!is.na(CFU_community_by_day$log_cfu),
                                            ! colnames(CFU_community_by_day) %in% c('Row.names','day')]
 RF_cfu_all_rf <- randomForest(log_cfu ~ ., data = predict_cfu_all_df,
