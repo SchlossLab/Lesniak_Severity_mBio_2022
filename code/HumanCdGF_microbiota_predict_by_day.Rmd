@@ -1,0 +1,243 @@
+---
+title: "Test_code"
+author: "Nick Lesniak"
+date: "August 18, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+```{r, message=FALSE}
+pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+
+```{r}
+# setup environment
+
+# read in files
+meta_file   <- read.table('../data/process/human_CdGF_metadata.txt', sep = '\t',
+                        header = T)
+shared_file <- read.table('../data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
+                          sep='\t',header = T, row.names = 'Group')
+tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
+                       sep='\t',header = T, row.names = 'OTU')
+# function to label otu with tax
+source('tax_level.R')
+
+# remove samples not used or with other cdiff strains
+meta_file <- 
+  meta_file %>% 
+  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
+  select(Mouse_ID, group, day, cdiff_cfu, Euthanized) %>% 
+  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(!is.na(log_cfu))
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+rel_abund_shared <- 100 * shared_file / mean_otu_counts
+rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
+rel_abund_shared_01$group <- rownames(rel_abund_shared_01)
+
+# create df with day 0 communities with column of mouse_id
+day_0_otu_by_mouse <- 
+  meta_file %>% 
+  filter(day == 0 ) %>% 
+  select(group, Mouse_ID) %>% 
+  left_join(rel_abund_shared_01)
+
+cfu_by_day <-
+  meta_file %>% 
+  select(group)
+
+
+seed <- 18
+n_trees <- 2000
+set.seed(seed)
+
+rf_plot_list <- list()
+n_features <- 10
+
+RandomForest_by_day <- function(i, community){
+if(community == day_0){
+  rf_data <- 
+  meta_file %>%
+  filter(day == i) %>% 
+  select(log_cfu, Mouse_ID) %>%
+  inner_join(day_0_otu_by_mouse_01) %>% 
+  select(-Mouse_ID)
+} else if (community == by_day) {
+  rf_data <- 
+  meta_file %>%
+  filter(day == i) %>% 
+  select(log_cfu, Mouse_ID) %>%
+  inner_join(day_0_otu_by_mouse_01) %>% 
+  select(-Mouse_ID)
+  
+} else {
+  print('Input for community needed (day_0 or by_day')
+}
+
+rf_all <- randomForest(log_cfu ~ ., data = rf_data,
+                   importance = TRUE, ntree = n_trees)
+importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
+rf_n_features <- randomForest(log_cfu ~ ., data=rf_data[ ,c( 'log_cfu',
+                              names(importance_sorted)[1:n_features])], 
+                           importance=TRUE, ntree=n_trees)
+
+predict_plot_day <- paste('prediction_day_', i, sep = '')
+importance_plot_day <- paste('importance_day_', i, sep = '')
+
+rf_prediction <- cbind(rf_data[, 'log_cfu'], 
+                       data.frame(rf_n_features$predicted))
+colnames(rf_prediction) <- c('observed', 'predicted')
+
+predict_plot_day <-  
+  ggplot(data = rf_prediction, aes(x=observed, y=predicted)) + geom_point() + 
+        labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + 
+        theme_bw() + ggtitle(paste("Random Forest Prediction of C Diff CFU \n on Day ",
+                                   i, " from Day 0 Community", sep = '')) +
+        annotate('text', x=0.15*(max(rf_prediction$observed)), 
+                 y=0.95*(max(rf_prediction$predicted)), 
+                 label=paste('R^2 = ', round(tail(rf_n_features$rsq, 1), 2),'\nMSE = ', 
+                             round(tail(rf_n_features$mse, 1), 2), sep = ''))
+
+top_important_OTU <- data.frame(head(importance_sorted, n_features))
+colnames(top_important_OTU) <- 'Importance'
+top_important_OTU$OTU <- rownames(top_important_OTU)
+otu_taxa <- get_tax(1, top_important_OTU$OTU, tax_file)
+
+
+importance_plot_day <- 
+  ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
+        geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU),
+                                        labels = rev(paste(otu_taxa[,1],' (',
+                                                       rownames(otu_taxa),')',
+                                                       sep=''))) +
+        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+  
+rf_plot_list[[i]] <- list(predict_plot_day,importance_plot_day)
+
+})
+
+rf_day_0_comm_plots <- lapply(1:10, day_0)
+rf_by_day_com_plots <- lapply(1:10, by_day)
+
+```
+
+### Predict Day 1 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[1]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[1]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 2 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[2]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[2]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 3 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[3]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[3]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 4 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[4]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[4]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 5 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[5]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[5]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 6 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[6]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[6]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 7 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[7]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[7]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 8 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[8]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[8]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 9 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[9]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[9]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 10 CFU from Day 0 Community
+
+```{r fig.height= 5, fig.width=10}
+ggdraw()+
+  draw_plot(rf_plot_list[[10]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_plot_list[[10]][[2]], 0.5, 0, 0.5, 1)
+
+```
