@@ -28,37 +28,37 @@ for (dep in pack_used){
 meta_file   <- read.table('../data/process/human_CdGF_metadata.txt', sep = '\t',
                         header = T)
 shared_file <- read.table('../data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
-                          sep='\t',header = T)
+                          sep='\t',header = T, row.names = 'Group')
 tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
                        sep='\t',header = T, row.names = 'OTU')
 # function to label otu with tax
 source('tax_level.R')
 
-unused_samples <- c("P2", "CON", "CON2", "CON3")
-
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
-  filter(sample_type == 'stool',
-         !cage_id %in% unused_samples) %>% 
-  select(Mouse_ID,Group = group, day, cdiff_cfu, Euthanized) %>% 
+  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
+  select(Mouse_ID, group, day, cdiff_cfu, Euthanized) %>% 
   mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
   filter(!is.na(log_cfu))
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+rel_abund_shared <- 100 * shared_file / mean_otu_counts
+rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
+rel_abund_shared_01$group <- rownames(rel_abund_shared_01)
 
 # create df with day 0 communities with column of mouse_id
 day_0_otu_by_mouse <- 
   meta_file %>% 
   filter(day == 0 ) %>% 
-  select(Group, Mouse_ID) %>% 
-  left_join(shared_file)
-day_0_otu_over_01 <- 
-  day_0_otu_by_mouse %>% 
-  select(contains('Otu')) %>% 
-  apply(. , 2, function(i){mean(i)/mean(rowSums(.))}) > 0.01
-day_0_otu_over_01 <-  names(day_0_otu_over_01)[day_0_otu_over_01]
-day_0_otu_by_mouse_01 <- 
-  day_0_otu_by_mouse %>% 
-  select(Mouse_ID, one_of(day_0_otu_over_01))
+  select(group, Mouse_ID) %>% 
+  left_join(rel_abund_shared_01)
+
+cfu_by_day <-
+  meta_file %>% 
+  select(group)
+
 
 seed <- 18
 n_trees <- 2000
@@ -67,15 +67,25 @@ set.seed(seed)
 rf_plot_list <- list()
 n_features <- 10
 
-rf_plot_list <- 
-lapply(1:10, function(i){
-rf_data <- 
+RandomForest_by_day <- function(i, community){
+if(community == day_0){
+  rf_data <- 
   meta_file %>%
   filter(day == i) %>% 
   select(log_cfu, Mouse_ID) %>%
   inner_join(day_0_otu_by_mouse_01) %>% 
-  select(-Mouse_ID) %>% 
-  tbl_df()
+  select(-Mouse_ID)
+} else if (community == by_day) {
+  rf_data <- 
+  meta_file %>%
+  filter(day == i) %>% 
+  select(log_cfu, Mouse_ID) %>%
+  inner_join(day_0_otu_by_mouse_01) %>% 
+  select(-Mouse_ID)
+  
+} else {
+  print('Input for community needed (day_0 or by_day')
+}
 
 rf_all <- randomForest(log_cfu ~ ., data = rf_data,
                    importance = TRUE, ntree = n_trees)
@@ -110,14 +120,18 @@ otu_taxa <- get_tax(1, top_important_OTU$OTU, tax_file)
 importance_plot_day <- 
   ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
         geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU),
-                                        labels = paste(otu_taxa[,1],' (',
+                                        labels = rev(paste(otu_taxa[,1],' (',
                                                        rownames(otu_taxa),')',
-                                                       sep='')) +
+                                                       sep=''))) +
         labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
   
 rf_plot_list[[i]] <- list(predict_plot_day,importance_plot_day)
 
 })
+
+rf_day_0_comm_plots <- lapply(1:10, day_0)
+rf_by_day_com_plots <- lapply(1:10, by_day)
+
 ```
 
 ### Predict Day 1 CFU from Day 0 Community
