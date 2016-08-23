@@ -13,7 +13,7 @@ library(RColorBrewer)
 
 #import Nick's awesome combined metadata file
 meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
-shared_file <- read.table("data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
+shared_file <- read.table("data/process/human_CdGF.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
 tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
 
 #make OTU abundance file
@@ -22,21 +22,19 @@ tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filte
 rel_abund <- 100*shared_file/unique(apply(shared_file, 1, sum))
 
 #Create vector of OTUs with median abundances >1%
-med_rel_abund_cage <- aggregate(rel_abund, by=list(met_or$cage_id),median)
+med_rel_abund_cage <- aggregate(rel_abund, by=list(meta_file$cage_id),median)
 cage_IDs <- med_rel_abund_cage[,"Group.1"]
 med_rel_abund_cage <- med_rel_abund_cage[,!colnames(med_rel_abund_cage) %in% 'Group.1']
 
-#this also isnt working, maybe this is part of the problem probably the rownames bullshit!
 OTUs_1 <- apply(med_rel_abund_cage, 2, max) > 1
 OTU_list <- colnames(rel_abund)[OTUs_1]
 
-
 #df of OTUs with abundances >1% - by cage and inoculum
-rel_abund_cage <- rel_abund[!met_or$cage_id=='inoculum',OTUs_1]
-inoculum_rel_abund <- rel_abund[met_or$cage_id=='inoculum',OTUs_1]
+rel_abund_cage <- rel_abund[!meta_file$cage_id=='inoculum',OTUs_1]
+inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
 
 #df of OTUs w abundances >1% 
-rel_abund_d0 <- rel_abund[met_or$day == 0, OTUs_1]
+rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
 #it's adding weird NAs, idk why but remove them:
 rel_d0 <- na.omit(rel_abund_d0)
 
@@ -72,6 +70,12 @@ cages <- na.omit(cages)
 rel_d0[82] <- cages
 colnames(rel_d0)[82] <- "cage"
 
+#add a column of donors to the df
+donors <- meta_file$human_source[meta_file$day==0]
+donors <- na.omit(donors)
+rel_d0[83] <- donors
+colnames(rel_d0)[83] <- "donor"
+ 
 d0_med <- aggregate(rel_d0[, 1:81], list(rel_d0$cage), median)
 d0_med_phy <- sum_OTU_by_tax_level(5, d0_med, tax_file)
 #removes inoculum cage
@@ -91,18 +95,38 @@ legend('right',fill=colors,legend_labels, bty='n', inset=c(-0.1,0), border=color
 #make dataframe of median family abundances and organize it 
 d0_med_fam <- sum_OTU_by_tax_level(2, d0_med, tax_file)
 rownames(d0_med_fam) <- cage_only_char
-colnames(d0_med_fam)[1] <- "donor"
+colnames(d0_med_fam)[1] <- "cage"
+
+#just make table of human source and cage unique and then merge by cage, take out unused ones after 
+
+dc <- meta_file[!meta_file$cage_id=='inoculum',2:3]
+uc <- unique(dc)
+d0_med_fam <- merge(d0_med_fam, uc, by.x='cage', by.y='cage_id')
+
+#get rid of samples/cages not used here: 
+d0_med_fam <- d0_med_fam[-23,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-3,]
+d0_med_fam <- d0_med_fam[-6,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-4,]
+d0_med_fam <- d0_med_fam[-12,]
+
+
 
 #colorbrewer
 getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
 #run this whole command to make figure of family by cage/donor - add colorbrewer!
-n=19
+#main="Taxonomic composition of mice on D0 by donor, family level"
+n=16
 par(mar=c(7.1, 4.1, 4.1, 8.1), xpd=TRUE)
-barplot(t(d0_med_fam[2:20]), ylab='Relative Abundance', main="Taxonomic composition of mice on D0 by cage, family", 
-        col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.6, xlab="cage", cex.names=0.5)
+barplot(t(d0_med_fam[2:20]), ylab='Relative Abundance', 
+        col = getPalette(n), ylim=c(0,100), cex.lab=0.9, cex.axis=0.8, cex.names=0.8, xaxt = 'n')
 fam_labels <- colnames(d0_med_fam[2:20])
 legend('right', fill = getPalette(n), fam_labels, inset=c(-0.15,0), cex=0.6)
+text(cex=0.8, x=x+0.5, y=-4, label=d0_med_fam$human_source, xpd=TRUE, srt=45, pos=2)
+box()
 
 
 #barplots for individual families
@@ -113,8 +137,8 @@ d0_upper <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.7
 d0_lower <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.25)
 d0_upper_fam <- sum_OTU_by_tax_level(2, d0_upper, tax_file)
 d0_lower_fam <- sum_OTU_by_tax_level(2, d0_lower, tax_file)
-colnames(d0_upper_fam)[1] <- "donor"
-colnames(d0_lower_fam)[1] <- "donor"
+colnames(d0_upper_fam)[1] <- "cage"
+colnames(d0_lower_fam)[1] <- "cage"
 fam_list <- as.vector(fam_labels)
 
 #to save as pdf to results, can't get the size right to render but fine for now
@@ -123,18 +147,20 @@ pdf(file="results/figures/figure2.pdf", width=25, height=15)
 #run this entire code to the end to plot the multipanel plot for all donors
 #set up layout
 par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
-layout(matrix(1:30, nrow=5))
+layout(matrix(1:16, nrow=4))
 
 #loop to plot all donors 
-for(d in d0_med_fam$donor){
-  one_d <- subset(d0_med_fam, donor == d)
-  one_uci <- subset(d0_upper_fam, donor == d)
-  one_lci <- subset(d0_lower_fam, donor == d)
+for(d in d0_med_fam$human_source){
+  one_d <- subset(d0_med_fam, human_source == d)
+  for(c in one_d$cage){
+  one_uci <- subset(d0_upper_fam, cage == c)
+  one_lci <- subset(d0_lower_fam, cage == c) 
   medians <- t(one_d[,2:20])
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
+  }
   #make barplot
-  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste("Cage", d))
+  z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste('Donor', d))
   #axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
   #text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
   box()
@@ -143,13 +169,19 @@ for(d in d0_med_fam$donor){
   arrows(x0=z, y0=medians, z, y1=lci, angle=90, length=0.05)
 }
 
+
 #tweak final plot so it looks nice 
 text(x=z+0.8, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
-mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=1, padj=-78)
-mtext("Mouse community on day 0, by cage", side = 3, cex = 1, adj =7, padj=-22)
+text(x=z-22.5, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-45.75, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-69, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=-2, padj=-75)
+mtext("Mouse community on day 0, by donor", side = 3, cex = 1, adj =15, padj=-45)
 
 dev.off()
+
+
+#text(x=z-95, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-71, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-47, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+#text(x=z-23, y=-225, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
