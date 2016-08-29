@@ -37,9 +37,11 @@ tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.fi
 # add log transformed CFU
 meta_file$log_cfu <- log10(meta_file$cdiff_cfu + 1)
 # remove cecum samples
-meta_file <- meta_file[! meta_file$sample_type == 'cecum', ]
-# remove unused cage P2 and non 431 cdiff
-meta_file <- meta_file[! meta_file$cage_id %in% c('P2', 'CON', 'CON2', 'CON3'), ]
+meta_file <- meta_file[meta_file$sample_type == 'stool', ]
+# remove unused cage P2 and 
+meta_file <- meta_file[! meta_file$cage_id %in% 'P2', ]
+# select only mice with 431 cdiff
+meta_file <- meta_file[meta_file$cdiff_strain == '431', ]
 
 # subset shared
 #Create df with relative abundances
@@ -581,32 +583,41 @@ mouse_list <- Predict_early_euth_df$Row.names
 Predict_early_euth_df <- Predict_early_euth_df[,!(colnames(Predict_early_euth_df) %in% "Row.names")]
 rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df, 
                               importance = TRUE, ntree = n_trees)
+rf_euth_import <- data.frame(importance = head(sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 10))
 
-unpredicted <- mouse_list[Predict_early_euth_df$Euth_Early != rf_early_euth$predicted]
-rf_euth_import <- data.frame(importance = head(
-  sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 30))
-ROC_euth <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth$predicted))
-roc_plot <- data.frame(Specificity = 1 - ROC_euth$specificities, Sensitivity = ROC_euth$sensitivities)
+rf_early_euth_top_otu <- randomForest(as.factor(Euth_Early) ~ ., 
+                                      data = Predict_early_euth_df[, c(rownames(rf_euth_import), 'Euth_Early')], 
+                              importance = TRUE, ntree = n_trees)
 
-euth_rf_plot <- ggplot(data = roc_plot, aes(x = Specificity, y = Sensitivity)) + geom_path() + 
-  geom_abline(intercept = 0, slope = 1, linetype = 'dashed', alpha = 0.5)
-euth_import_plot <- ggplot(data = rf_euth_import, aes(x = factor(rownames(rf_euth_import)), y = importance)) + 
-        geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import))) +
+unpredicted_top_otu <- mouse_list[Predict_early_euth_df$Euth_Early != rf_early_euth_top_otu$predicted]
+rf_euth_import_top_otu <- data.frame(importance = sort(rf_early_euth_top_otu$importance[ , 'MeanDecreaseAccuracy'], 
+                                                       decreasing = T))
+ROC_euth_top_otu <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth_top_otu$predicted))
+roc_plot_top_otu <- data.frame(Specificity = 1 - ROC_euth_top_otu$specificities, 
+                       Sensitivity = ROC_euth_top_otu$sensitivities)
+
+euth_rf_plot_top_otu <- ggplot(data = roc_plot_top_otu, aes(x = Specificity, y = Sensitivity)) + 
+                      geom_path() + geom_abline(intercept = 0, slope = 1, 
+                                                linetype = 'dashed', alpha = 0.5)
+euth_import_plot_top_otu <- ggplot(data = rf_euth_import_top_otu, 
+                           aes(x = factor(rownames(rf_euth_import_top_otu)), y = importance)) + 
+        geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import_top_otu))) +
         labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
 # title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
 
 ggdraw()+
-  draw_plot(euth_rf_plot, 0, 0, 0.5, 1) + 
-  draw_plot(euth_import_plot, 0.5, 0, 0.5, 1)
+  draw_plot(euth_rf_plot_top_otu, 0, 0, 0.5, 1) + 
+  draw_plot(euth_import_plot_top_otu, 0.5, 0, 0.5, 1)
 ```
 
 Confusion Matrix  
-`r kable(rf_early_euth$confusion)`
+`r kable(rf_early_euth_top_otu$confusion)`
 
-OOB error rate = `r 100*tail(rf_early_euth$err.rate[ , 1], 1)`
+OOB error rate = `r 100*tail(rf_early_euth_top_otu$err.rate[ , 1], 1)`
 
 Mice which were euthanized early, but the model predicts the will were not (Mouse Tag - Cage):
-`r unpredicted`
+`r unpredicted_top_otu`
+
 
 ***
 
