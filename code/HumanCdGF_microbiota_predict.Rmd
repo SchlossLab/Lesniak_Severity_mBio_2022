@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
 ```{r, message=FALSE}
-pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr', 'cowplot')
+pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr', 'cowplot','dplyr','AUCRF')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -32,7 +32,7 @@ shared_file <- read.table('../data/process/human_CdGF.an.unique_list.0.03.subsam
                           sep='\t',header = T, row.names='Group')
 tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
                        sep='\t',header = T, row.names = 'OTU')
-#source('tax_level.R')
+source('tax_level.R')
 
 # add log transformed CFU
 meta_file$log_cfu <- log10(meta_file$cdiff_cfu + 1)
@@ -314,7 +314,8 @@ all_rf_plot <- ggplot(data = RF_cfu_all_df, aes(x = log_cfu, y = predicted)) + g
         labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw() + 
         ggtitle("Random Forest Prediction of C Diff CFU") +
         annotate('text', x=0.15*(max(RF_cfu_all_df$log_cfu)), y=0.95*(max(RF_cfu_all_df$predicted)), 
-                 label=paste('R^2 = ', tail(RF_cfu_all_rf$rsq, 1),'\nMSE = ', tail(RF_cfu_all_rf$mse, 1), sep = ''))
+                 label=paste('R^2 = ', round(tail(RF_cfu_all_rf$rsq, 1), 2),
+                             '\nMSE = ', round(tail(RF_cfu_all_rf$mse, 1), 2), sep = ''))
 
 importance_all <- sort(importance(RF_cfu_all_rf)[,1], decreasing = T)
 
@@ -534,7 +535,8 @@ all_persist_rf_plot <- ggplot(data = RF_cfu_persist_df, aes(x = log_cfu, y = pre
         labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + theme_bw() + 
         ggtitle("Random Forest Prediction of C Diff CFU") +
         annotate('text', x=0.15*(max(RF_cfu_persist_df$log_cfu)), y=0.95*(max(RF_cfu_persist_df$predicted)), 
-                 label=paste('R^2 = ', tail(RF_cfu_persist_rf$rsq, 1),'\nMSE = ', tail(RF_cfu_persist_rf$mse, 1), sep = ''))
+                 label=paste('R^2 = ', round(tail(RF_cfu_persist_rf$rsq, 1), 2),
+                             '\nMSE = ', round(tail(RF_cfu_persist_rf$mse, 1), 2), sep = ''))
 
 importance_all_persist <- sort(importance(RF_cfu_persist_rf)[,1], decreasing = T)
 
@@ -573,23 +575,25 @@ At first glance, OTU135 (Coriobacteriaceae) seems to stand out for predicting cf
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
+#### randomForest
 ```{r fig.width=10, fig.height=5}
-Predict_early_euth_df <- data.frame(Euth_Early = ifelse(meta_file[meta_file$day %in% 0,
-                                                                  'Euthanized'] %in% 10,
-                                                        'No','Yes'), 
-                                    row.names = meta_file[meta_file$day %in% 0, 'Mouse_ID'])
-Predict_early_euth_df <- merge(Predict_early_euth_df, rel_abund_stool, by='row.names')
-mouse_list <- Predict_early_euth_df$Row.names
-Predict_early_euth_df <- Predict_early_euth_df[,!(colnames(Predict_early_euth_df) %in% "Row.names")]
-rf_early_euth <- randomForest(as.factor(Euth_Early) ~ ., data = Predict_early_euth_df, 
+meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Euthanized'] %in% 10, 1, 0)) 
+
+Predict_early_euth_df <- merge(meta_file[meta_file$day == 0, c('Mouse_ID', 'Euth_Early')], 
+                               rel_abund_stool, by.x = 'Mouse_ID', by.y='row.names')
+Predict_early_euth_df_names <- Predict_early_euth_df$Mouse_ID
+Predict_early_euth_df <- select(Predict_early_euth_df, -Mouse_ID)
+
+rf_early_euth <- randomForest(Euth_Early ~ ., data = Predict_early_euth_df, 
                               importance = TRUE, ntree = n_trees)
 rf_euth_import <- data.frame(importance = head(sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 10))
 
-rf_early_euth_top_otu <- randomForest(as.factor(Euth_Early) ~ ., 
+rf_early_euth_top_otu <- randomForest(Euth_Early ~ ., 
                                       data = Predict_early_euth_df[, c(rownames(rf_euth_import), 'Euth_Early')], 
                               importance = TRUE, ntree = n_trees)
 
-unpredicted_top_otu <- mouse_list[Predict_early_euth_df$Euth_Early != rf_early_euth_top_otu$predicted]
+unpredicted_top_otu <- Predict_early_euth_df_names[Predict_early_euth_df$Euth_Early != 
+                                               rf_early_euth_top_otu$predicted]
 rf_euth_import_top_otu <- data.frame(importance = sort(rf_early_euth_top_otu$importance[ , 'MeanDecreaseAccuracy'], 
                                                        decreasing = T))
 ROC_euth_top_otu <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth_top_otu$predicted))
@@ -618,12 +622,116 @@ OOB error rate = `r 100*tail(rf_early_euth_top_otu$err.rate[ , 1], 1)`
 Mice which were euthanized early, but the model predicts the will were not (Mouse Tag - Cage):
 `r unpredicted_top_otu`
 
+#### AUCRF
 
-***
+```{r fig.width=6, fig.height=5}
 
-## Analysis By Day
+rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
+                              ntree = n_trees, pdel = 0.05, ranking = 'MDA')
+
+otu_euth_probs <- predict(rf_early_aucrf$RFopt, type = 'prob')
+otu_euth_roc <- roc(Predict_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
+
+#otu_euth_model <- rf_early_aucrf$RFopt
+#rf_early_aucrf$Kopt
+#rf_early_aucrf$Xopt
+#rf_early_aucrf$RFopt$confusion
+#OptimalSet(rf_early_aucrf)
+#plot(otu_euth_model_cv)
+#plot(otu_euth_model, which="ranking") 
+#plot(otu_euth_model, which="psel") 
+
+aucrf_data <- Predict_early_euth_df[,c('Euth_Early',rf_early_aucrf$Xopt)]
+
+#### 10-fold Cross validated - 10 repetitions
+start <- proc.time()[3]
+iters <- 100
+cv10f_aucs <- c()
+cv10f_all_resp <- c()
+cv10f_all_pred <- c()
+for(j in 1:iters){
+  sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
+  cv10f_probs <- rep(NA,nrow(aucrf_data))
+  for(i in seq(1,nrow(aucrf_data),5)){
+    train <- aucrf_data[sampling[-(i:(i+4))],]
+    test <- aucrf_data[sampling[i:(i+4)],]
+    temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
+    cv10f_probs[sampling[i:(i+4)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
+  }
+  cv10f_roc <- roc(aucrf_data$Euth_Early~cv10f_probs)
+  cv10f_all_pred <- c(cv10f_all_pred, cv10f_probs)
+  cv10f_all_resp <- c(cv10f_all_resp, aucrf_data$Euth_Early)
+  cv10f_aucs[j] <- cv10f_roc$auc
+}
+cv10f_roc <- roc(cv10f_all_resp~cv10f_all_pred)
+end <- proc.time()[3]
+time <- end-start
+
+#### leave-one-out
+LOO_probs <- NULL
+LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
+ train <- aucrf_data[-i,]
+  test <- aucrf_data[i,]
+  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
+  LOO_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
+})
+LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
+
+#### plot rocs
+par(mar=c(4,4,1,1))
+plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
+plot(otu_euth_roc, col='black', lwd=2, add=T, lty=1)
+plot(cv10f_roc, col='gray', lwd=2, add=T, lty=1)
+plot(LOO_roc, col='blue', lwd=2, add=T, lty=2)
+mtext(side=2, text="Sensitivity", line=2.5)
+mtext(side=1, text="Specificity", line=2.5)
+legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc),
+                               sprintf('Leave-1-out (AUC: %.3g)',LOO_roc$auc),
+                               sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
+                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
+                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
+),lty=c(1,2,1,0,0), lwd=2, col=c('black','blue','gray'), bty='n')
+```
+
 
 ```{r fig.width=10, fig.height=5}
-layout(matrix(rep(c(1,1,1,1,2,2,2,2),4), ncol=8, nrow = 4, byrow = T))
+layout(matrix(c(1,3,2,2), nrow=2))
+
+
+#AUCRF curve
+par(mar=c(5,5,1.5,1))
+plot(rf_early_aucrf)
+#mtext('A', at=-90, font=2, side=3)
+
+#Importance Plot
+euth_otus <- rf_early_aucrf$Xopt
+euth_tax <- get_tax(1, euth_otus, tax_file)
+euth_tax$tax_label <- paste(gsub('_unclassified', '', euth_tax$tax),
+                                   ' (', gsub('tu0*', 'TU ', rownames(euth_tax)), 
+                                   ')', sep = '')
+dotchart(rev(rf_early_aucrf$ranking[euth_otus]), labels=rev(euth_tax[euth_otus, 'tax_label']), xlab='Mean Decrease Accuracy')
+#mtext('B', at=-0.014, font=2, side=3)
+
+#Abundance stripchart or most predictive otus
+euth_otus <- rf_early_aucrf$Xopt
+euth_otus <- rev(euth_otus[1:5])
+early_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==0, euth_otus]/10000 + 1e-4
+late_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==1, euth_otus]/10000 + 1e-4
+
+par(mar=c(4, 9, 1, 1))
+plot(1, type="n", ylim=c(0,length(euth_otus)*2), xlim=c(1e-4,1e-2), log="x", ylab="", xlab="Relative Abundance (%)", xaxt="n", yaxt="n")
+index <- 1
+for(i in euth_otus){
+  stripchart(at=index-0.35, jitter(early_abunds[,i], amount=1e-5), pch=21, bg="royalblue1", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
+  stripchart(at=index+0.35, jitter(late_abunds[,i], amount=1e-5), pch=21, bg="orange", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
+  segments(mean(early_abunds[,i]),index-0.7,mean(early_abunds[,i]),index, lwd=3)
+  segments(mean(late_abunds[,i]),index+0.7,mean(late_abunds[,i]),index, lwd=3)
+  index <- index + 2
+}
+axis(2, at=seq(1,index-2,2), labels=euth_tax[euth_otus, 'tax_label'], las=1, line=-0.5, tick=F, cex.axis=0.8)
+axis(1, at=c(1e-4, 1e-3, 1e-2), label=c("0", "0.1", "1"))
+legend('topright', legend=c("Persistant", "Susceptible"), pch=c(21, 21), pt.bg=c("orange","royalblue1"), cex=0.7)
+#mtext('C', at=1e-7, font=2, side=3)
+dev.off()
 
 ```
