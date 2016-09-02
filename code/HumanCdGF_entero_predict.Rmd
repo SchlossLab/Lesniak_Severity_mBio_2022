@@ -1,0 +1,71 @@
+---
+title: "humanCdGF_entero_predict"
+author: "Nicholas Lesniak"
+date: "September 1, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
+```
+
+```{r}
+pack_used <- c('randomForest','tidyr','ggplot2','dplyr','knitr', 'cowplot', 'vegan', 'cluster')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+
+```{r}
+# setup environment
+
+# read in files
+meta_file   <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt', sep = '\t',
+                        header = T)
+shared_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
+                          sep='\t',header = T, row.names = 'Group')
+tax_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
+                       sep='\t',header = T, row.names = 'OTU')
+# function to label otu with tax
+source('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R')
+
+# identify c difficile otus
+cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
+# remove samples not used or with other cdiff strains
+meta_file <- 
+  meta_file %>% 
+  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
+  select(Mouse_ID, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
+  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(!is.na(log_cfu))
+
+# create enterotypes
+# first generate distance matrices
+dist.JSD <- function(inMatrix, pseudocount=0.000001, ...) {
+	KLD <- function(x,y) sum(x *log(x/y))
+	JSD<- function(x,y) sqrt(0.5 * KLD(x, (x+y)/2) + 0.5 * KLD(y, (x+y)/2))
+	matrixColSize <- length(colnames(inMatrix))
+	matrixRowSize <- length(rownames(inMatrix))
+	colnames <- colnames(inMatrix)
+	resultsMatrix <- matrix(0, matrixColSize, matrixColSize)
+        
+  inMatrix = apply(inMatrix,1:2,function(x) ifelse (x==0,pseudocount,x))
+
+	for(i in 1:matrixColSize) {
+		for(j in 1:matrixColSize) { 
+			resultsMatrix[i,j]=JSD(as.vector(inMatrix[,i]),
+			as.vector(inMatrix[,j]))
+		}
+	}
+	colnames -> colnames(resultsMatrix) -> rownames(resultsMatrix)
+	as.dist(resultsMatrix)->resultsMatrix
+	attr(resultsMatrix, "method") <- "dist"
+	return(resultsMatrix) 
+}
+
+shared_dist <- dist.JSD(shared_file)
