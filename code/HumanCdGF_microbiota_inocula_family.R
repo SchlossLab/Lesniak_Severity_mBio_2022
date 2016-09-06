@@ -63,8 +63,8 @@ inoc_list <- as.vector(inoc_labels)
 #make multiplot of family plots for each donor
 #run this entire code to the end to plot the multipanel plot for all donors
 #set up layout
-par(mar=c(2,1.5,1.1,1), oma=c(7,7,7,0.5))
-layout(matrix(1:24, nrow=6))
+par(mar=c(2,1.5,1.1,1), oma=c(6,7,6,0.5))
+layout(matrix(1:16, nrow=4))
 
 #loop to plot all donors 
 for(d in family_level_RA$donor){
@@ -78,11 +78,17 @@ for(d in family_level_RA$donor){
 }
 
 #tweak final plot so it looks nice 
-text(x=z+0.8, y=-3, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
-text(x=z-28.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
-text(x=z-57.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
-mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=0, padj=-55)
-mtext("Donor Inocula Communities", side = 3, cex = 1, las = 1, adj =6.5, padj=-48)
+#text(x=z+0.8, y=-3, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+#text(x=z-28.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+#text(x=z-57.5, y=-100, xpd=NA, label=parse(text=inoc_list), pos=2, srt=70, cex=0.8)
+text(x=z+0.8, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-29, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-58, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+text(x=z-88, y=-5, xpd=NA, label=parse(text=fam_list), pos=2, srt=70, cex=0.8)
+mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=-1, padj=-73)
+
+#mtext("Relative Abundance (%)", side = 2, line =2, las = 3, cex = 1, adj=0, padj=-55)
+#mtext("Donor Inocula Communities", side = 3, cex = 1, las = 1, adj =6.5, padj=-48)
 
 dev.off()
 
