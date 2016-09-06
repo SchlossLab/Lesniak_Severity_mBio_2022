@@ -42,7 +42,8 @@ human_GF_clinical <- human_GF_clinical[,!colnames(human_GF_clinical) %in%
 # Remove file names
 human_GF_mouse <- human_GF_mouse[,!colnames(human_GF_mouse) %in% 'file']
 # Remove AMS samples
-human_GF_mouse <- human_GF_mouse[!human_GF_mouse$human_source=='AMS',]
+human_GF_mouse <- human_GF_mouse[!human_GF_mouse$human_source %in% c('AMS', 'DA00810'),]
+
 
 #Combine Toxin, Exp, and metadata
 #this next line is where the reordering happens - will correct before writing to new file (KF)

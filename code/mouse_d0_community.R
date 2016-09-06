@@ -36,6 +36,7 @@ inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
 #df of OTUs w abundances >1% 
 rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
 #it's adding weird NAs, idk why but remove them:
+#instead move na.omit to before first or do %in%
 rel_d0 <- na.omit(rel_abund_d0)
 
 
@@ -70,6 +71,8 @@ cages <- na.omit(cages)
 rel_d0[82] <- cages
 colnames(rel_d0)[82] <- "cage"
 
+#or could merge subsetted metafile for cage ids and donor and merge by mouse id. rel_d0$cage <- cage_iDs
+
 #add a column of donors to the df
 donors <- meta_file$human_source[meta_file$day==0]
 donors <- na.omit(donors)
@@ -103,6 +106,9 @@ dc <- meta_file[!meta_file$cage_id=='inoculum',2:3]
 uc <- unique(dc)
 d0_med_fam <- merge(d0_med_fam, uc, by.x='cage', by.y='cage_id')
 
+#merge(... by.x="row.names")
+
+#this will be taken care of in earlier file 
 #get rid of samples/cages not used here: 
 d0_med_fam <- d0_med_fam[-23,]
 d0_med_fam <- d0_med_fam[-4,]
@@ -133,6 +139,7 @@ box()
 #combine into loop and output plots to a main figure looking file 
 
 #calculates upper and lower quantiles, then combines by family. 
+#instead of doing this becasue there is a small n should plot each sample as a point not median
 d0_upper <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.75)
 d0_lower <- aggregate(rel_d0[1:81], list(rel_d0$cage), FUN= quantile, probs =0.25)
 d0_upper_fam <- sum_OTU_by_tax_level(2, d0_upper, tax_file)
@@ -159,7 +166,7 @@ for(d in d0_med_fam$human_source){
   uci <- t(one_uci[,2:20])
   lci <- t(one_lci[,2:20])
   }
-  #make barplot
+  #make barplot. this gives good coordinates to be able to use layout more efficiently 
   z <- barplot(t(one_d[,2:20]), beside = TRUE, xaxt='n', col="white", ylim=c(0,max(uci)+5), ylab = "Relative Abundance (%)", main=paste('Donor', d))
   #axis(1, at=seq(1,19, by=1), labels=FALSE, tick=FALSE)
   #text(seq(1,19, by=1), par("usr")[3] - 11, labels=fam_list, srt = 65, pos = 1, xpd = TRUE, cex=0.6)
