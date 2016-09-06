@@ -1,0 +1,456 @@
+---
+title: "HumanCdGF_microbiota_predict_by_day"
+author: "Nick Lesniak"
+date: "August 18, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
+```
+
+```{r}
+pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+
+```{r}
+# setup environment
+
+# read in files
+meta_file   <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt', sep = '\t',
+                        header = T)
+shared_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
+                          sep='\t',header = T, row.names = 'Group')
+tax_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
+                       sep='\t',header = T, row.names = 'OTU')
+# function to label otu with tax
+source('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R')
+
+# identify c difficile otus
+cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
+# remove samples not used or with other cdiff strains
+meta_file <- 
+  meta_file %>% 
+  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
+  select(Mouse_ID, group, day, cdiff_cfu, Euthanized) %>% 
+  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(!is.na(log_cfu))
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+rel_abund_shared <- 100 * shared_file / mean_otu_counts
+rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
+rel_abund_shared_01$group <- rownames(rel_abund_shared_01)
+
+# create df with day 0 communities with column of mouse_id
+day_0_otu_by_mouse <- 
+  meta_file %>% 
+  filter(day == 0 ) %>% 
+  select(group, Mouse_ID) %>% 
+  left_join(rel_abund_shared_01) %>% 
+  select(-group)
+# create df with cfu merge to shared
+cfu_by_day_comm <-
+  meta_file %>% 
+  filter(day %in% 1:10) %>% 
+  select(group, day, log_cfu) %>% 
+  left_join(rel_abund_shared_01) %>% 
+  select(-group, -one_of(cdiff_otu))
+
+
+seed <- 18
+n_trees <- 2000
+set.seed(seed)
+
+rf_plot_list <- list()
+n_features <- 10
+
+RandomForest_by_day <- function(i, community_day_0){
+  if(!is.logical(community_day_0)){
+    stop('Input for community  - Need community_day_0 = T/F')
+  } else {
+    rf_data <- if(community_day_0 == TRUE){
+      meta_file %>%
+        filter(day == 1) %>% 
+        select(log_cfu, Mouse_ID) %>%
+        inner_join(day_0_otu_by_mouse) %>% 
+        select(-Mouse_ID)
+    } else {
+      cfu_by_day_comm %>% 
+        filter(day == 1) %>% 
+        select(-day)
+    } 
+
+    rf_all <- randomForest(log_cfu ~ ., data = rf_data,
+                   importance = TRUE, ntree = n_trees)
+    importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
+    rf_n_features <- randomForest(log_cfu ~ ., data=rf_data[ ,c( 'log_cfu',
+                              names(importance_sorted)[1:n_features])], 
+                           importance=TRUE, ntree=n_trees)
+
+    predict_plot_day <- paste('prediction_day_', i, sep = '')
+    importance_plot_day <- paste('importance_day_', i, sep = '')
+
+    rf_prediction <- cbind(rf_data[, 'log_cfu'], 
+                       data.frame(rf_n_features$predicted))
+    colnames(rf_prediction) <- c('observed', 'predicted')
+
+    predict_plot_day <-  
+      ggplot(data = rf_prediction, aes(x=observed, y=predicted)) + geom_point() + 
+        labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + 
+        theme_bw() + ggtitle(paste("Random Forest Prediction of C Diff CFU on Day ",
+                                   i, sep = '')) +
+        annotate('text', x=0.15*(max(rf_prediction$observed)), 
+                 y=0.95*(max(rf_prediction$predicted)), 
+                 label=paste('R^2 = ', round(tail(rf_n_features$rsq, 1), 2),'\nMSE = ', 
+                             round(tail(rf_n_features$mse, 1), 2), sep = ''))
+
+    top_important_OTU <- data.frame(head(importance_sorted, n_features))
+    colnames(top_important_OTU) <- 'Importance'
+    top_important_OTU$OTU <- rownames(top_important_OTU)
+    otu_taxa <- get_tax(1, top_important_OTU$OTU, tax_file)
+
+    importance_plot_day <- 
+      ggplot(data = top_important_OTU, aes(x = factor(OTU), y = Importance)) + 
+        geom_point() + scale_x_discrete(limits = rev(top_important_OTU$OTU),
+                                        labels = rev(paste(otu_taxa[,1],' (',
+                                                       rownames(otu_taxa),')',
+                                                       sep=''))) +
+        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+  
+    rf_plot_list[[i]] <- list(predict_plot_day,importance_plot_day)
+  }
+}
+rf_day_0_comm_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = T)
+rf_by_day_com_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = F)
+
+```
+
+### Predict Day 1 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[1]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[1]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 1 CFU from Day 1 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[1]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[1]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 2 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[2]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[2]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 2 CFU from Day 2 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[2]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[2]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 3 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[3]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[3]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 3 CFU from Day 3 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[3]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[3]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 4 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[4]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[4]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 4 CFU from Day 4 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[4]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[4]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 5 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[5]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[5]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 5 CFU from Day 5 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[5]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[5]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 6 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[1]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[1]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 6 CFU from Day 6 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[6]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[6]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 7 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[7]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[7]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 7 CFU from Day 7 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[7]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[7]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 8 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[8]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[8]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 8 CFU from Day 8 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[8]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[8]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 9 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[9]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[9]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 9 CFU from Day 9 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[9]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[9]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+### Predict Day 10 CFU from Day 0 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_day_0_comm_plots[[10]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_day_0_comm_plots[[10]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+### Predict Day 10 CFU from Day 10 Community
+
+```{r}
+ggdraw()+
+  draw_plot(rf_by_day_com_plots[[10]][[1]], 0, 0, 0.5, 1) + 
+  draw_plot(rf_by_day_com_plots[[10]][[2]], 0.5, 0, 0.5, 1)
+
+```
+
+***
+
+Modeled with OTUs with max rel abund > 1% (216 OTUs) 
+When modeling based on mean rel abund > 1% (22 OTUs), R^2 decreases ~0.1 and MSE increases ~ 1 and lose all coriobacteriaceae/Actinobacteria
+
+
+***
+
+### Otus associated with CFU C difficile and same day OTU
+
+```{r fig.width=10, fig.height=10}
+predictive_otus <- paste('Otu00', c('199','026','050','015','028',
+                                    '033','135','059','044'),    # lost with max rel abund > 10
+                                    #'007', '014', '035', '005'), # gain with max rel abund > 10
+                         sep = '')
+predictive_taxa <- get_tax(1, predictive_otus, tax_file)
+predictive_taxa$otu <- rownames(predictive_taxa)
+predictive_taxa$tax_label <- paste(gsub('_unclassified', '', predictive_taxa$tax),
+                                   ' (', gsub('tu0*', 'TU ', predictive_taxa$otu), 
+                                   ')', sep = '')
+
+cfu_by_day_comm %>% 
+  select(log_cfu, day, one_of(predictive_otus)) %>% 
+  filter(!is.na(log_cfu)) %>% 
+  gather('otu','abundance',contains('Otu')) %>% 
+  full_join(predictive_taxa) %>% 
+  ggplot(aes(x = abundance, y = log_cfu, color = factor(day))) + geom_point() + 
+    facet_wrap(~ tax_label, scales = 'free_x') +
+    labs( x = 'Relative Abundance', y = 'CFU (log10)')
+
+```
+
+```{r fig.width=10, fig.height=10}
+cfu_by_day_comm %>% 
+  select(log_cfu, day, one_of(predictive_otus)) %>% 
+  filter(!is.na(log_cfu)) %>% 
+  gather('otu','abundance',contains('Otu')) %>% 
+  full_join(predictive_taxa) %>% 
+  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(day))) + geom_point() + 
+    facet_wrap(~ tax_label, scales = 'free_x') +
+    labs( x = 'Relative Abundance (log10)', y = 'CFU (log10)')
+
+```
+
+### Day 0 OTUs associated with C difficile CFU
+
+```{r fig.width=10, fig.height=10}
+meta_file %>% 
+  select(day, log_cfu, Mouse_ID) %>% 
+  full_join(day_0_otu_by_mouse) %>% 
+  select(day, log_cfu, one_of(predictive_otus)) %>% 
+  filter(!day == 0) %>% 
+  gather('otu', 'abundance', contains('Otu')) %>% 
+  filter(!is.na(abundance)) %>% 
+  full_join(predictive_taxa) %>% 
+  ggplot(aes(x = abundance, y = log_cfu, color = factor(day))) + geom_point() + 
+    facet_wrap(~ tax_label, scales = 'free_x') +
+    labs( x = 'Relative Abundance', y = 'CFU (log10)')
+
+```
+
+```{r fig.width=10, fig.height=10}
+meta_file %>% 
+  select(day, log_cfu, Mouse_ID) %>% 
+  full_join(day_0_otu_by_mouse) %>% 
+  select(day, log_cfu, one_of(predictive_otus)) %>% 
+  filter(!day == 0) %>% 
+  gather('otu', 'abundance', contains('Otu')) %>% 
+  filter(!is.na(abundance)) %>% 
+  full_join(predictive_taxa) %>% 
+  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(day))) + geom_point() + 
+    facet_wrap(~ tax_label, scales = 'free_x') +
+    labs( x = 'Relative Abundance (log10)', y = 'CFU (log10)')
+
+```
+
+
+```{r fig.width=10, fig.height=10}
+
+corr_df_day_0_comm <- meta_file %>% 
+  select(day, log_cfu, Mouse_ID) %>% 
+  full_join(day_0_otu_by_mouse) %>% 
+  filter(!day == 0) %>% 
+  select(-day, -Mouse_ID)
+
+get_CFU_cor <- function(dataframe, CFU, OTU){
+    cor.test(dataframe[ , CFU], dataframe[ , OTU], method="spearman")[c("estimate","p.value")]
+}
+
+otu_cfu_corrs <- sapply(2:ncol(corr_df_day_0_comm), get_CFU_cor, CFU = 1, dataframe = corr_df_day_0_comm)
+colnames(otu_cfu_corrs) <- colnames(corr_df_day_0_comm)[-1]
+
+# identify the significant correlations after applying a correction for multiple
+# comparisons
+sig <- which(p.adjust(otu_cfu_corrs["p.value",], method="BH") < 0.05)
+sigg_corr_otus <- data.frame(estimate = unlist(otu_cfu_corrs["estimate", sig]),
+                   p_value = unlist(otu_cfu_corrs["p.value", sig]))
+sigg_corr_otus$otus <- gsub('.rho', '', rownames(sigg_corr_otus))
+sig_corr_phyla <- get_tax(1, sigg_corr_otus$otus, tax_file)
+sigg_corr_otus$phylogeny <- paste(gsub('_unclassified', '', sig_corr_phyla[,'tax']),
+                                   ' (', gsub('tu0*', 'TU ', sigg_corr_otus$otu), 
+                                   ')', sep = '')
+
+sigg_corr_otus %>%
+  filter(estimate >= 0.3 | estimate <= -0.3) %>%
+  mutate(color = ifelse(estimate >= 0.32 | estimate <= -0.32, 'black', 'red')) %>% 
+  ggplot( aes(x = reorder(factor(phylogeny), estimate), y = estimate)) + 
+  geom_bar(stat = 'identity', aes(fill = color)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_manual(values = c(black = 'black', red = 'red'), guide = FALSE) +
+  labs( x = '', y = 'rho', title = 'Significant Spearman Correlation Coefficient - CFU vs OTU\n(only rho > 0.3 or < -0.3 shown)')
+
+  
+# '199','026','050','015','028','033','135','059','044'),    # lost with max rel abund > 10
+                                    #'007', '014', '035', '005')
+
+#50, 15, 33, 135, 7, 14, 35, 5
+
+
+
+
+```
