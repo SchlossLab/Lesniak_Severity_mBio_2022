@@ -1,0 +1,56 @@
+---
+title: "humanCdGF_entero_predict"
+author: "Nicholas Lesniak"
+date: "September 1, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
+```
+
+```{r}
+pack_used <- c('randomForest','tidyr','ggplot2','dplyr','knitr', 'cowplot', 'vegan', 'cluster')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+
+```{r}
+# setup environment
+
+# read in files
+meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
+shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy'
+entero_list <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.0.03.subsample.shared.for.0.03.dmm.5.mix.posterior'
+entero_abund <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.0.03.subsample.shared.for.0.03.dmm.5.mix.relabund'
+
+meta_file   <- read.table(meta_file, sep = '\t', header = T)
+shared_file <- read.table(shared_file, sep='\t',header = T, row.names = 'Group')
+tax_file <- read.table(tax_file, sep='\t',header = T, row.names = 'OTU')
+entero_list <- read.table(entero_list, sep = '\t', header = T)
+entero_abund <- read.table(entero_abund, sep = '\t', header = T)
+  
+# function to label otu with tax
+source('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R')
+
+# identify c difficile otus
+cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
+# remove samples not used or with other cdiff strains
+meta_file <- 
+  meta_file %>% 
+  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
+  select(Mouse_ID, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
+  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(!is.na(log_cfu))
+
+# create enterotypes
+entero_list <-
+  unique(meta_file[meta_file$cage_id != 'inoculum',c('human_source','cage_id')])  
+  gather(entero_list, 'Partition', 2:6)
