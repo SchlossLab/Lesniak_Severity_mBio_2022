@@ -32,7 +32,7 @@ entero_list <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/hum
 entero_abund <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.0.03.subsample.shared.for.0.03.dmm.5.mix.relabund'
 
 meta_file   <- read.table(meta_file, sep = '\t', header = T)
-shared_file <- read.table(shared_file, sep='\t',header = T, row.names = 'Group')
+shared_file <- read.table(shared_file, sep='\t',header = T, row.names = 'sample_id')
 tax_file <- read.table(tax_file, sep='\t',header = T, row.names = 'OTU')
 entero_list <- read.table(entero_list, sep = '\t', header = T)
 entero_abund <- read.table(entero_abund, sep = '\t', header = T)
@@ -45,9 +45,8 @@ cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
-  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
-  select(Mouse_ID, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
-  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(cdiff_strain == 431) %>% 
+  select(mouse_id, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
   filter(!is.na(log_cfu))
 
 # create enterotypes
