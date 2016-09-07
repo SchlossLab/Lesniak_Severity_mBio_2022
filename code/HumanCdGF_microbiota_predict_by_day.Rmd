@@ -40,7 +40,7 @@ cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
 meta_file <- 
   meta_file %>% 
   filter(sample_type == 'stool', cdiff_strain == 431) %>% 
-  select(Mouse_ID, group, day, cdiff_cfu, Euthanized) %>% 
+  select(Mouse_ID, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
   mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
   filter(!is.na(log_cfu))
 
@@ -133,6 +133,8 @@ rf_day_0_comm_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = T)
 rf_by_day_com_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = F)
 
 ```
+
+Removing mice which were euthanized early did not significantly change the R2 or MSE
 
 ### Predict Day 1 CFU from Day 0 Community
 
@@ -446,11 +448,25 @@ sigg_corr_otus %>%
 
   
 # '199','026','050','015','028','033','135','059','044'),    # lost with max rel abund > 10
-                                    #'007', '014', '035', '005')
 
-#50, 15, 33, 135, 7, 14, 35, 5
+```
 
-
-
+```{r}
+# function to compare rel abund of otu with cdiff cfu
+plot_otu_w_cfu <- function(OTU){
+  rel_abund_otu <- data.frame(rel_abund = rel_abund_shared_01[,OTU],
+                              group = rownames(rel_abund_shared_01))
+  plot <- meta_file %>% 
+  select(group, day, cage_id, log_cfu) %>% 
+  left_join(rel_abund_otu) %>% 
+  select(cage_id, day, log_cfu, rel_abund) %>% 
+  filter(day %in% 0:10) %>%
+  group_by(cage_id, day) %>% 
+  summarise(abund = mean(rel_abund), cfu = mean(log_cfu)) %>% 
+  gather(data_type, values, abund:cfu) %>% 
+  ggplot(aes(x = factor(day), y = values, group = data_type, color = data_type)) +
+            facet_wrap(~cage_id) + 
+            geom_line() + scale_y_log10()
+}            
 
 ```
