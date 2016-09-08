@@ -10,17 +10,14 @@
 
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
-shared <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
+shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
 
 #subset shared to be inoculum only
-inocula_df <- shared_file[meta_file$cage_id=='inoculum',]
-inocula_shared <- shared[shared$Group %in% rownames(inocula_df),]
+inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
+inocula_shared <- shared[shared$sample_id %in% inocula,]
 
 #take out samples we cant use
-inocula_shared <- inocula_shared[-1,]
-inocula_shared <- inocula_shared[-4,]
-inocula_shared <- inocula_shared[-6,]
-inocula_shared <- inocula_shared[-17,]
+
 
 #write file out so we can use it in mothur
 write.table(inocula_shared, file='data/process/inocula.shared', quote=F,sep='\t',row.names=F)
