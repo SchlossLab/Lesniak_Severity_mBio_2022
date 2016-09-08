@@ -53,7 +53,7 @@ OTU_list <- colnames(rel_abund_stool)
 
 #random forest regression model to determine Day 0 OTU correlated with increased CFU
 seed <- 18
-n_trees <- 2000
+n_trees <- 2001
 set.seed(seed)
 
 #log_cfu_obs <- meta_file[meta_file$day %in% c(0:10), c('mouse_id', 'day', 'log_cfu') ]
@@ -569,56 +569,14 @@ At first glance, OTU135 (Coriobacteriaceae) seems to stand out for predicting cf
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
-#### randomForest
-```{r fig.width=10, fig.height=5}
+
+```{r fig.width=6, fig.height=5}
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
 Predict_early_euth_df <- merge(meta_file[meta_file$day == 0, c('mouse_id', 'Euth_Early')], 
                                rel_abund_stool, by.x = 'mouse_id', by.y='row.names')
 Predict_early_euth_df_names <- Predict_early_euth_df$mouse_id
 Predict_early_euth_df <- select(Predict_early_euth_df, -mouse_id)
-
-rf_early_euth <- randomForest(Euth_Early ~ ., data = Predict_early_euth_df, 
-                              importance = TRUE, ntree = n_trees)
-rf_euth_import <- data.frame(importance = head(sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 10))
-
-rf_early_euth_top_otu <- randomForest(Euth_Early ~ ., 
-                                      data = Predict_early_euth_df[, c(rownames(rf_euth_import), 'Euth_Early')], 
-                              importance = TRUE, ntree = n_trees)
-
-unpredicted_top_otu <- Predict_early_euth_df_names[Predict_early_euth_df$Euth_Early != 
-                                               rf_early_euth_top_otu$predicted]
-rf_euth_import_top_otu <- data.frame(importance = sort(rf_early_euth_top_otu$importance[ , 'MeanDecreaseAccuracy'], 
-                                                       decreasing = T))
-ROC_euth_top_otu <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth_top_otu$predicted))
-roc_plot_top_otu <- data.frame(Specificity = 1 - ROC_euth_top_otu$specificities, 
-                       Sensitivity = ROC_euth_top_otu$sensitivities)
-
-euth_rf_plot_top_otu <- ggplot(data = roc_plot_top_otu, aes(x = Specificity, y = Sensitivity)) + 
-                      geom_path() + geom_abline(intercept = 0, slope = 1, 
-                                                linetype = 'dashed', alpha = 0.5)
-euth_import_plot_top_otu <- ggplot(data = rf_euth_import_top_otu, 
-                           aes(x = factor(rownames(rf_euth_import_top_otu)), y = importance)) + 
-        geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import_top_otu))) +
-        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
-# title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
-
-ggdraw()+
-  draw_plot(euth_rf_plot_top_otu, 0, 0, 0.5, 1) + 
-  draw_plot(euth_import_plot_top_otu, 0.5, 0, 0.5, 1)
-```
-
-Confusion Matrix  
-`r kable(rf_early_euth_top_otu$confusion)`
-
-OOB error rate = `r 100*tail(rf_early_euth_top_otu$err.rate[ , 1], 1)`
-
-Mice which were euthanized early, but the model predicts the will were not (Mouse Tag - Cage):
-`r unpredicted_top_otu`
-
-#### AUCRF
-
-```{r fig.width=6, fig.height=5}
 
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
                               ntree = n_trees, pdel = 0.05, ranking = 'MDA')
