@@ -12,12 +12,18 @@
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
 
+#orig_shared <- read.table('data/mothur/gf_all.an.0.03.subsample.shared', sep='\t', header = T)
+#remove dashes from group names so the next stuff will work
+#orig_shared[2] <- gsub("-", "", orig_shared$Group)
+
 #subset shared to be inoculum only
 inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
 inocula_shared <- shared[shared$sample_id %in% inocula,]
 
-#take out samples we cant use
+#add back label and numOTUs column to subsetted shared file-- need this to run dist.shared
 
+inocula_shared <- cbind(label=0.03, inocula_shared[1], numOTUs=2255, inocula_shared[2:ncol(inocula_shared)])
+colnames(inocula_shared)[2] <- 'Group'
 
 #write file out so we can use it in mothur
 write.table(inocula_shared, file='data/process/inocula.shared', quote=F,sep='\t',row.names=F)
