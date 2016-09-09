@@ -25,45 +25,46 @@ for (dep in pack_used){
 # setup environment
 
 # read in files
-meta_file   <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt', sep = '\t',
-                        header = T)
-shared_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
-                          sep='\t',header = T, row.names = 'Group')
-tax_file <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
-                       sep='\t',header = T, row.names = 'OTU')
-# function to label otu with tax
-source('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R')
+meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
+shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
+
+# read in files
+meta_file   <- read.table(meta_file, sep = '\t', header = T)
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
 
 # identify c difficile otus
 cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
-  filter(sample_type == 'stool', cdiff_strain == 431) %>% 
-  select(Mouse_ID, cage_id, group, day, cdiff_cfu, Euthanized) %>% 
-  mutate(log_cfu = log10(cdiff_cfu + 1)) %>% 
+  filter(cdiff_strain == 431) %>% 
+  select(mouse_id, cage_id, sample_id, day, cdiff_cfu, Early_Euth, log_cfu) %>% 
   filter(!is.na(log_cfu))
 
 # create shared with relative abundances over 1%
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
 rel_abund_shared <- 100 * shared_file / mean_otu_counts
 rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
-rel_abund_shared_01$group <- rownames(rel_abund_shared_01)
+rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
 
 # create df with day 0 communities with column of mouse_id
 day_0_otu_by_mouse <- 
   meta_file %>% 
   filter(day == 0 ) %>% 
-  select(group, Mouse_ID) %>% 
+  select(sample_id, mouse_id) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-group)
+  select(-sample_id)
 # create df with cfu merge to shared
 cfu_by_day_comm <-
   meta_file %>% 
   filter(day %in% 1:10) %>% 
-  select(group, day, log_cfu) %>% 
+  select(sample_id, day, log_cfu) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-group, -one_of(cdiff_otu))
+  select(-sample_id, -one_of(cdiff_otu))
 
 
 seed <- 18
@@ -80,9 +81,9 @@ RandomForest_by_day <- function(i, community_day_0){
     rf_data <- if(community_day_0 == TRUE){
       meta_file %>%
         filter(day == 1) %>% 
-        select(log_cfu, Mouse_ID) %>%
+        select(log_cfu, mouse_id) %>%
         inner_join(day_0_otu_by_mouse) %>% 
-        select(-Mouse_ID)
+        select(-mouse_id)
     } else {
       cfu_by_day_comm %>% 
         filter(day == 1) %>% 
@@ -382,7 +383,7 @@ cfu_by_day_comm %>%
 
 ```{r fig.width=10, fig.height=10}
 meta_file %>% 
-  select(day, log_cfu, Mouse_ID) %>% 
+  select(day, log_cfu, mouse_id) %>% 
   full_join(day_0_otu_by_mouse) %>% 
   select(day, log_cfu, one_of(predictive_otus)) %>% 
   filter(!day == 0) %>% 
@@ -397,7 +398,7 @@ meta_file %>%
 
 ```{r fig.width=10, fig.height=10}
 meta_file %>% 
-  select(day, log_cfu, Mouse_ID) %>% 
+  select(day, log_cfu, mouse_id) %>% 
   full_join(day_0_otu_by_mouse) %>% 
   select(day, log_cfu, one_of(predictive_otus)) %>% 
   filter(!day == 0) %>% 
@@ -414,10 +415,10 @@ meta_file %>%
 ```{r fig.width=10, fig.height=10}
 
 corr_df_day_0_comm <- meta_file %>% 
-  select(day, log_cfu, Mouse_ID) %>% 
+  select(day, log_cfu, mouse_id) %>% 
   full_join(day_0_otu_by_mouse) %>% 
   filter(!day == 0) %>% 
-  select(-day, -Mouse_ID)
+  select(-day, -mouse_id)
 
 get_CFU_cor <- function(dataframe, CFU, OTU){
     cor.test(dataframe[ , CFU], dataframe[ , OTU], method="spearman")[c("estimate","p.value")]
@@ -455,9 +456,9 @@ sigg_corr_otus %>%
 # function to compare rel abund of otu with cdiff cfu
 plot_otu_w_cfu <- function(OTU){
   rel_abund_otu <- data.frame(rel_abund = rel_abund_shared_01[,OTU],
-                              group = rownames(rel_abund_shared_01))
+                              sample_id = rownames(rel_abund_shared_01))
   plot <- meta_file %>% 
-  select(group, day, cage_id, log_cfu) %>% 
+  select(sample_id, day, cage_id, log_cfu) %>% 
   left_join(rel_abund_otu) %>% 
   select(cage_id, day, log_cfu, rel_abund) %>% 
   filter(day %in% 0:10) %>%
