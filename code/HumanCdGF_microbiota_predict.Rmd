@@ -23,23 +23,17 @@ for (dep in pack_used){
 ## Can Day 0 Community members predict C. difficile CFU?
 ```{r fig.height= 10, fig.width=10}
 
-setwd("~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code")
+meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
+shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
-meta_file   <- read.table('../data/process/human_CdGF_metadata.txt', sep = '\t',
-                        header = T, row.names = 'group')
-shared_file <- read.table('../data/process/human_CdGF.an.unique_list.0.03.subsample.shared',
-                          sep='\t',header = T, row.names='Group')
-tax_file <- read.table('../data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy',
-                       sep='\t',header = T, row.names = 'OTU')
-source('tax_level.R')
+meta_file   <- read.table(meta_file, sep = '\t', header = T, row.names = 'sample_id')
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
 
-# add log transformed CFU
-meta_file$log_cfu <- log10(meta_file$cdiff_cfu + 1)
-# remove cecum samples
-meta_file <- meta_file[meta_file$sample_type == 'stool', ]
-# remove unused cage P2 and 
-meta_file <- meta_file[! meta_file$cage_id %in% 'P2', ]
 # select only mice with 431 cdiff
 meta_file <- meta_file[meta_file$cdiff_strain == '431', ]
 
@@ -48,7 +42,7 @@ meta_file <- meta_file[meta_file$cdiff_strain == '431', ]
 stool_shared <- shared_file[rownames(meta_file[meta_file$day %in% 0, ]) ,]
 # use %in% instead of == because to ignore NA
 # rename day 0 community rows by mouse id - since meta rows have day in row names, use mouse id for both
-rownames(stool_shared) <- meta_file$Mouse_ID[rownames(meta_file) %in% 
+rownames(stool_shared) <- meta_file$mouse_id[rownames(meta_file) %in% 
                                                rownames(stool_shared) ]
 rel_abund_stool <- 100 * stool_shared / unique(apply(stool_shared, 1, sum))
 #Create vector of OTUs with median abundances >1%
@@ -59,10 +53,10 @@ OTU_list <- colnames(rel_abund_stool)
 
 #random forest regression model to determine Day 0 OTU correlated with increased CFU
 seed <- 18
-n_trees <- 2000
+n_trees <- 2001
 set.seed(seed)
 
-#log_cfu_obs <- meta_file[meta_file$day %in% c(0:10), c('Mouse_ID', 'day', 'log_cfu') ]
+#log_cfu_obs <- meta_file[meta_file$day %in% c(0:10), c('mouse_id', 'day', 'log_cfu') ]
 #log_cfu_obs$predict <- NA
 #log_cfu_obs[log_cfu_obs$day==2, ] <- predict(RF, rel_abund_stool)
 
@@ -77,10 +71,10 @@ prediction_df <- data.frame(matrix(nrow = 0, ncol = 4))
 rsq_features <- data.frame('Day'=NA, 'Features (n)'= NA, 'RSQ'=NA, 'MSE'=NA)
 
 for (i in 1:10){
-  predict_all_df <- merge(meta_file[meta_file$day==i, c('Mouse_ID', 'day' , 'log_cfu') ],
-                    rel_abund_stool, by='Mouse_ID', by.y='row.names', all.y = T)
+  predict_all_df <- merge(meta_file[meta_file$day==i, c('mouse_id', 'day' , 'log_cfu') ],
+                    rel_abund_stool, by='mouse_id', by.y='row.names', all.y = T)
   predict_df <- predict_all_df[,! colnames(predict_all_df) %in% 'day']
-  predict_df <- predict_df[ ,!(colnames(predict_df) %in% "Mouse_ID")]
+  predict_df <- predict_df[ ,!(colnames(predict_df) %in% "mouse_id")]
   RF <- randomForest(log_cfu ~ ., data = predict_df[!is.na(predict_df$log_cfu), ],
                    importance = TRUE, ntree = n_trees)
   rsq_df[i] <- RF$rsq[length(RF$rsq)]
@@ -147,9 +141,9 @@ Endpoint has data from Day 2,3,10 - might be misleading since contains CFU from 
      
 ```{r fig.height= 5, fig.width=10}
 
-CFU_euth <- merge(meta_file[meta_file$day==meta_file$Euthanized, c('Mouse_ID', 'log_cfu') ],
-                    rel_abund_stool, by='Mouse_ID', by.y='row.names', all.y = T)
-CFU_euth <- CFU_euth[ ,!(colnames(CFU_euth) %in% "Mouse_ID")]
+CFU_euth <- merge(meta_file[meta_file$day==meta_file$last_day_by_mouse, c('mouse_id', 'log_cfu') ],
+                    rel_abund_stool, by='mouse_id', by.y='row.names', all.y = T)
+CFU_euth <- CFU_euth[ ,!(colnames(CFU_euth) %in% "mouse_id")]
 
 RF_CFU_day_euth <- randomForest(log_cfu ~ ., data = CFU_euth[!is.na(CFU_euth$log_cfu), ],
                    importance = TRUE, ntree = n_trees)
@@ -350,11 +344,11 @@ ggdraw()+
 
 ```{r fig.height= 10, fig.width=10}
 
-without_early_euth <- meta_file[meta_file$Euthanized %in% 10 ,c('day', 'Mouse_ID', 'log_cfu')]
+without_early_euth <- meta_file[meta_file$Early_Euth == FALSE ,c('day', 'mouse_id', 'log_cfu')]
 without_early_euth <- without_early_euth[without_early_euth$day %in% c(1:4), ]
 
 without_by_day <- merge(without_early_euth, shared_X_cdiff_ra, by  = 'row.names')
-without_day_0 <- merge(without_early_euth, rel_abund_stool, by='Mouse_ID', by.y='row.names' )
+without_day_0 <- merge(without_early_euth, rel_abund_stool, by='mouse_id', by.y='row.names' )
 
 ###################################
 
@@ -371,7 +365,7 @@ features_persist <- data.frame('Day'=NA, 'Features (n)'= NA, 'RSQ'=NA, 'MSE'=NA)
 for (i in 1:4){
   predict_all_df <- without_day_0[without_day_0$day == i ,]
   predict_df <- predict_all_df[!is.na(predict_all_df$log_cfu), 
-                           !colnames(predict_all_df) %in% c('Mouse_ID', 'day')]
+                           !colnames(predict_all_df) %in% c('mouse_id', 'day')]
   RF <- randomForest(log_cfu ~ ., data = predict_df,
                    importance = TRUE, ntree = n_trees)
   rsq_persist[i] <- RF$rsq[length(RF$rsq)]
@@ -452,7 +446,7 @@ features_persist_day <- data.frame('Day'=NA, 'Features (n)'= NA, 'RSQ'=NA, 'MSE'
 for (i in 1:4){
   predict_all_df <- without_by_day[without_by_day$day == i ,]
   predict_df <- predict_all_df[!is.na(predict_all_df$log_cfu), 
-                           !colnames(predict_all_df) %in% c('Mouse_ID', 'Row.names', 'day')]
+                           !colnames(predict_all_df) %in% c('mouse_id', 'Row.names', 'day')]
   RF <- randomForest(log_cfu ~ ., data = predict_df,
                    importance = TRUE, ntree = n_trees)
   rsq_persist_day[i] <- RF$rsq[length(RF$rsq)]
@@ -521,7 +515,7 @@ ggdraw()+
 ```{r fig.width=10, fig.height=5}
 
 predict_cfu_persist_df <- without_by_day[!is.na(without_by_day$log_cfu),
-                                           ! colnames(without_by_day) %in% c('Row.names','day','Mouse_ID')]
+                                           ! colnames(without_by_day) %in% c('Row.names','day','mouse_id')]
 RF_cfu_persist_rf <- randomForest(log_cfu ~ ., data = predict_cfu_persist_df,
                    importance = TRUE, ntree = n_trees)
 RF_cfu_persist_df <- data.frame(cbind(without_by_day[!is.na(without_by_day$log_cfu), 
@@ -575,56 +569,14 @@ At first glance, OTU135 (Coriobacteriaceae) seems to stand out for predicting cf
 ***
 
 ##Can we predict moribundity with the community structure at Day 0?
-#### randomForest
-```{r fig.width=10, fig.height=5}
-meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Euthanized'] %in% 10, 1, 0)) 
-
-Predict_early_euth_df <- merge(meta_file[meta_file$day == 0, c('Mouse_ID', 'Euth_Early')], 
-                               rel_abund_stool, by.x = 'Mouse_ID', by.y='row.names')
-Predict_early_euth_df_names <- Predict_early_euth_df$Mouse_ID
-Predict_early_euth_df <- select(Predict_early_euth_df, -Mouse_ID)
-
-rf_early_euth <- randomForest(Euth_Early ~ ., data = Predict_early_euth_df, 
-                              importance = TRUE, ntree = n_trees)
-rf_euth_import <- data.frame(importance = head(sort(rf_early_euth$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 10))
-
-rf_early_euth_top_otu <- randomForest(Euth_Early ~ ., 
-                                      data = Predict_early_euth_df[, c(rownames(rf_euth_import), 'Euth_Early')], 
-                              importance = TRUE, ntree = n_trees)
-
-unpredicted_top_otu <- Predict_early_euth_df_names[Predict_early_euth_df$Euth_Early != 
-                                               rf_early_euth_top_otu$predicted]
-rf_euth_import_top_otu <- data.frame(importance = sort(rf_early_euth_top_otu$importance[ , 'MeanDecreaseAccuracy'], 
-                                                       decreasing = T))
-ROC_euth_top_otu <- roc(as.numeric(Predict_early_euth_df$Euth_Early), as.numeric(rf_early_euth_top_otu$predicted))
-roc_plot_top_otu <- data.frame(Specificity = 1 - ROC_euth_top_otu$specificities, 
-                       Sensitivity = ROC_euth_top_otu$sensitivities)
-
-euth_rf_plot_top_otu <- ggplot(data = roc_plot_top_otu, aes(x = Specificity, y = Sensitivity)) + 
-                      geom_path() + geom_abline(intercept = 0, slope = 1, 
-                                                linetype = 'dashed', alpha = 0.5)
-euth_import_plot_top_otu <- ggplot(data = rf_euth_import_top_otu, 
-                           aes(x = factor(rownames(rf_euth_import_top_otu)), y = importance)) + 
-        geom_point() + scale_x_discrete(limits = rev(rownames(rf_euth_import_top_otu))) +
-        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
-# title = 'OTU Importance in Prediction of Day Euthanized from Day 0 Community',
-
-ggdraw()+
-  draw_plot(euth_rf_plot_top_otu, 0, 0, 0.5, 1) + 
-  draw_plot(euth_import_plot_top_otu, 0.5, 0, 0.5, 1)
-```
-
-Confusion Matrix  
-`r kable(rf_early_euth_top_otu$confusion)`
-
-OOB error rate = `r 100*tail(rf_early_euth_top_otu$err.rate[ , 1], 1)`
-
-Mice which were euthanized early, but the model predicts the will were not (Mouse Tag - Cage):
-`r unpredicted_top_otu`
-
-#### AUCRF
 
 ```{r fig.width=6, fig.height=5}
+meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
+
+Predict_early_euth_df <- merge(meta_file[meta_file$day == 0, c('mouse_id', 'Euth_Early')], 
+                               rel_abund_stool, by.x = 'mouse_id', by.y='row.names')
+Predict_early_euth_df_names <- Predict_early_euth_df$mouse_id
+Predict_early_euth_df <- select(Predict_early_euth_df, -mouse_id)
 
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
                               ntree = n_trees, pdel = 0.05, ranking = 'MDA')
@@ -706,8 +658,8 @@ plot(rf_early_aucrf)
 #Importance Plot
 euth_otus <- rf_early_aucrf$Xopt
 euth_tax <- get_tax(1, euth_otus, tax_file)
-euth_tax$tax_label <- paste(gsub('_unclassified', '', euth_tax$tax),
-                                   ' (', gsub('tu0*', 'TU ', rownames(euth_tax)), 
+euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
+                            gsub('tu0*', 'TU ', rownames(euth_tax)), 
                                    ')', sep = '')
 dotchart(rev(rf_early_aucrf$ranking[euth_otus]), labels=rev(euth_tax[euth_otus, 'tax_label']), xlab='Mean Decrease Accuracy')
 #mtext('B', at=-0.014, font=2, side=3)
