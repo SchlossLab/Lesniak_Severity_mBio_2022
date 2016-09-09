@@ -27,7 +27,7 @@ for (dep in pack_used){
 # read in files
 meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
 shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
-tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
 entero_list <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.0.03.subsample.shared.for.0.03.dmm.5.mix.posterior'
 entero_abund <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.0.03.subsample.shared.for.0.03.dmm.5.mix.relabund'
 

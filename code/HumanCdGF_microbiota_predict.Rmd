@@ -658,8 +658,8 @@ plot(rf_early_aucrf)
 #Importance Plot
 euth_otus <- rf_early_aucrf$Xopt
 euth_tax <- get_tax(1, euth_otus, tax_file)
-euth_tax$tax_label <- paste(gsub('_unclassified', '', euth_tax$tax),
-                                   ' (', gsub('tu0*', 'TU ', rownames(euth_tax)), 
+euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
+                            gsub('tu0*', 'TU ', rownames(euth_tax)), 
                                    ')', sep = '')
 dotchart(rev(rf_early_aucrf$ranking[euth_otus]), labels=rev(euth_tax[euth_otus, 'tax_label']), xlab='Mean Decrease Accuracy')
 #mtext('B', at=-0.014, font=2, side=3)

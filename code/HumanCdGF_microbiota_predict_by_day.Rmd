@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
 ```
 
-```{r}
+```{r load packages}
 pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
@@ -21,8 +21,7 @@ for (dep in pack_used){
 ```
 
 
-```{r}
-# setup environment
+```{r setup environment}
 
 # read in files
 meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
@@ -68,7 +67,7 @@ cfu_by_day_comm <-
 
 
 seed <- 18
-n_trees <- 2000
+n_trees <- 2001
 set.seed(seed)
 
 rf_plot_list <- list()
@@ -139,7 +138,7 @@ Removing mice which were euthanized early did not significantly change the R2 or
 
 ### Predict Day 1 CFU from Day 0 Community
 
-```{r}
+```{r Day_1_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[1]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[1]][[2]], 0.5, 0, 0.5, 1)
@@ -148,7 +147,7 @@ ggdraw()+
 
 ### Predict Day 1 CFU from Day 1 Community
 
-```{r}
+```{r Day_1_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[1]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[1]][[2]], 0.5, 0, 0.5, 1)
@@ -159,7 +158,7 @@ ggdraw()+
 
 ### Predict Day 2 CFU from Day 0 Community
 
-```{r}
+```{r Day_2_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[2]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[2]][[2]], 0.5, 0, 0.5, 1)
@@ -168,7 +167,7 @@ ggdraw()+
 
 ### Predict Day 2 CFU from Day 2 Community
 
-```{r}
+```{r Day_2_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[2]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[2]][[2]], 0.5, 0, 0.5, 1)
@@ -179,7 +178,7 @@ ggdraw()+
 
 ### Predict Day 3 CFU from Day 0 Community
 
-```{r}
+```{r Day_3_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[3]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[3]][[2]], 0.5, 0, 0.5, 1)
@@ -188,7 +187,7 @@ ggdraw()+
 
 ### Predict Day 3 CFU from Day 3 Community
 
-```{r}
+```{r Day_3_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[3]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[3]][[2]], 0.5, 0, 0.5, 1)
@@ -199,7 +198,7 @@ ggdraw()+
 
 ### Predict Day 4 CFU from Day 0 Community
 
-```{r}
+```{r Day_4_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[4]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[4]][[2]], 0.5, 0, 0.5, 1)
@@ -208,7 +207,7 @@ ggdraw()+
 
 ### Predict Day 4 CFU from Day 4 Community
 
-```{r}
+```{r Day_4_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[4]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[4]][[2]], 0.5, 0, 0.5, 1)
@@ -219,7 +218,7 @@ ggdraw()+
 
 ### Predict Day 5 CFU from Day 0 Community
 
-```{r}
+```{r Day_5_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[5]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[5]][[2]], 0.5, 0, 0.5, 1)
@@ -228,7 +227,7 @@ ggdraw()+
 
 ### Predict Day 5 CFU from Day 5 Community
 
-```{r}
+```{r Day_5_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[5]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[5]][[2]], 0.5, 0, 0.5, 1)
@@ -239,7 +238,7 @@ ggdraw()+
 
 ### Predict Day 6 CFU from Day 0 Community
 
-```{r}
+```{r Day_6_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[1]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[1]][[2]], 0.5, 0, 0.5, 1)
@@ -248,7 +247,7 @@ ggdraw()+
 
 ### Predict Day 6 CFU from Day 6 Community
 
-```{r}
+```{r Day_6_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[6]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[6]][[2]], 0.5, 0, 0.5, 1)
@@ -259,7 +258,7 @@ ggdraw()+
 
 ### Predict Day 7 CFU from Day 0 Community
 
-```{r}
+```{r Day_7_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[7]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[7]][[2]], 0.5, 0, 0.5, 1)
@@ -268,7 +267,7 @@ ggdraw()+
 
 ### Predict Day 7 CFU from Day 7 Community
 
-```{r}
+```{r Day_7_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[7]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[7]][[2]], 0.5, 0, 0.5, 1)
@@ -279,7 +278,7 @@ ggdraw()+
 
 ### Predict Day 8 CFU from Day 0 Community
 
-```{r}
+```{r Day_8_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[8]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[8]][[2]], 0.5, 0, 0.5, 1)
@@ -288,7 +287,7 @@ ggdraw()+
 
 ### Predict Day 8 CFU from Day 8 Community
 
-```{r}
+```{r Day_8_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[8]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[8]][[2]], 0.5, 0, 0.5, 1)
@@ -299,7 +298,7 @@ ggdraw()+
 
 ### Predict Day 9 CFU from Day 0 Community
 
-```{r}
+```{r Day_9_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[9]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[9]][[2]], 0.5, 0, 0.5, 1)
@@ -308,7 +307,7 @@ ggdraw()+
 
 ### Predict Day 9 CFU from Day 9 Community
 
-```{r}
+```{r Day_9_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[9]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[9]][[2]], 0.5, 0, 0.5, 1)
@@ -319,7 +318,7 @@ ggdraw()+
 
 ### Predict Day 10 CFU from Day 0 Community
 
-```{r}
+```{r Day_10_CFU_Day_0_Community}
 ggdraw()+
   draw_plot(rf_day_0_comm_plots[[10]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_day_0_comm_plots[[10]][[2]], 0.5, 0, 0.5, 1)
@@ -328,7 +327,7 @@ ggdraw()+
 
 ### Predict Day 10 CFU from Day 10 Community
 
-```{r}
+```{r Day_10_CFU__Community}
 ggdraw()+
   draw_plot(rf_by_day_com_plots[[10]][[1]], 0, 0, 0.5, 1) + 
   draw_plot(rf_by_day_com_plots[[10]][[2]], 0.5, 0, 0.5, 1)
@@ -352,8 +351,8 @@ predictive_otus <- paste('Otu00', c('199','026','050','015','028',
                          sep = '')
 predictive_taxa <- get_tax(1, predictive_otus, tax_file)
 predictive_taxa$otu <- rownames(predictive_taxa)
-predictive_taxa$tax_label <- paste(gsub('_unclassified', '', predictive_taxa$tax),
-                                   ' (', gsub('tu0*', 'TU ', predictive_taxa$otu), 
+predictive_taxa$tax_label <- paste(predictive_taxa$tax, ' (', 
+                                   gsub('tu0*', 'TU ', predictive_taxa$otu), 
                                    ')', sep = '')
 
 cfu_by_day_comm %>% 
@@ -434,8 +433,8 @@ sigg_corr_otus <- data.frame(estimate = unlist(otu_cfu_corrs["estimate", sig]),
                    p_value = unlist(otu_cfu_corrs["p.value", sig]))
 sigg_corr_otus$otus <- gsub('.rho', '', rownames(sigg_corr_otus))
 sig_corr_phyla <- get_tax(1, sigg_corr_otus$otus, tax_file)
-sigg_corr_otus$phylogeny <- paste(gsub('_unclassified', '', sig_corr_phyla[,'tax']),
-                                   ' (', gsub('tu0*', 'TU ', sigg_corr_otus$otu), 
+sigg_corr_otus$phylogeny <- paste(sig_corr_phyla[,'tax'], ' (', 
+                                  gsub('tu0*', 'TU ', sigg_corr_otus$otu), 
                                    ')', sep = '')
 
 sigg_corr_otus %>%
