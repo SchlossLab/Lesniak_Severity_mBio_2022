@@ -1,0 +1,47 @@
+Strain independence
+========================================================
+``` {r, include = FALSE}
+# title: "Strain independence"
+# author: "Nicholas Lesniak"
+# date: "September 12, 2016"
+# output: html_document
+```
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+```{r, message=FALSE}
+pack_used <- c('ggplot2','knitr','dplyr')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+non_431   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
+
+# read in files
+non_431   <- read.table(non_431, sep = '\t', header = T, row.names = 'sample_id')
+
+# select mice infected with two strains of c diff
+cdiff_strains <- unique(non_431$cdiff_strain)
+non_431_strains <- cdiff_strains[!unique(cdiff_strains) %in% c('431', NA)]
+non_431_inocula <- unique(non_431[non_431$cdiff_strain %in% non_431_strains, 'human_source'])
+non_431 <- non_431[non_431$human_source %in% non_431_inocula, ]
+```
+
+```{r fig.height= 5, fig.width=10}
+non_431 %>% 
+  filter(day %in% c(0:10), !is.na(log_cfu) ) %>%
+  select(mouse_id, day, human_source, cdiff_strain, cage_id, log_cfu) %>% 
+  ggplot(aes(x = factor(day), y = log_cfu, color = factor(cdiff_strain))) + geom_point() +
+            stat_summary(fun.y=mean, geom="line", aes(group = cage_id)) + 
+            facet_grid(. ~ human_source) + theme_bw() + 
+            labs(x = 'Day', y = 'C Diff CFU (log10)') +
+            theme(legend.justification=c(1,0.5), legend.position=c(1,0.5), 
+                  legend.title=element_blank())
+
+```
+
