@@ -59,7 +59,10 @@ combo_design <- read.table(file='data/raw/d0_outcome.design', header = F)
 combo_nmds <- merge(combo_nmds, combo_design, by.x='group', by.y='V1')
 
 d0_donor <- read.table(file='data/raw/sample_donor.design', header = F)
-day0_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
+day0_donor_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
+
+d0_outcome <- read.table(file='data/raw/d0_only_outcome.design', header=F)
+day0_outcome_nmds <- merge(day0_nmds, d0_outcome, by.x='group', by.y='V1')
 
 
 #make nmds inocula plot
@@ -70,7 +73,7 @@ points(severe, pch=16, col = "red")
 points(asymptomatic, pch=16, col = "black")
 legend <- c("severe", "asymptomatic")
 legend(x="topright", legend, col = c("red", "black"), pch=16)
-#amova in mothur output for asymptomatic vs severe: p-value: 0.508
+#amova in mothur output for asymptomatic vs severe DONORS: p-value: 0.508
 
 #donor and day 0 by outcome plot
 severe2 <- combo_nmds[grep('Severe', combo_nmds$V2), c(2,3)]
@@ -81,12 +84,21 @@ points(asymp2, pch=16, col = "black")
 legend <- c("severe", "asymptomatic")
 legend(x="topright", legend, col = c("red", "black"), pch=16)
 
-#day 0 by outcome plot, no donors, need to make separate nmds for this one... ugh. 
+#day 0 by outcome plot, no donors. 
+#amova output for that is P <0.001! 
+
+severe4 <- day0_outcome_nmds[grep('Severe', day0_outcome_nmds$V2), c(2,3)]
+asymp4 <- day0_outcome_nmds[grep('Asymptomatic', day0_outcome_nmds$V2), c(2,3)]
+plot(day0_outcome_nmds$axis1, day0_outcome_nmds$axis2, main="Similarity day0 by outcome")
+points(severe4, pch=16, col = "red")
+points(asymp4, pch=16, col = "black")
+legend <- c("severe", "asymptomatic")
+legend(x="topright", legend, col = c("red", "black"), pch=16)
 
 
 
 #nmds colored by donor plot
-d369 <- day0_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
+d369 <- day0_donor_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
 d430 <- day0_nmds[grep('DA00430', day0_nmds$V2), c(2,3)]
 d431 <- day0_nmds[grep('DA00431', day0_nmds$V2), c(2,3)]
 d578 <- day0_nmds[grep('DA00578', day0_nmds$V2), c(2,3)]
@@ -125,7 +137,7 @@ points(d10148, pch=16, col = 'violetred2')
 par(mar=c(5,5,5,5), xpd=TRUE)
 legend <- c("d369", "d430", "d431", "d578", "d581", "d884", "d953", "d1134", "d1146", "d1245", "d1324", "d10027", "d10034", "d10082", "d10093", "d10148")
 legend(x="topright", legend, col = c("red", "orange", "yellow", "green", "blue", "purple", "black", "brown", "aquamarine", "cyan", "darkgoldenrod", "burlywood", "coral1", "darkolivegreen", "darkgray", "violetred2"), 
-        pch=16, bty='n', inset=c(-0.1,0), cex=0.9)
+        pch=16, bty='n', inset=c(-0.07,0), cex=0.9)
 
 #Anova for comparing severe vs asymptomatic
 #can do this in mothur very easily with distance matrix and design file 
