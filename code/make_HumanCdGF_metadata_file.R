@@ -59,6 +59,7 @@ shared_file <- select(shared_file, sample_id, contains('Otu0'))
 
 # Remove AMS and DA00810 human sources, cecum and day -7 samples, and file col
 human_GF_mouse <- subset(human_GF_mouse, !human_source %in% c('AMS', 'DA00810') &
+                                  !sample_id %in% c('581-inoculum', 'DA581') &
                                    sample_type == 'stool' &
                                    !human_GF_mouse$day %in% -7
                                  ,select = -file)
