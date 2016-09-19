@@ -345,8 +345,8 @@ When modeling based on mean rel abund > 1% (22 OTUs), R^2 decreases ~0.1 and MSE
 ### Otus associated with CFU C difficile and same day OTU
 
 ```{r fig.width=10, fig.height=10}
-predictive_otus <- paste('Otu00', c('199','026','050','015','028',
-                                    '033','135','059','044'),    # lost with max rel abund > 10
+predictive_otus <- paste('Otu00', c('012','171','063','033','038',
+                                    '062','078','007','209'),    # lost with max rel abund > 10
                                     #'007', '014', '035', '005'), # gain with max rel abund > 10
                          sep = '')
 predictive_taxa <- get_tax(1, predictive_otus, tax_file)
@@ -441,7 +441,7 @@ sigg_corr_otus %>%
   filter(estimate >= 0.3 | estimate <= -0.3) %>%
   mutate(color = ifelse(estimate >= 0.32 | estimate <= -0.32, 'black', 'red')) %>% 
   ggplot( aes(x = reorder(factor(phylogeny), estimate), y = estimate)) + 
-  geom_bar(stat = 'identity', aes(fill = color)) +
+  geom_bar(stat = 'identity', aes(fill = color)) + coord_flip() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_fill_manual(values = c(black = 'black', red = 'red'), guide = FALSE) +
   labs( x = '', y = 'rho', title = 'Significant Spearman Correlation Coefficient - CFU vs OTU\n(only rho > 0.3 or < -0.3 shown)')
