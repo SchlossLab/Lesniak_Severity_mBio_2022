@@ -27,11 +27,15 @@ meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/hum
 shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
+dist_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.0.03.subsample.groups.summary'
+entero_file <- '~/Desktop/dmm/human_CdGF.0.03.subsample.shared.for.0.03.dmm.2.mix.posterior'
 
 # read in files
 meta_file   <- read.table(meta_file, sep = '\t', header = T, row.names = 'sample_id')
 shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+dist_file <- read.table(dist_file, sep = '\t', header = T, row.names = 'group')
+entero_file <- read.table(entero_file, sep = '\t', header = T, row.names = 'X')
 source(tax_function)
 
 # select only mice with 431 cdiff
@@ -63,10 +67,24 @@ set.seed(seed)
 #create dataframe for RF-classification
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
-Predict_early_euth_df <- merge(meta_file[meta_file$day == 0, c('mouse_id', 'Euth_Early')], 
-                               rel_abund_stool, by.x = 'mouse_id', by.y='row.names')
-Predict_early_euth_df_names <- Predict_early_euth_df$mouse_id
-Predict_early_euth_df <- select(Predict_early_euth_df, -mouse_id)
+rownames(entero_file) <- gsub('_','-', rownames(entero_file))
+dist_file <- dist_file[grep('D0', rownames(dist_file)), ]
+rownames(dist_file) <- gsub('D0', '-D0', rownames(dist_file))
+rownames(dist_file) <- gsub('--', '-', rownames(dist_file))
+
+Predict_df <- 
+  merge(
+    merge(
+      merge(
+        meta_file[meta_file$day %in% 2, c('mouse_id', 'log_cfu')],
+        merge(meta_file[meta_file$day %in% 0, c('cage_id', 'mouse_id', 'Euth_Early')],
+              entero_file, by = 'row.names'), by = 'mouse_id'), 
+      dist_file, by.x = 'Row.names', by.y = 'row.names'),
+    rel_abund_stool, by.x = 'mouse_id', by.y = 'row.names')
+
+Predict_early_euth_df <- select(Predict_df, -cage_id, 
+                                -mouse_id, -Row.names, -Partition_2,
+                                -label, -X, -invsimpson_lci, -invsimpson_hci)
 
 # create RF model
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
@@ -78,7 +96,6 @@ random_roc <- roc(sample(c(1,0), length(otu_euth_probs[ , 2]), replace = T) ~ ot
 aucrf_data <- Predict_early_euth_df[,c('Euth_Early',rf_early_aucrf$Xopt)]
 
 #### 10-fold Cross validated - 10 repetitions
-start <- proc.time()[3]
 iters <- 100
 cv10f_aucs <- c()
 cv10f_all_resp <- c()
@@ -86,7 +103,7 @@ cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
   cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,nrow(aucrf_data),5)){
+  for(i in seq(1, 40,4)){
     train <- aucrf_data[sampling[-(i:(i+4))],]
     test <- aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -98,8 +115,6 @@ for(j in 1:iters){
   cv10f_aucs[j] <- cv10f_roc$auc
 }
 cv10f_roc <- roc(cv10f_all_resp~cv10f_all_pred)
-end <- proc.time()[3]
-time <- end-start
 
 #### leave-one-out
 LOO_probs <- NULL
@@ -112,14 +127,14 @@ LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
 LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
 
 #### leave-one-cage-out
-LOcO_df <- merge(meta_file[meta_file$day == 0, c('mouse_id', 'cage_id', 'Euth_Early')], 
-                               rel_abund_stool[ , rf_early_aucrf$Xopt], by.x = 'mouse_id', by.y='row.names')
-cage_list <- unique(LOcO_df$cage_id)
+LOcO_df <- Predict_df %>% 
+                select(Euth_Early, cage_id, one_of(rf_early_aucrf$Xopt))
+cage_list <- as.character(unique(LOcO_df$cage_id))
 
 LOcO_probs <- NULL
 LOcO_probs <- sapply(1:length(cage_list), function(i){
   by_cage <- LOcO_df$cage_id == cage_list[i]
-  LOcO_predict <- select(LOcO_df, -mouse_id, -cage_id)
+  LOcO_predict <- select(LOcO_df, -cage_id)
   train <- LOcO_predict[-by_cage,]
   test <- LOcO_predict[by_cage,]
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -138,7 +153,7 @@ ran_cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(ran_aucrf_data),nrow(ran_aucrf_data),replace=F)
   ran_cv10f_probs <- rep(NA,nrow(ran_aucrf_data))
-  for(i in seq(1,nrow(ran_aucrf_data),5)){
+  for(i in seq(1,40,4)){
     train <- ran_aucrf_data[sampling[-(i:(i+4))],]
     test <- ran_aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -150,10 +165,6 @@ for(j in 1:iters){
   ran_cv10f_aucs[j] <- ran_cv10f_roc$auc
 }
 ran_cv10f_roc <- roc(ran_cv10f_all_resp~ran_cv10f_all_pred)
-
-
-set.seed(seed)
-
 
 
 #### plot rocs
@@ -218,16 +229,23 @@ legend('topright', legend=c("Mild", "Severe"), pch=c(21, 21), pt.bg=c("orange","
 #mtext('C', at=1e-7, font=2, side=3)
 ```
 
+
+Would it help to add community information such as diversity or enterotype?  
+Would adding initial increase/slope of CFU or day 1 CFU help predict?
+But how to show since model is already approaching 1?  
+* Rerun AUCRF with added features and see if they replace any OTUs
+
+
 ***  
 ***  
 
-### Validate AUCRF with Randomizing
+### Validate AUCRF with Randomized Input
 
 
 ```{r Random_validation, fig.width=6, fig.height=5, results= 'hide'}
 #create dataframe for RF-classification
-Euth_Early <- factor(sample(c(1,0), size = nrow(rel_abund_stool), replace = T))
-Validate_early_euth_df <- cbind(Euth_Early, rel_abund_stool)
+Validate_early_euth_df <- Predict_early_euth_df
+Validate_early_euth_df$Euth_Early <- sample(Validate_early_euth_df$Euth_Early)
 
 # create RF model
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Validate_early_euth_df,
@@ -239,7 +257,6 @@ otu_euth_roc <- roc(Validate_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
 aucrf_data <- Validate_early_euth_df[,c('Euth_Early',rf_early_aucrf$Xopt)]
 
 #### 10-fold Cross validated - 10 repetitions
-start <- proc.time()[3]
 iters <- 100
 cv10f_aucs <- c()
 cv10f_all_resp <- c()
@@ -247,7 +264,7 @@ cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
   cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,nrow(aucrf_data),5)){
+  for(i in seq(1,40,4)){
     train <- aucrf_data[sampling[-(i:(i+4))],]
     test <- aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -259,8 +276,6 @@ for(j in 1:iters){
   cv10f_aucs[j] <- cv10f_roc$auc
 }
 cv10f_roc <- roc(cv10f_all_resp~cv10f_all_pred)
-end <- proc.time()[3]
-time <- end-start
 
 #### leave-one-out
 LOO_probs <- NULL
@@ -273,9 +288,10 @@ LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
 LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
 
 #### leave-one-cage-out
-LOcO_df <- cbind(cage_id = sample(meta_file[meta_file$day %in% 0, 'cage_id']),
-                 cbind(Euth_Early, rel_abund_stool[ , rf_early_aucrf$Xopt]))
-cage_list <- unique(LOcO_df$cage_id)
+LOcO_df <- cbind(cage_id = sample(meta_file[meta_file$day %in% 0, 'cage_id'],
+                                  nrow(Validate_early_euth_df)),
+                 Validate_early_euth_df[ , c('Euth_Early', rf_early_aucrf$Xopt)])
+cage_list <- as.character(unique(LOcO_df$cage_id))
 
 LOcO_probs <- NULL
 LOcO_probs <- sapply(1:length(cage_list), function(i){
@@ -284,7 +300,7 @@ LOcO_probs <- sapply(1:length(cage_list), function(i){
   train <- LOcO_predict[-by_cage,]
   test <- LOcO_predict[by_cage,]
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOcO_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
+  LOcO_probs[[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 })
 LOcO_probs <- unlist(LOcO_probs)
 LOcO_roc <- roc(aucrf_data$Euth_Early~LOcO_probs)
@@ -304,7 +320,7 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
                                sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
                                sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
                                sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
-),lty=c(1,2,1,2,0,0), lwd=2, col=c('black','blue','gray','red'), bty='n')
+),lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','red','gray'), bty='n')
 ```
 
 
