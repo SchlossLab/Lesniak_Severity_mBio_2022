@@ -27,15 +27,11 @@ meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/hum
 shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
-dist_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.0.03.subsample.groups.summary'
-entero_file <- '~/Desktop/dmm/human_CdGF.0.03.subsample.shared.for.0.03.dmm.2.mix.posterior'
 
 # read in files
 meta_file   <- read.table(meta_file, sep = '\t', header = T, row.names = 'sample_id')
 shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
-dist_file <- read.table(dist_file, sep = '\t', header = T, row.names = 'group')
-entero_file <- read.table(entero_file, sep = '\t', header = T, row.names = 'X')
 source(tax_function)
 
 # select only mice with 431 cdiff
@@ -67,24 +63,11 @@ set.seed(seed)
 #create dataframe for RF-classification
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
-rownames(entero_file) <- gsub('_','-', rownames(entero_file))
-dist_file <- dist_file[grep('D0', rownames(dist_file)), ]
-rownames(dist_file) <- gsub('D0', '-D0', rownames(dist_file))
-rownames(dist_file) <- gsub('--', '-', rownames(dist_file))
+Predict_df <- merge(meta_file[meta_file$day %in% 0, 
+                              c('cage_id', 'mouse_id', 'Euth_Early')],
+                    rel_abund_stool, by.x = 'mouse_id', by.y = 'row.names')
 
-Predict_df <- 
-  merge(
-    merge(
-      merge(
-        meta_file[meta_file$day %in% 2, c('mouse_id', 'log_cfu')],
-        merge(meta_file[meta_file$day %in% 0, c('cage_id', 'mouse_id', 'Euth_Early')],
-              entero_file, by = 'row.names'), by = 'mouse_id'), 
-      dist_file, by.x = 'Row.names', by.y = 'row.names'),
-    rel_abund_stool, by.x = 'mouse_id', by.y = 'row.names')
-
-Predict_early_euth_df <- select(Predict_df, -cage_id, 
-                                -mouse_id, -Row.names, -Partition_2,
-                                -label, -X, -invsimpson_lci, -invsimpson_hci)
+Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id)
 
 # create RF model
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
@@ -103,7 +86,7 @@ cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
   cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1, 40,4)){
+  for(i in seq(1,nrow(aucrf_data),5)){
     train <- aucrf_data[sampling[-(i:(i+4))],]
     test <- aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -153,7 +136,7 @@ ran_cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(ran_aucrf_data),nrow(ran_aucrf_data),replace=F)
   ran_cv10f_probs <- rep(NA,nrow(ran_aucrf_data))
-  for(i in seq(1,40,4)){
+  for(i in seq(1,nrow(ran_aucrf_data),5)){
     train <- ran_aucrf_data[sampling[-(i:(i+4))],]
     test <- ran_aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -189,9 +172,9 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 
 
 ```{r fig.width=10, fig.height=8}
-layout(matrix(c(1,1,4,4,
-                2,2,3,3,
-                2,2,3,3), nrow=3, byrow = TRUE))
+layout(matrix(c(1,1,1,1,4,4,4,
+                2,2,2,5,3,3,3,
+                2,2,2,5,3,3,3), nrow=3, byrow = TRUE))
 
 
 #AUCRF curve
@@ -230,11 +213,19 @@ legend('topright', legend=c("Mild", "Severe"), pch=c(21, 21), pt.bg=c("orange","
 ```
 
 
-Would it help to add community information such as diversity or enterotype?  
-Would adding initial increase/slope of CFU or day 1 CFU help predict?
-But how to show since model is already approaching 1?  
-* Rerun AUCRF with added features and see if they replace any OTUs
+Would adding initial increase/slope of CFU or day 1 CFU help predict?  
 
+* Adding CFU decreases AUC and improves Random model, likely due to samples lost due to lack of cfu data which are biased towards the severe samples
+    - Day 1 CFU loses 2 samples  [AUCRF model with Day 1 CFU](~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/CdGF_AUCRF_withCFU_day1.html)
+    - Day 2 cfu loses 14 samples, 10 are severe  [AUCRF model with Day 2 CFU](~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/CdGF_AUCRF_withCFU_day2.html)
+
+Would it help to add community information such as diversity or enterotype?
+
+* When adding diversity and CFU, invsimpson and cfu appear as features, but when cfu is removed, invsimpson is no longer a predictor
+
+But how to show since model is already approaching 1?  
+
+* Rerun AUCRF with added features and see if they replace any OTUs
 
 ***  
 ***  
@@ -264,7 +255,7 @@ cv10f_all_pred <- c()
 for(j in 1:iters){
   sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
   cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,40,4)){
+  for(i in seq(1,nrow(aucrf_data),5)){
     train <- aucrf_data[sampling[-(i:(i+4))],]
     test <- aucrf_data[sampling[i:(i+4)],]
     temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
@@ -325,9 +316,10 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 
 
 ```{r Random_valid OTUs, fig.width=10, fig.height=8}
-layout(matrix(c(1,1,4,4,
-                2,2,3,3,
-                2,2,3,3), nrow=3, byrow = TRUE))
+layout(matrix(c(1,1,1,1,4,4,4,
+                2,2,2,5,3,3,3,
+                2,2,2,5,3,3,3), nrow=3, byrow = TRUE))
+
 
 
 #AUCRF curve
