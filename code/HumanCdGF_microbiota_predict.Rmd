@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ```{r, message=FALSE}
@@ -99,33 +99,39 @@ for (i in 1:10){
 }
 rsq_features <- rsq_features[-1,]
 
+rf_title <- expression(paste("Random Forest Prediction of ", italic("C. difficile"), " CFU dpi from Day 0 Community"))
+
 
 day_0_rf_plot <- ggplot(data = prediction_df, aes(x=observed, y=predicted)) + geom_point() + 
         facet_wrap( ~ day, nrow = 2) + 
-        labs(title = 'Random Forest Prediction of C Diff CFU dpi from Day 0 Community',
-        x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
+        labs(title = rf_title, x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)')
 
 rsq_df <- t(rsq_df)
 rsq_df <- as.data.frame(cbind(rsq_df, day = c(1:10)))
 day_0_rsq_plot <- ggplot(data = rsq_df, aes(x = factor(day), y = RSQ)) + geom_point() + theme_bw() +
-        labs(x= 'Day', y = 'R^2') #title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
+        labs(x= 'Day', y = 'R^2') + expand_limits(y=0) #title = 'Variation Explained by Day of C Diff CFU dpi from Day 0 Community',
 
 mse_df <- t(mse_df)
 mse_df <- as.data.frame(cbind(mse_df, day = c(1:10)))
 day_0_mse_plot <- ggplot(data = mse_df, aes(x = factor(day), y = MSE)) + geom_point() + theme_bw() +
-        labs(x= 'Day', y = 'MSE') # title = 'MSE by Day of C Diff CFU dpi from Day 0 Community',
+        labs(x= 'Day', y = 'MSE') + expand_limits(y=0) # title = 'MSE by Day of C Diff CFU dpi from Day 0 Community',
 day_0_r2feat_plot <- ggplot(rsq_features, aes(x=Features..n., y=RSQ, group=(Day), color=factor(Day))) + geom_line() +
-  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide=FALSE) + theme_bw()
+  labs(x = 'Features (n)', y = 'R^2') + scale_color_discrete(guide=FALSE) + theme_bw() + expand_limits(y=0)
 #  title= 'R^2 from RF with top n features\n
 #                    Day of C Diff CFU dpi from Day 0 Community', scale_color_discrete(name = 'Day')
 
-n_important <- 20
+n_important <- 10
 median_importance <- names(head(sort((apply(importance_df,1, median)), decreasing = T), n_important))
 med_import_df <- melt(cbind(rownames(importance_df), importance_df)[median_importance, ])
 colnames(med_import_df) <- c('OTU', 'Day', 'Importance')
-day_0_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + facet_wrap( ~ OTU, nrow = 2) +
+otu_taxa <- get_tax(1, as.character(unique(med_import_df$OTU)), tax_file)
+med_import_df$OTU <- paste(otu_taxa[,1],' (', 
+                           gsub('tu0*', 'TU', rownames(otu_taxa)),')', sep='')
+    
+day_0_feat_plot <- ggplot(data = med_import_df, aes(x = factor(Day), y = Importance)) + 
+        facet_wrap( ~ OTU, nrow = 2) +
         geom_point() + scale_x_discrete(labels = c(1:10)) +
-        labs(title = 'OTU Importance in Prediction of C Diff CFU dpi from Day 0 Community\n (Top 20 Median OTUs)',
+        labs(title = 'OTU Importance (Top 10 Median OTUs)',
         x= 'Day', y = '% Increase in MSE') + theme_bw()
 
 ggdraw()+
