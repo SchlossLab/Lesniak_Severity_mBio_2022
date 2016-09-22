@@ -127,13 +127,16 @@ LOcO_probs <- unlist(LOcO_probs)
 LOcO_roc <- roc(aucrf_data$Euth_Early~LOcO_probs)
 
 #### Random - 10-fold Cross validated - 10 repetitions
-ran_aucrf_data <- cbind(Euth_Early = factor(sample(Predict_early_euth_df$Euth_Early, 
-                                                     nrow(Predict_early_euth_df))),
-                             Predict_early_euth_df[,rf_early_aucrf$Xopt])
+
 ran_cv10f_aucs <- c()
 ran_cv10f_all_resp <- c()
 ran_cv10f_all_pred <- c()
 for(j in 1:iters){
+  set.seed(j)
+  ran_aucrf_data <- cbind(Euth_Early = factor(sample(Predict_early_euth_df$Euth_Early, 
+                                                     nrow(Predict_early_euth_df))),
+                             Predict_early_euth_df[,rf_early_aucrf$Xopt])
+  set.seed(seed)
   sampling <- sample(1:nrow(ran_aucrf_data),nrow(ran_aucrf_data),replace=F)
   ran_cv10f_probs <- rep(NA,nrow(ran_aucrf_data))
   for(i in seq(1,nrow(ran_aucrf_data),5)){
@@ -233,6 +236,22 @@ But how to show since model is already approaching 1?
 ### Validate AUCRF with Randomized Input
 
 
+```{r}
+
+# boruta feature selection
+random_boruta <- read.table('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/random_rf_features_boruta.txt', sep = '\t')
+random_boruta <- random_boruta[, c('normHits', 'decision')]
+random_boruta$OTU <- rownames(random_boruta)
+```
+
+When randomly redistributing the Early Euthnization classification to the Day 0 commnunities, Boruta does not select any OTUs  
+Summing the OTU decisions from 100 iterations of randomly assigning classifications run in Boruta with 100 iterations produces:
+`r summary(random_boruta$decision)`
+Of all the Confirmed OTUs there are `r length(unique(random_boruta$OTU[random_boruta$decision == 'Confirmed']))` unique OTUs
+Of all the Tentative OTUs there are `r length(unique(random_boruta$OTU[random_boruta$decision == 'Tentative']))` unique OTUs
+Furthermore, there is no overlap in the identified OTUs, since there are `r length(unique(random_boruta$OTU[random_boruta$decision %in% c('Tentative', 'Confirmed')]))` unique OTUs.  
+Thus, no OTUs are able to create a model with out the specific pattern of observed disease severity.
+
 ```{r Random_validation, fig.width=6, fig.height=5, results= 'hide'}
 #create dataframe for RF-classification
 Validate_early_euth_df <- Predict_early_euth_df
@@ -279,8 +298,7 @@ LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
 LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
 
 #### leave-one-cage-out
-LOcO_df <- cbind(cage_id = sample(meta_file[meta_file$day %in% 0, 'cage_id'],
-                                  nrow(Validate_early_euth_df)),
+LOcO_df <- cbind(cage_id = Predict_df$cage_id,
                  Validate_early_euth_df[ , c('Euth_Early', rf_early_aucrf$Xopt)])
 cage_list <- as.character(unique(LOcO_df$cage_id))
 
