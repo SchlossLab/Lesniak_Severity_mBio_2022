@@ -5,15 +5,19 @@
 get_tax <- function(tax_level=1,row_list=1:length(rownames(tax_file)),df=tax_file){
      if (tax_level %in% c(1:5)){
           taxonomy <- df[row_list,]
-          taxonomy <-  data.frame(do.call('rbind', strsplit(as.character(taxonomy$Taxonomy),';',fixed=TRUE)))
-          taxonomy <- data.frame(sapply(taxonomy,gsub,pattern="\\(\\d*\\)",replacement=""))
+          taxonomy <- strsplit(as.character(taxonomy$Taxonomy),';',fixed=TRUE)
+          n <- max(sapply(taxonomy, length))
+          taxonomy <- lapply(taxonomy, `[`, seq_len(n))
+          taxonomy <- data.frame(do.call('rbind', taxonomy))
+          taxonomy <- sapply(taxonomy,gsub,pattern="\\(\\d*\\)",replacement="")
           level <- 7-tax_level
           tax_out <- as.character(taxonomy[,level])
           for (i in level:2){
                next_level <- i-1
-               tax_out[tax_out=='unclassified'] <- 
-                    as.character(taxonomy[tax_out=='unclassified',next_level])
+               tax_out[is.na(tax_out)] <- 
+                 as.character(taxonomy[is.na(tax_out),next_level])
           }
+          tax_out <- gsub('_unclassified', '', tax_out)
           return(data.frame(tax= tax_out, row.names=row_list))
      } else {print(
           'Error: Level must be 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum)')
