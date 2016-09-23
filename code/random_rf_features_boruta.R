@@ -31,9 +31,9 @@ OTUs_stool_0_01 <- apply(rel_abund_stool, 2, max) > 1
 rel_abund_stool <- rel_abund_stool[ ,OTUs_stool_0_01]
 
 #random forest regression model to determine Day 0 OTU correlated with increased CFU
-seed <- 18
+seed <- -592166825
 n_trees <- 2001
-set.seed(seed)
+iters <- 100
 
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
@@ -45,16 +45,18 @@ Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id)
 
 #create dataframe for RF-classification
 Validate_early_euth_df <- Predict_early_euth_df
+set.seed(seed)
 Validate_early_euth_df$Euth_Early <- sample(Validate_early_euth_df$Euth_Early)
 
 # boruta feature selection
-
 random_model_features <- c()
+
 for(i in 1:iters){
-  set.seed(i)
-  Validate_early_euth_df$Euth_Early <- sample(Validate_early_euth_df$Euth_Early)
-  random_bor <- Boruta(Euth_Early ~ ., data = Validate_early_euth_df)
-  random_model_features[[i]] <- attStats(random_bor)
+  set.seed(seed)
+  Boruta(Euth_Early ~ ., data = Validate_early_euth_df)
+  feature_df <- attStats(random_bor)
+  feature_df$OTU <- rownames(feature_df)
+  random_model_features[[i]] <- feature_df
 }
 random_model_features <- do.call('rbind', random_model_features)
 
