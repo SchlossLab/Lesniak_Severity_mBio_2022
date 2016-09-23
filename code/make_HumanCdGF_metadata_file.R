@@ -14,14 +14,14 @@
 #
 ###################
 input_mouse <- 'data/raw/humanGF_ids.xlsx'
-input_shared <- 'data/mothur/gf_all.an.0.03.subsample.shared'
+input_shared <- 'data/mothur/gf_new.an.0.03.subsample.shared'
 output_metadata <- 'data/process/human_CdGF_metadata.txt'
 output_shared <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 
 # files file used for metadata file
 input_meta_sample_ids <- 'data/raw/gf_cdiff.files' #did he do this on purpose, i forget
 # files file used for mothur processing
-input_shared_sample_ids <- 'data/raw/gf_all.files'
+input_shared_sample_ids <- 'data/raw/gf_new.files'
 
 # gdata loads excel files, 
 pack_used <- c('gdata', 'dplyr', 'stringr')

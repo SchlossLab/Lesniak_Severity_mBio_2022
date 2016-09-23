@@ -24,6 +24,7 @@ mouseIDVector <- as.character(unique(meta_file$mouse_id))
 mouseIDVector <- mouseIDVector[mouseIDVector != "inoculum_NA"]
 stability <- as.data.frame(matrix(ncol=10, nrow=length(mouseIDVector)))
 row.names(stability) <- mouseIDVector
+names(stability) <- c(1,2,3,4,5,6,7,8,9,10)
 for (k in 1:10){
   sampA <- rownames(meta_file)[meta_file$day %in% 0]
   sampB <- rownames(meta_file)[meta_file$day %in% k]
@@ -38,7 +39,10 @@ for (k in 1:10){
   }
 }
 
+test <- t(stability)
 #plot
+#tidyr or reshape from ggverse to melt 
+#or draw on blank plot and connect
 
 
 
