@@ -53,7 +53,7 @@ random_model_features <- c()
 
 for(i in 1:iters){
   set.seed(seed)
-  Boruta(Euth_Early ~ ., data = Validate_early_euth_df)
+  random_bor <- Boruta(Euth_Early ~ ., data = Validate_early_euth_df)
   feature_df <- attStats(random_bor)
   feature_df$OTU <- rownames(feature_df)
   random_model_features[[i]] <- feature_df
