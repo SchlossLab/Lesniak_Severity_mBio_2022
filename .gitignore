@@ -6,7 +6,9 @@
 head.batch
 tail.batch
 
-data/
+data/*
+!data/process
+!data/mothur
 
 *.qsub*
 mothur*logfile
