@@ -14,7 +14,7 @@
 #
 ###################
 input_mouse <- 'data/raw/humanGF_ids.xlsx'
-input_shared <- 'data/mothur/gf_new.an.0.03.subsample.shared'
+input_shared <- 'data/process/gf_new.subsample.shared'
 output_metadata <- 'data/process/human_CdGF_metadata.txt'
 output_shared <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 

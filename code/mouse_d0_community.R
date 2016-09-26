@@ -12,9 +12,9 @@ install.packages("RColorBrewer")
 library(RColorBrewer)
 
 #import Nick's awesome combined metadata file
-meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
+meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=2)
 shared_file <- read.table("data/process/human_CdGF.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
-tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
+tax_file <- read.table('data/process/gf_new.an.taxonomy', sep='\t',header = T, row.names = 1)
 
 #make OTU abundance file
 
