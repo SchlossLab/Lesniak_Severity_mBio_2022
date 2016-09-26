@@ -179,10 +179,11 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
                                sprintf('Leave-1 mouse-out (AUC: %.3g)',LOO_roc$auc),
                                sprintf('Leave-1 cage-out (AUC: %.3g)',LOcO_roc$auc),
                                sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
-                               sprintf('Random (AUC: %.3g)',ran_cv10f_roc$auc),
+                               sprintf('Random OOB (AUC: %.3g)',predict_random_roc$auc),
+                               sprintf('Random 10-fold CV (AUC: %.3g)',ran_cv10f_roc$auc),
                                sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
                                sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
-),lty=c(1,2,2,1,3,0,0), lwd=2, col=c('black','blue','red','gray','orange'), bty='n')
+),lty=c(1,2,2,1,3,1,0,0), lwd=2, col=c('black','blue','purple','gray','red','orange'), bty='n')
 ```
 
 
