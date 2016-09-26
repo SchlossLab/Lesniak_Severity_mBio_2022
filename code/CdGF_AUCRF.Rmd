@@ -336,3 +336,48 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_random_roc$a
 #                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_random_roc,cv10r_roc)$p.value)),
 		lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','red','gray'), bty='n')
 ```
+
+### Other prediction models
+
+##### C50
+
+```{r c50, eval=F}
+install.packages('C50')
+library(C50)
+
+set.seed(seed)
+shuffle <- runif(nrow(Predict_early_euth_df))
+Predict_early_euth_df_r <- Predict_early_euth_df[order(shuffle), ]
+
+c50_euth_model <- C5.0(Predict_early_euth_df_r[1:50 , -1], Predict_early_euth_df_r[1:50 , 1])
+summary(c50_euth_model)
+plot(c50_euth_model)
+c50_euth_predict <- predict(c50_euth_model, Predict_early_euth_df_r[51:55, ])
+table(Predict_early_euth_df_r[51:55, 1],c50_euth_predict)
+
+mylibrary<-c("SL.glm","SL.randomForest","SL.svm","SL.glmnet") 
+SL_euth_model <- SuperLearner(as.numeric(Predict_early_euth_df_r[ , 1]), Predict_early_euth_df_r[ , -1], SL.library = mylibrary)
+predict(SL_euth_model, newdata = as.numeric(Predict_early_euth_df_r[ , 1]))
+
+SL_euth_model$SL.predict
+sum=0
+tt<-length(Predict_early_euth_df_r)
+for(i in 1:tt) {
+sum<-sum+(Predict_early_euth_df_r[i,1]-SL_euth_model$SL.predict[i])^2
+  } 
+sumg <-sum/tt
+sumg
+
+listWrappers()
+
+Remove_otu_df <- Predict_early_euth_df_r %>% 
+  select(-Otu00074, -Otu00114, -Otu00050, -Otu00124, -Otu00120, -Otu00100)
+
+set.seed(seed)
+rf_rm_otu_early_aucrf <- AUCRF(Euth_Early ~ ., data = Remove_otu_df,
+                              ntree = n_trees, pdel = 0.05, ranking = 'MDA')
+rm_otu_euth_probs <- predict(rf_rm_otu_early_aucrf$RFopt, type = 'prob')
+rm_otu_euth_roc <- roc(Remove_otu_df$Euth_Early ~ rm_otu_euth_probs[ , 2])
+
+plot(rm_otu_euth_roc, col='gray', lwd=2, add=T, lty=1)
+```
