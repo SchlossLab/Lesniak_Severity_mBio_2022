@@ -16,6 +16,10 @@ shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shar
 #remove dashes from group names so the next stuff will work
 #orig_shared[2] <- gsub("-", "", orig_shared$Group)
 
+#make shared file look like a true shared:
+shared_group <- cbind(label=0.03, shared[1], numOTUs=2255, shared[2:ncol(shared)])
+colnames(shared_group)[2] <- 'Group'
+
 #subset shared to be inoculum only
 inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
 inocula_shared <- shared[shared$sample_id %in% inocula,]
@@ -39,6 +43,7 @@ inputd0_shared <- rbind(inocula_shared, day0_shared)
 write.table(inocula_shared, file='data/process/inocula.shared', quote=F,sep='\t',row.names=F)
 write.table(day0_shared, file='data/process/day0.shared', quote=F,sep='\t',row.names=F)
 write.table(inputd0_shared, file='data/process/inputd0.shared', quote=F, sep='\t', row.names=F)
+write.table(shared_group, file='data/process/shared_group.shared', quote=F, sep='\t', row.names=F)
 
 #run dist.shared, nmds in mothur to get axes file
 #mothur ouput stats for combined file: 
@@ -89,7 +94,7 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 
 severe4 <- day0_outcome_nmds[grep('Severe', day0_outcome_nmds$V2), c(2,3)]
 asymp4 <- day0_outcome_nmds[grep('Asymptomatic', day0_outcome_nmds$V2), c(2,3)]
-plot(day0_outcome_nmds$axis1, day0_outcome_nmds$axis2, main="Similarity day0 by outcome")
+plot(day0_outcome_nmds$axis1, day0_outcome_nmds$axis2, main="Similarity day0 by outcome", col = day0_outcome_nmds$V2, pch=as.numeric(day0_outcome_nmds$V2))
 points(severe4, pch=16, col = "red")
 points(asymp4, pch=16, col = "black")
 legend <- c("severe", "asymptomatic")
@@ -98,24 +103,9 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 
 
 #nmds colored by donor plot
-d369 <- day0_donor_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
-d430 <- day0_nmds[grep('DA00430', day0_nmds$V2), c(2,3)]
-d431 <- day0_nmds[grep('DA00431', day0_nmds$V2), c(2,3)]
-d578 <- day0_nmds[grep('DA00578', day0_nmds$V2), c(2,3)]
-d581 <- day0_nmds[grep('DA00581', day0_nmds$V2), c(2,3)]
-d884 <- day0_nmds[grep('DA00884', day0_nmds$V2), c(2,3)]
-d953 <- day0_nmds[grep('DA00953', day0_nmds$V2), c(2,3)]
-d1134 <- day0_nmds[grep('DA01134', day0_nmds$V2), c(2,3)]
-d1146 <- day0_nmds[grep('DA01146', day0_nmds$V2), c(2,3)]
-d1245 <- day0_nmds[grep('DA01245', day0_nmds$V2), c(2,3)]
-d1324 <- day0_nmds[grep('DA01324', day0_nmds$V2), c(2,3)]
-d10027 <- day0_nmds[grep('DA10027', day0_nmds$V2), c(2,3)]
-d10034 <- day0_nmds[grep('DA10034', day0_nmds$V2), c(2,3)]
-d10082 <- day0_nmds[grep('DA10082', day0_nmds$V2), c(2,3)]
-d10093 <- day0_nmds[grep('DA10093', day0_nmds$V2), c(2,3)]
-d10148 <- day0_nmds[grep('DA10148', day0_nmds$V2), c(2,3)]
 
-plot(day0_nmds$axis1, day0_nmds$axis2, main="Similarity of day 0 communities, colored by donor")
+
+plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2)
 
 points(d369, pch=16, col = 'red')
 points(d430, pch=16, col = 'orange')
@@ -126,7 +116,7 @@ points(d884, pch=1, col = 'purple')
 points(d953, pch=16, col = 'black')
 points(d1134, pch=16, col = 'brown')
 points(d1146, pch=16, col = 'aquamarine')
-points(d1245, pch=1, col = 'cyan')
+points(d1245, pch=15, col = 'cyan')
 points(d1324, pch=16, col = 'darkgoldenrod')
 points(d10027, pch=16, col = 'burlywood')
 points(d10034, pch=1, col = 'coral1')
