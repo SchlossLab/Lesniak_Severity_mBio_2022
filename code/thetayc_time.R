@@ -13,7 +13,9 @@ source('code/read.dist.R')
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
-theta <- read.dist(file='data/process/shared_group.thetayc.0.03.lt.dist', input="lt", make.square=T, diag=0)
+theta <- read.dist(file='data/process/shared_subset_2194.thetayc.0.03.lt.dist', input="lt", make.square=T, diag=0)
+
+
 
 #then maybe write it as a function 
 
