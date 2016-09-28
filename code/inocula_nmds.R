@@ -134,9 +134,24 @@ legend(x="topright", legend, col = c("red", "orange", "yellow", "green", "blue",
 
 
 #tree test
+install.packages("ape")
+
+library(ape)
 
 inoc_tree <- read.tree(file='data/process/inocula_2194.thetayc.0.03.tre')
+day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.tre')
 
+#for plotting donors by outcome 
+dead <- inoc_tree$tip.label[c(3,6,7,8,15)]
+plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% dead, 'red', 'black'))
+plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% dead, 'red', 'black'))
+
+#for plotting donors by initial disease state
+diah <- inoc_tree$tip.label[c(2,5,7,11)]
+cdiff <- inoc_tree$tip.label[8]
+plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
+plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
+legend("bottomleft", c('diarrhea', 'cdiff infected', 'no diarrhea'), col = c('blue', 'red', 'black'), pch =16)
 
 
 

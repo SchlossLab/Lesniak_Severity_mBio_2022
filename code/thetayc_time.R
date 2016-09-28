@@ -7,7 +7,8 @@
 #    
 #
 ###################
-
+install.packages("reshape")
+library("reshape")
 source('code/read.dist.R')
 
 #read in files
@@ -41,7 +42,7 @@ for (k in 1:10){
   }
 }
 
-test <- t(stability)
+
 #plot
 #tidyr or reshape from ggverse to melt 
 #or draw on blank plot and connect

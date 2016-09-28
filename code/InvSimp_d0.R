@@ -11,7 +11,7 @@
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
-simp <- read.table('data/mothur/gf_all.an.0.03.subsample.groups.summary', sep='\t',header=T)
+simp <- read.table('data/process/invsimp.summary', sep='\t',header=T)
 
 #subset simp to be day 0 only
 day0list <- rownames(meta_file)[meta_file$day==0]
@@ -26,13 +26,13 @@ day0_simp$cage <- day0_meta$cage_id
 day0_simp$donor <- day0_meta$human_source
 day0donor <- day0_meta$human_source
 
-fullsimp <- cbind(day0_simp[2:3], day0_simp[7], day0_simp[8])
+fullsimp <- cbind(day0_simp[2:3], day0_simp[6:7])
 
 #plot(fullsimp$cage, fullsimp$invsimpson, type="p", cex.lab=0.7, cex.axis=0.7)
 
 stripchart(fullsimp$invsimpson ~ fullsimp$cage, vertical = TRUE, cex.axis=0.7, pch=16, main="Simpson diversity on day 0", xlab="cage", ylab="Inverse Simpson")
 
-stripchart(fullsimp$invsimpson ~ fullsimp$donor, vertical = TRUE, cex.axis=0.7, pch=16, main="Simpson diversity on day 0", xlab="donor", ylab="Inverse Simpson")
+stripchart(fullsimp$invsimpson ~ fullsimp$donor, vertical = TRUE, method = "jitter", cex.axis=0.7, pch=16, main="Simpson diversity on day 0", xlab="donor", ylab="Inverse Simpson")
 
 #would be good to label the points by severity.. dont have a column for this but can 
 #force it by coloring donors that are severe 
