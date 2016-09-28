@@ -17,6 +17,10 @@ input_mouse <- 'data/raw/humanGF_ids.xlsx'
 input_shared <- 'data/process/gf_new.subsample.shared'
 output_metadata <- 'data/process/human_CdGF_metadata.txt'
 output_shared <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+input_full_shared <- 'data/mothur/gf_new.an.shared'
+output_full_shared <- 'data/process/humanCdGF_full.shared'
+
+
 
 # files file used for metadata file
 input_meta_sample_ids <- 'data/raw/gf_cdiff.files' #did he do this on purpose, i forget
@@ -38,6 +42,7 @@ human_GF_mouse <- read.xls(input_mouse, sheet = 'complete metadata')
 shared_file <- read.table(input_shared, sep = '\t',header = T)
 meta_sample_ids <- read.table(input_meta_sample_ids, sep = '\t', header = F, stringsAsFactors = FALSE)
 shared_sample_ids <- read.table(input_shared_sample_ids, sep = '\t', header = F, stringsAsFactors = FALSE)
+shared_full <- read.table(input_full_shared, sep = '\t', header =T)
 
 # convert sample ids of shared to match metafile
 colnames(meta_sample_ids) <- c('meta_sample_id','fastq_1', 'fastq_2')
@@ -52,10 +57,16 @@ sample_id_key[is.na(sample_id_key$meta_sample_id), 'meta_sample_id'] <-
 shared_file <- merge(sample_id_key, shared_file, by.x = 'shared_sample_id', 
                         by.y = 'Group', all.y = TRUE)
 shared_file <- rename(shared_file, sample_id = meta_sample_id)
-human_GF_mouse <- rename(human_GF_mouse, sample_id = group)
+human_GF_mouse <- rename(human_GF_mouse, ample_id = group)
+
+# do the above for the full shared file too 
+shared_full <- merge(sample_id_key, shared_full, by.x = 'shared_sample_id', by.y = 'Group', all.y = TRUE)
+shared_full <- rename(shared_full, sample_id = meta_sample_id)
 
 # subset df to include only sample_id and otus
 shared_file <- select(shared_file, sample_id, contains('Otu0'))
+shared_full <- select(shared_full, sample_id, contains('Otu0'))
+
 
 # Remove AMS and DA00810 human sources, cecum and day -7 samples, and file col
 human_GF_mouse <- subset(human_GF_mouse, !human_source %in% c('AMS', 'DA00810') &

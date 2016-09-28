@@ -9,6 +9,8 @@
 ###################
 install.packages("reshape")
 library("reshape")
+install.packages("gridExtra")
+library("gridExtra")
 source('code/read.dist.R')
 
 #read in files
@@ -42,15 +44,46 @@ for (k in 1:10){
   }
 }
 
-
-#plot
-#tidyr or reshape from ggverse to melt 
-#or draw on blank plot and connect
+#need to melt data to get it in plottable form. add mouse id and cage id column. WOO. 
 
 
+melted <- melt(stability) %>% mutate(mouse_id = rep(rownames(stability), 10))
+melted$cage_id <- sapply((strsplit(melted$mouse_id, "_")), '[', 1)
 
 
+#ggplot wont plot NAs but if you remove them it plots the lines ok 
+ggplot(na.omit(melted), aes(variable, value, group = mouse_id)) + geom_line(aes(color = cage_id)) + theme_bw() + facet_grid(cage_id~.) + ggtitle("ThetaYC vs day 0 over time") + xlab("day post infection") + ylab("Theta YC distance from day 0")
 
+
+#not faceted or averaged
+ggplot(na.omit(melted), aes(variable, value, group = mouse_id)) + geom_line(aes(color = cage_id)) + theme_bw() + ggtitle("ThetaYC vs day 0 over time") + xlab("day post infection") + ylab("Theta YC distance from day 0")
+
+ggplot(na.omit(melted), aes(variable, value, group = mouse_id)) + geom_line(aes(color = mouse_id)) + theme_bw()
+
+#trying multiple plots - put this in a loop and have plot all on one page? or use this to avg by cage 
+
+ggplot(na.omit(subset(melted, melted$cage_id == '369')), aes(variable, value, group = mouse_id)) + geom_line()
+
+
+p <- list()
+i <- 1
+for(j in melted$cage_id){
+  p[[i]] <- ggplot(na.omit(subset(melted, melted$cage_id == j)), aes(variable, value, group = mouse_id)) + geom_line(aes(color = mouse_id))
+  i <- i +1
+}
+do.call(grid.arrange, p)
+
+#now average by cage. woof. and add labels and shit 
+#or at least split up plot by severity 
+#facet by cage!!!
+
+p <- list()
+for(j in melted$cage_id){
+  for(i in 1:length(unique(melted$cage_id))){
+    p[[i]] <- ggplot(na.omit(subset(melted, melted$cage_id == j)), aes(variable, value, group = mouse_id)) + geom_line(aes(color = mouse_id))
+  }
+}
+do.call(grid.arrange, p)
 #build as function 
 
 
