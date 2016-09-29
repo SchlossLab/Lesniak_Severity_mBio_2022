@@ -7,6 +7,7 @@
 #    
 #
 ###################
+install.packages("wesanderson")
 
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
@@ -54,8 +55,15 @@ write.table(full_shared_group, file='data/process/full_shared.shared', quote=F, 
 #R-squared for configuration:	0.380491
 
 #mothur output stats for new combined file
+#for combo
+#Number of dimensions:	2
+#Lowest stress :	0.364672
+#R-squared for configuration:	0.372893
 
-
+#for day 0 
+#Number of dimensions:	2
+#Lowest stress :	0.348974
+#R-squared for configuration:	0.407514
 
 combo_nmds <- read.table(file='data/process/inputd0.thetayc.0.03.lt.nmds.axes', header = T)
 
@@ -114,7 +122,10 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 #nmds colored by donor plot
 
 
-plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2)
+plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2, pch=16)
+
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2)) + geom_point(aes(size = 3 , color = V2)) + 
+  scale_color_manual(values = wes_palette("GrandBudapest")) + theme_bw()
 
 points(d369, pch=16, col = 'red')
 points(d430, pch=16, col = 'orange')
