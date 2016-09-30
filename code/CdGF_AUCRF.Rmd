@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
-pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr', 'cowplot','dplyr','AUCRF')
+pack_used <- c('randomForest','ggplot2', 'pROC', 'knitr','dplyr','AUCRF', 'tidyr')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -59,7 +59,7 @@ iters <- 100
 
 ##Can we predict moribundity with the community structure at Day 0?
 
-```{r fig.width=6, fig.height=5, results= 'hide'}
+```{r fig.width=8, fig.height=8, results= 'hide'}
 #create dataframe for RF-classification
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
@@ -73,10 +73,9 @@ Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id)
 set.seed(seed)
 rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
                               ntree = n_trees, pdel = 0.05, ranking = 'MDA')
+
 otu_euth_probs <- predict(rf_early_aucrf$RFopt, type = 'prob')
 otu_euth_roc <- roc(Predict_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
-set.seed(seed)
-random_roc <- roc(sample(c(1,0), length(otu_euth_probs[ , 2]), replace = T) ~ otu_euth_probs[ , 2])
 
 aucrf_data <- Predict_early_euth_df[,c('Euth_Early',rf_early_aucrf$Xopt)]
 
@@ -118,50 +117,17 @@ LOcO_df <- Predict_df %>%
                 select(Euth_Early, cage_id, one_of(rf_early_aucrf$Xopt))
 cage_list <- as.character(unique(LOcO_df$cage_id))
 
-LOcO_probs <- NULL
-LOcO_probs <- sapply(1:length(cage_list), function(i){
+LOcO_probs <- c()
+for(i in 1:length(cage_list)){
   by_cage <- LOcO_df$cage_id == cage_list[i]
   LOcO_predict <- select(LOcO_df, -cage_id)
-  train <- LOcO_predict[-by_cage,]
+  train <- LOcO_predict[!by_cage,]
   test <- LOcO_predict[by_cage,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOcO_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOcO_probs <- unlist(LOcO_probs)
-LOcO_roc <- roc(aucrf_data$Euth_Early~LOcO_probs)
-
-#### Random - 10-fold Cross validated - 10 repetitions
-
-set.seed(seed)
-ran_outcome_data <- cbind(Euth_Early = factor(sample(Predict_early_euth_df$Euth_Early,  
-                                                     nrow(Predict_early_euth_df))), 
-                             Predict_early_euth_df[,rf_early_aucrf$Xopt]) 
-predict_random <-  predict(rf_early_aucrf$RFopt, ran_outcome_data, type = 'prob')[,2]
-predict_random_roc <- roc(ran_outcome_data$Euth_Early ~ predict_random)
- 
-ran_cv10f_aucs <- c()
-ran_cv10f_all_resp <- c()
-ran_cv10f_all_pred <- c()
-for(j in 1:iters){
   set.seed(j)
-  sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
-  ran_cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,nrow(aucrf_data),5)){
-    train <- aucrf_data[sampling[-(i:(i+4))],]
-    test <- ran_outcome_data[sampling[i:(i+4)],]
-    set.seed(seed)
-    temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-    ran_cv10f_probs[sampling[i:(i+4)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-  }
-  ran_cv10f_roc <- roc(ran_outcome_data$Euth_Early~ran_cv10f_probs)
-  ran_cv10f_all_pred <- c(ran_cv10f_all_pred, ran_cv10f_probs)
-  ran_cv10f_all_resp <- c(ran_cv10f_all_resp, ran_outcome_data$Euth_Early)
-  ran_cv10f_aucs[j] <- ran_cv10f_roc$auc
+  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
+  LOcO_probs[LOcO_df$cage_id == cage_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
-ran_cv10f_roc <- roc(ran_cv10f_all_resp~ran_cv10f_all_pred)
-
-
+LOcO_roc <- roc(LOcO_df$Euth_Early~LOcO_probs)
 
 
 #### plot rocs
@@ -171,60 +137,50 @@ plot(otu_euth_roc, col='black', lwd=2, add=T, lty=1)
 plot(cv10f_roc, col='gray', lwd=2, add=T, lty=1)
 plot(LOO_roc, col='blue', lwd=2, add=T, lty=2)
 plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
-plot(ran_cv10f_roc, col='orange', lwd=2, add=T, lty=1)
-plot(predict_random_roc, col='red', lwd=2, add=T, lty=3)
 mtext(side=2, text="Sensitivity", line=2.5)
 mtext(side=1, text="Specificity", line=2.5)
 legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc),
                                sprintf('Leave-1 mouse-out (AUC: %.3g)',LOO_roc$auc),
                                sprintf('Leave-1 cage-out (AUC: %.3g)',LOcO_roc$auc),
                                sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
-                               sprintf('Random (AUC: %.3g)',ran_cv10f_roc$auc),
                                sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
                                sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
-),lty=c(1,2,2,1,3,0,0), lwd=2, col=c('black','blue','red','gray','orange'), bty='n')
+),lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','purple','gray','red'), bty='n')
 ```
 
 
-```{r fig.width=10, fig.height=8}
-layout(matrix(c(1,1,1,1,4,4,4,
-                2,2,2,5,3,3,3,
-                2,2,2,5,3,3,3), nrow=3, byrow = TRUE))
+```{r fig.width=10, fig.height=10}
 
-
-#AUCRF curve
-par(mar=c(5,5,1.5,1))
-plot(rf_early_aucrf, ylim = c(0.7, 1.1))
-#mtext('A', at=-90, font=2, side=3)
 
 #Importance Plot
 euth_otus <- rf_early_aucrf$Xopt
 euth_tax <- get_tax(1, euth_otus, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
                             gsub('tu0*', 'TU ', rownames(euth_tax)), 
-                                   ')', sep = '')
-dotchart(rev(rf_early_aucrf$ranking[euth_otus]), labels=rev(euth_tax[euth_otus, 'tax_label']), xlab='Mean Decrease Accuracy')
-#mtext('B', at=-0.014, font=2, side=3)
+                                   ') : ', round(rf_early_aucrf$ranking[euth_otus], 3), sep = '')
 
-#Abundance stripchart or most predictive otus
-euth_otus <- rev(rf_early_aucrf$Xopt)
-early_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==0, euth_otus]/10000 + 1e-4
-late_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==1, euth_otus]/10000 + 1e-4
 
-par(mar=c(4, 9, 1, 1))
-plot(1, type="n", ylim=c(0,length(euth_otus)*2), xlim=c(1e-4,1e-2), log="x", ylab="", xlab="Relative Abundance (%)", xaxt="n", yaxt="n")
-index <- 1
-for(i in euth_otus){
-  stripchart(at=index-0.35, jitter(early_abunds[,i], amount=1e-5), pch=21, bg="royalblue1", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
-  stripchart(at=index+0.35, jitter(late_abunds[,i], amount=1e-5), pch=21, bg="orange", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
-  segments(mean(early_abunds[,i]),index-0.7,mean(early_abunds[,i]),index, lwd=3)
-  segments(mean(late_abunds[,i]),index+0.7,mean(late_abunds[,i]),index, lwd=3)
-  index <- index + 2
-}
-axis(2, at=seq(1,index-2,2), labels=euth_tax[euth_otus, 'tax_label'], las=1, line=-0.5, tick=F, cex.axis=0.8)
-axis(1, at=c(1e-4, 1e-3, 1e-2), label=c("0", "0.1", "1"))
-legend('topright', legend=c("Mild", "Severe"), pch=c(21, 21), pt.bg=c("orange","royalblue1"), cex=0.7)
-#mtext('C', at=1e-7, font=2, side=3)
+RF_features_polt <- Predict_early_euth_df %>% 
+  select(Euth_Early, one_of(euth_otus)) %>% 
+  gather('OTU', 'Value', -Euth_Early) %>% 
+  full_join(data.frame(OTU = names(rf_early_aucrf$ranking[euth_otus]), 
+               MDA =  rf_early_aucrf$ranking[euth_otus])) %>% 
+  ggplot( aes(x = reorder(factor(OTU), MDA), y = Value, fill = Euth_Early, dodge = Euth_Early)) +
+  theme(legend.title=element_blank(), legend.position = c(0.9,0.5),
+        panel.background = element_rect(fill = NA),
+        panel.grid.major = element_line(colour = NA),
+        panel.grid.minor = element_line(colour = NA)) +
+  geom_point(pch = 21, position = position_jitterdodge(), alpha = 0.4, size = 2) + coord_flip() +
+  scale_x_discrete(breaks = rownames(euth_tax), labels = euth_tax$tax_label) +
+  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
+                 geom = "crossbar", width = 0.6, position=position_dodge(width=0.8)) + 
+  scale_fill_manual(values = c('red', 'black'), labels = c('Severe','Mild'),
+                    guide = guide_legend(reverse=TRUE))
+
+RF_features_polt + labs( y = 'Relative Abundance (%)\nClassification (OTU) : MDA', x = '', title = '')
+
+RF_features_polt + labs( y = 'Relative Abundance (%) - log10\nClassification (OTU) : MDA', x = '', title = '') +
+  scale_y_log10()
 ```
 
 
@@ -240,98 +196,9 @@ Would it help to add community information such as diversity or enterotype?
 
 But how to show since model is already approaching 1?  
 
-* Rerun AUCRF with added features and see if they replace any OTUs
+* Rerun AUCRF with added features and see if they replace any OTUs  
+
+Leave 1 cage out RF with all otus gives and AUC of 0.63-0.68, but using the reduced features selected by AUCRF on the whole dataset gives an AUC of 0.88-0.90  
 
 ***  
 ***  
-
-### Validate AUCRF with Randomized Input
-
-
-```{r Random_validation, fig.width=6, fig.height=5, results= 'hide'}
-
-# boruta feature selection
-#set.seed(seed)
-#Boruta(Euth_Early ~ ., data = Validate_early_euth_df, maxRuns = 200)
-
-#create dataframe for random RF-classification
-Validate_early_euth_df <- Predict_early_euth_df
-set.seed(seed)
-Validate_early_euth_df$Euth_Early <- sample(Predict_early_euth_df$Euth_Early)
-
-# create RF model
-set.seed(seed)
-rf_random_aucrf <- AUCRF(Euth_Early ~ ., data = Validate_early_euth_df,
-                              ntree = n_trees, pdel = 0.05, ranking = 'MDA')
-otu_random_probs <- predict(rf_random_aucrf$RFopt, type = 'prob')
-otu_random_roc <- roc(Validate_early_euth_df$Euth_Early ~ otu_random_probs[ , 2])
-
-random_aucrf_data <- Validate_early_euth_df[,c('Euth_Early',rf_random_aucrf$Xopt)]
-
-#### 10-fold Cross validated - 10 repetitions
-cv10r_aucs <- c()
-cv10r_all_resp <- c()
-cv10r_all_pred <- c()
-for(j in 1:iters){
-  set.seed(j)
-  sampling <- sample(1:nrow(random_aucrf_data),nrow(random_aucrf_data),replace=F)
-  cv10r_probs <- rep(NA,nrow(random_aucrf_data))
-  for(i in seq(1,nrow(random_aucrf_data),5)){
-    train <- random_aucrf_data[sampling[-(i:(i+4))],]
-    test <- random_aucrf_data[sampling[i:(i+4)],]
-    set.seed(seed)
-    temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-    cv10r_probs[sampling[i:(i+4)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-  }
-  cv10r_roc <- roc(random_aucrf_data$Euth_Early~cv10r_probs)
-  cv10r_all_pred <- c(cv10r_all_pred, cv10r_probs)
-  cv10r_all_resp <- c(cv10r_all_resp, random_aucrf_data$Euth_Early)
-  cv10r_aucs[j] <- cv10r_roc$auc
-}
-cv10r_roc <- roc(cv10r_all_resp~cv10r_all_pred)
-
-#### leave-one-out
-LOOr_probs <- NULL
-LOOr_probs <- sapply(1:nrow(random_aucrf_data), function(i){
- train <- random_aucrf_data[-i,]
-  test <- random_aucrf_data[i,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOOr_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOOr_roc <- roc(random_aucrf_data$Euth_Early~LOOr_probs)
-
-#### leave-one-cage-out
-LOcOr_df <- cbind(cage_id = Predict_df$cage_id, random_aucrf_data)
-cage_list_random <- as.character(unique(LOcOr_df$cage_id))
-
-LOcOr_probs <- NULL
-LOcOr_probs <- sapply(1:length(cage_list_random), function(i){
-  by_cage <- LOcOr_df$cage_id == cage_list_random[i]
-  LOcO_predict <- select(LOcOr_df, -cage_id)
-  train <- LOcO_predict[-by_cage,]
-  test <- LOcO_predict[by_cage,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOcOr_probs[[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOcOr_probs <- unlist(LOcOr_probs)
-LOcOr_roc <- roc(random_aucrf_data$Euth_Early~LOcOr_probs)
-
-#### plot rocs
-par(mar=c(4,4,1,1))
-plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
-plot(otu_random_roc, col='black', lwd=2, add=T, lty=1)
-plot(cv10r_roc, col='gray', lwd=2, add=T, lty=1)
-plot(LOOr_roc, col='blue', lwd=2, add=T, lty=2)
-plot(LOcOr_roc, col='red', lwd=2, add=T, lty=2)
-mtext(side=2, text="Sensitivity", line=2.5)
-mtext(side=1, text="Specificity", line=2.5)
-legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_random_roc$auc),
-                               sprintf('Leave-1 mouse-out (AUC: %.3g)',LOOr_roc$auc),
-                               sprintf('Leave-1 cage-out (AUC: %.3g)',LOcOr_roc$auc),
-                               sprintf('10-fold CV (AUC: %.3g)',cv10r_roc$auc)),
-#                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_random_roc,LOOr_roc)$p.value),
-#                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_random_roc,cv10r_roc)$p.value)),
-		lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','red','gray'), bty='n')
-```
