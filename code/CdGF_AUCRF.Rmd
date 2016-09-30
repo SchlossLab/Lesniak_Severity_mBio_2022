@@ -166,30 +166,6 @@ ran_outcome_data <- cbind(Euth_Early = factor(sample(Predict_early_euth_df$Euth_
 predict_random <-  predict(rf_early_aucrf$RFopt, ran_outcome_data, type = 'prob')[,2]
 predict_random_roc <- roc(ran_outcome_data$Euth_Early ~ predict_random)
  
-ran_cv10f_aucs <- c()
-ran_cv10f_all_resp <- c()
-ran_cv10f_all_pred <- c()
-for(j in 1:iters){
-  set.seed(j)
-  sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
-  ran_cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,nrow(aucrf_data),5)){
-    train <- aucrf_data[sampling[-(i:(i+4))],]
-    test <- ran_outcome_data[sampling[i:(i+4)],]
-    set.seed(seed)
-    temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-    ran_cv10f_probs[sampling[i:(i+4)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-  }
-  ran_cv10f_roc <- roc(ran_outcome_data$Euth_Early~ran_cv10f_probs)
-  ran_cv10f_all_pred <- c(ran_cv10f_all_pred, ran_cv10f_probs)
-  ran_cv10f_all_resp <- c(ran_cv10f_all_resp, ran_outcome_data$Euth_Early)
-  ran_cv10f_aucs[j] <- ran_cv10f_roc$auc
-}
-ran_cv10f_roc <- roc(ran_cv10f_all_resp~ran_cv10f_all_pred)
-
-
-
-
 #### plot rocs
 par(mar=c(4,4,1,1))
 plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
@@ -197,19 +173,15 @@ plot(otu_euth_roc, col='black', lwd=2, add=T, lty=1)
 plot(cv10f_roc, col='gray', lwd=2, add=T, lty=1)
 plot(LOO_roc, col='blue', lwd=2, add=T, lty=2)
 plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
-plot(ran_cv10f_roc, col='orange', lwd=2, add=T, lty=1)
-plot(predict_random_roc, col='red', lwd=2, add=T, lty=3)
 mtext(side=2, text="Sensitivity", line=2.5)
 mtext(side=1, text="Specificity", line=2.5)
 legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc),
                                sprintf('Leave-1 mouse-out (AUC: %.3g)',LOO_roc$auc),
                                sprintf('Leave-1 cage-out (AUC: %.3g)',LOcO_roc$auc),
                                sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
-                               sprintf('Random OOB (AUC: %.3g)',predict_random_roc$auc),
-                               sprintf('Random 10-fold CV (AUC: %.3g)',ran_cv10f_roc$auc),
                                sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
                                sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
-),lty=c(1,2,2,1,3,1,0,0), lwd=2, col=c('black','blue','purple','gray','red','orange'), bty='n')
+),lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','purple','gray','red'), bty='n')
 ```
 
 
@@ -280,90 +252,10 @@ But how to show since model is already approaching 1?
 # boruta feature selection
 #set.seed(seed)
 #Boruta(Euth_Early ~ ., data = Validate_early_euth_df, maxRuns = 200)
-
-#create dataframe for random RF-classification
-Validate_early_euth_df <- Predict_early_euth_df
-set.seed(seed)
-Validate_early_euth_df$Euth_Early <- sample(Predict_early_euth_df$Euth_Early)
-
-# create RF model
-set.seed(seed)
-rf_random_aucrf <- AUCRF(Euth_Early ~ ., data = Validate_early_euth_df,
-                              ntree = n_trees, pdel = 0.05, ranking = 'MDA')
-otu_random_probs <- predict(rf_random_aucrf$RFopt, type = 'prob')
-otu_random_roc <- roc(Validate_early_euth_df$Euth_Early ~ otu_random_probs[ , 2])
-
-random_aucrf_data <- Validate_early_euth_df[,c('Euth_Early',rf_random_aucrf$Xopt)]
-
-#### 10-fold Cross validated - 10 repetitions
-cv10r_aucs <- c()
-cv10r_all_resp <- c()
-cv10r_all_pred <- c()
-for(j in 1:iters){
-  set.seed(j)
-  sampling <- sample(1:nrow(random_aucrf_data),nrow(random_aucrf_data),replace=F)
-  cv10r_probs <- rep(NA,nrow(random_aucrf_data))
-  for(i in seq(1,nrow(random_aucrf_data),5)){
-    train <- random_aucrf_data[sampling[-(i:(i+4))],]
-    test <- random_aucrf_data[sampling[i:(i+4)],]
-    set.seed(seed)
-    temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-    cv10r_probs[sampling[i:(i+4)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-  }
-  cv10r_roc <- roc(random_aucrf_data$Euth_Early~cv10r_probs)
-  cv10r_all_pred <- c(cv10r_all_pred, cv10r_probs)
-  cv10r_all_resp <- c(cv10r_all_resp, random_aucrf_data$Euth_Early)
-  cv10r_aucs[j] <- cv10r_roc$auc
-}
-cv10r_roc <- roc(cv10r_all_resp~cv10r_all_pred)
-
-#### leave-one-out
-LOOr_probs <- NULL
-LOOr_probs <- sapply(1:nrow(random_aucrf_data), function(i){
- train <- random_aucrf_data[-i,]
-  test <- random_aucrf_data[i,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOOr_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOOr_roc <- roc(random_aucrf_data$Euth_Early~LOOr_probs)
-
-#### leave-one-cage-out
-LOcOr_df <- cbind(cage_id = Predict_df$cage_id, random_aucrf_data)
-cage_list_random <- as.character(unique(LOcOr_df$cage_id))
-
-LOcOr_probs <- NULL
-LOcOr_probs <- sapply(1:length(cage_list_random), function(i){
-  by_cage <- LOcOr_df$cage_id == cage_list_random[i]
-  LOcO_predict <- select(LOcOr_df, -cage_id)
-  train <- LOcO_predict[-by_cage,]
-  test <- LOcO_predict[by_cage,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOcOr_probs[[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOcOr_probs <- unlist(LOcOr_probs)
-LOcOr_roc <- roc(random_aucrf_data$Euth_Early~LOcOr_probs)
-
-#### plot rocs
-par(mar=c(4,4,1,1))
-plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
-plot(otu_random_roc, col='black', lwd=2, add=T, lty=1)
-plot(cv10r_roc, col='gray', lwd=2, add=T, lty=1)
-plot(LOOr_roc, col='blue', lwd=2, add=T, lty=2)
-plot(LOcOr_roc, col='red', lwd=2, add=T, lty=2)
-mtext(side=2, text="Sensitivity", line=2.5)
-mtext(side=1, text="Specificity", line=2.5)
-legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_random_roc$auc),
-                               sprintf('Leave-1 mouse-out (AUC: %.3g)',LOOr_roc$auc),
-                               sprintf('Leave-1 cage-out (AUC: %.3g)',LOcOr_roc$auc),
-                               sprintf('10-fold CV (AUC: %.3g)',cv10r_roc$auc)),
-#                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_random_roc,LOOr_roc)$p.value),
-#                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_random_roc,cv10r_roc)$p.value)),
-		lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','red','gray'), bty='n')
 ```
 
-### Add ranges to RF ROC
+
+### Add ranges to RF ROC ??
 
 ```{r error_plot, eval=F}
 
