@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
-pack_used <- c('randomForest','miscTools','ggplot2','reshape2', 'pROC', 'knitr', 'cowplot','dplyr','AUCRF','Boruta')
+pack_used <- c('randomForest','ggplot2', 'pROC', 'knitr','dplyr','AUCRF', 'tidyr')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -59,7 +59,7 @@ iters <- 100
 
 ##Can we predict moribundity with the community structure at Day 0?
 
-```{r fig.width=6, fig.height=5, results= 'hide'}
+```{r fig.width=8, fig.height=8, results= 'hide'}
 #create dataframe for RF-classification
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
@@ -149,45 +149,38 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 ```
 
 
-```{r fig.width=10, fig.height=8}
-layout(matrix(c(1,1,1,1,4,4,4,
-                2,2,2,5,3,3,3,
-                2,2,2,5,3,3,3), nrow=3, byrow = TRUE))
+```{r fig.width=10, fig.height=10}
 
-
-#AUCRF curve
-par(mar=c(5,5,1.5,1))
-plot(rf_early_aucrf, ylim = c(0.7, 1.1))
-#mtext('A', at=-90, font=2, side=3)
 
 #Importance Plot
 euth_otus <- rf_early_aucrf$Xopt
 euth_tax <- get_tax(1, euth_otus, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
                             gsub('tu0*', 'TU ', rownames(euth_tax)), 
-                                   ')', sep = '')
-dotchart(rev(rf_early_aucrf$ranking[euth_otus]), labels=rev(euth_tax[euth_otus, 'tax_label']), xlab='Mean Decrease Accuracy')
-#mtext('B', at=-0.014, font=2, side=3)
+                                   ') : ', round(rf_early_aucrf$ranking[euth_otus], 3), sep = '')
 
-#Abundance stripchart or most predictive otus
-euth_otus <- rev(rf_early_aucrf$Xopt)
-early_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==0, euth_otus]/10000 + 1e-4
-late_abunds <- Predict_early_euth_df[Predict_early_euth_df$Euth_Early==1, euth_otus]/10000 + 1e-4
 
-par(mar=c(4, 9, 1, 1))
-plot(1, type="n", ylim=c(0,length(euth_otus)*2), xlim=c(1e-4,1e-2), log="x", ylab="", xlab="Relative Abundance (%)", xaxt="n", yaxt="n")
-index <- 1
-for(i in euth_otus){
-  stripchart(at=index-0.35, jitter(early_abunds[,i], amount=1e-5), pch=21, bg="royalblue1", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
-  stripchart(at=index+0.35, jitter(late_abunds[,i], amount=1e-5), pch=21, bg="orange", method="jitter", jitter=0.2, add=T, cex=1, lwd=0.5)
-  segments(mean(early_abunds[,i]),index-0.7,mean(early_abunds[,i]),index, lwd=3)
-  segments(mean(late_abunds[,i]),index+0.7,mean(late_abunds[,i]),index, lwd=3)
-  index <- index + 2
-}
-axis(2, at=seq(1,index-2,2), labels=euth_tax[euth_otus, 'tax_label'], las=1, line=-0.5, tick=F, cex.axis=0.8)
-axis(1, at=c(1e-4, 1e-3, 1e-2), label=c("0", "0.1", "1"))
-legend('topright', legend=c("Mild", "Severe"), pch=c(21, 21), pt.bg=c("orange","royalblue1"), cex=0.7)
-#mtext('C', at=1e-7, font=2, side=3)
+RF_features_polt <- Predict_early_euth_df %>% 
+  select(Euth_Early, one_of(euth_otus)) %>% 
+  gather('OTU', 'Value', -Euth_Early) %>% 
+  full_join(data.frame(OTU = names(rf_early_aucrf$ranking[euth_otus]), 
+               MDA =  rf_early_aucrf$ranking[euth_otus])) %>% 
+  ggplot( aes(x = reorder(factor(OTU), MDA), y = Value, fill = Euth_Early, dodge = Euth_Early)) +
+  theme(legend.title=element_blank(), legend.position = c(0.9,0.5),
+        panel.background = element_rect(fill = NA),
+        panel.grid.major = element_line(colour = NA),
+        panel.grid.minor = element_line(colour = NA)) +
+  geom_point(pch = 21, position = position_jitterdodge(), alpha = 0.4, size = 2) + coord_flip() +
+  scale_x_discrete(breaks = rownames(euth_tax), labels = euth_tax$tax_label) +
+  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
+                 geom = "crossbar", width = 0.6, position=position_dodge(width=0.8)) + 
+  scale_fill_manual(values = c('red', 'black'), labels = c('Severe','Mild'),
+                    guide = guide_legend(reverse=TRUE))
+
+RF_features_polt + labs( y = 'Relative Abundance (%)\nClassification (OTU) : MDA', x = '', title = '')
+
+RF_features_polt + labs( y = 'Relative Abundance (%) - log10\nClassification (OTU) : MDA', x = '', title = '') +
+  scale_y_log10()
 ```
 
 
