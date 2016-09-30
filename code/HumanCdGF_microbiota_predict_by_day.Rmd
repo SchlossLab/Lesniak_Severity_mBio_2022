@@ -355,24 +355,31 @@ predictive_taxa$tax_label <- paste(predictive_taxa$tax, ' (',
                                    gsub('tu0*', 'TU ', predictive_taxa$otu), 
                                    ')', sep = '')
 
-cfu_by_day_comm %>% 
-  select(log_cfu, day, one_of(predictive_otus)) %>% 
+cfu_by_day <-
+  meta_file %>% 
+  filter(day %in% 1:10) %>% 
+  select(sample_id, day, log_cfu, Early_Euth) %>% 
+  left_join(rel_abund_shared_01) %>% 
+  select(-sample_id, -one_of(cdiff_otu))
+
+cfu_by_day %>% 
+  select(log_cfu, day, one_of(predictive_otus), Early_Euth) %>% 
   filter(!is.na(log_cfu)) %>% 
   gather('otu','abundance',contains('Otu')) %>% 
   full_join(predictive_taxa) %>% 
-  ggplot(aes(x = abundance, y = log_cfu, color = factor(day))) + geom_point() + 
+  ggplot(aes(x = abundance, y = log_cfu, color = factor(Early_Euth))) + geom_point() + 
     facet_wrap(~ tax_label, scales = 'free_x') +
     labs( x = 'Relative Abundance', y = 'CFU (log10)')
 
 ```
 
 ```{r fig.width=10, fig.height=10}
-cfu_by_day_comm %>% 
-  select(log_cfu, day, one_of(predictive_otus)) %>% 
+cfu_by_day %>% 
+  select(log_cfu, day, one_of(predictive_otus), Early_Euth) %>% 
   filter(!is.na(log_cfu)) %>% 
   gather('otu','abundance',contains('Otu')) %>% 
   full_join(predictive_taxa) %>% 
-  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(day))) + geom_point() + 
+  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(Early_Euth))) + geom_point() + 
     facet_wrap(~ tax_label, scales = 'free_x') +
     labs( x = 'Relative Abundance (log10)', y = 'CFU (log10)')
 
@@ -382,14 +389,14 @@ cfu_by_day_comm %>%
 
 ```{r fig.width=10, fig.height=10}
 meta_file %>% 
-  select(day, log_cfu, mouse_id) %>% 
+  select(day, log_cfu, mouse_id, Early_Euth) %>% 
   full_join(day_0_otu_by_mouse) %>% 
-  select(day, log_cfu, one_of(predictive_otus)) %>% 
+  select(day, log_cfu, one_of(predictive_otus), Early_Euth) %>% 
   filter(!day == 0) %>% 
   gather('otu', 'abundance', contains('Otu')) %>% 
   filter(!is.na(abundance)) %>% 
   full_join(predictive_taxa) %>% 
-  ggplot(aes(x = abundance, y = log_cfu, color = factor(day))) + geom_point() + 
+  ggplot(aes(x = abundance, y = log_cfu, color = factor(Early_Euth))) + geom_point() + 
     facet_wrap(~ tax_label, scales = 'free_x') +
     labs( x = 'Relative Abundance', y = 'CFU (log10)')
 
@@ -397,14 +404,14 @@ meta_file %>%
 
 ```{r fig.width=10, fig.height=10}
 meta_file %>% 
-  select(day, log_cfu, mouse_id) %>% 
+  select(day, log_cfu, mouse_id, Early_Euth) %>% 
   full_join(day_0_otu_by_mouse) %>% 
-  select(day, log_cfu, one_of(predictive_otus)) %>% 
+  select(day, log_cfu, one_of(predictive_otus), Early_Euth) %>% 
   filter(!day == 0) %>% 
   gather('otu', 'abundance', contains('Otu')) %>% 
   filter(!is.na(abundance)) %>% 
   full_join(predictive_taxa) %>% 
-  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(day))) + geom_point() + 
+  ggplot(aes(x = log10(abundance), y = log_cfu, color = factor(Early_Euth))) + geom_point() + 
     facet_wrap(~ tax_label, scales = 'free_x') +
     labs( x = 'Relative Abundance (log10)', y = 'CFU (log10)')
 
