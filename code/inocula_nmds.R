@@ -7,33 +7,36 @@
 #    
 #
 ###################
+install.packages("wesanderson")
 
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
+full_shared <- read.table('data/process/humanCdGF_full.shared', sep='\t', header = T)
+
 
 #orig_shared <- read.table('data/mothur/gf_all.an.0.03.subsample.shared', sep='\t', header = T)
 #remove dashes from group names so the next stuff will work
 #orig_shared[2] <- gsub("-", "", orig_shared$Group)
 
 #make shared file look like a true shared:
-shared_group <- cbind(label=0.03, shared[1], numOTUs=2255, shared[2:ncol(shared)])
-colnames(shared_group)[2] <- 'Group'
+full_shared_group <- cbind(label=0.03, full_shared[1], numOtus=5671, full_shared[2:ncol(full_shared)])
+colnames(full_shared_group)[2] <- 'Group'
 
 #subset shared to be inoculum only
 inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
-inocula_shared <- shared[shared$sample_id %in% inocula,]
+inocula_shared <- full_shared[full_shared$sample_id %in% inocula,]
 
 #subset shared to be day 0 only- will use later for comparison 
 day0 <- rownames(meta_file)[meta_file$day==0]
-day0_shared <- shared[shared$sample_id %in% day0,]
+day0_shared <- full_shared[full_shared$sample_id %in% day0,]
 
 #add back label and numOTUs column to subsetted shared file-- need this to run dist.shared
-inocula_shared <- cbind(label=0.03, inocula_shared[1], numOTUs=2255, inocula_shared[2:ncol(inocula_shared)])
+inocula_shared <- cbind(label=0.03, inocula_shared[1], numOtus=5671, inocula_shared[2:ncol(inocula_shared)])
 colnames(inocula_shared)[2] <- 'Group'
 
 #for day 0 also
-day0_shared <- cbind(label=0.03, day0_shared[1], numOTUs=2255, day0_shared[2:ncol(day0_shared)])
+day0_shared <- cbind(label=0.03, day0_shared[1], numOtus=5671, day0_shared[2:ncol(day0_shared)])
 colnames(day0_shared)[2] <- 'Group'
 
 #combine these all to run as one file duhhhh
@@ -43,15 +46,28 @@ inputd0_shared <- rbind(inocula_shared, day0_shared)
 write.table(inocula_shared, file='data/process/inocula.shared', quote=F,sep='\t',row.names=F)
 write.table(day0_shared, file='data/process/day0.shared', quote=F,sep='\t',row.names=F)
 write.table(inputd0_shared, file='data/process/inputd0.shared', quote=F, sep='\t', row.names=F)
-write.table(shared_group, file='data/process/shared_group.shared', quote=F, sep='\t', row.names=F)
+write.table(full_shared_group, file='data/process/full_shared.shared', quote=F, sep='\t', row.names=F)
 
-#run dist.shared, nmds in mothur to get axes file
-#mothur ouput stats for combined file: 
+#run dist.shared with iters and subsamp in TYC form, nmds in mothur to get axes file
+#OLD mothur ouput stats for OLD SUBSAMP combined file: 
 #Number of dimensions:	2
 #Lowest stress :	0.362683
 #R-squared for configuration:	0.380491
 
+#mothur output stats for new combined file
+#for combo
+#Number of dimensions:	2
+#Lowest stress :	0.364672
+#R-squared for configuration:	0.372893
+
+#for day 0 
+#Number of dimensions:	2
+#Lowest stress :	0.348974
+#R-squared for configuration:	0.407514
+
 combo_nmds <- read.table(file='data/process/inputd0.thetayc.0.03.lt.nmds.axes', header = T)
+
+#need to get these other nmds's done to get the right plot 
 inoc_nmds <- read.table(file='data/process/inocula.thetayc.0.03.lt.nmds.axes', header = T)
 day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.nmds.axes', header = T)
 
@@ -59,6 +75,7 @@ day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.nmds.axes', head
 #merge design and nmds files to prep for plotting 
 inocula_design <- read.table(file='data/raw/donor.design', header = F)
 inocula_nmds <- merge(inoc_nmds, inocula_design, by.x='group', by.y='V1')
+
 
 combo_design <- read.table(file='data/raw/d0_outcome.design', header = F)
 combo_nmds <- merge(combo_nmds, combo_design, by.x='group', by.y='V1')
@@ -105,7 +122,10 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 #nmds colored by donor plot
 
 
-plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2)
+plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2, pch=16)
+
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2)) + geom_point(aes(size = 3 , color = V2)) + 
+  scale_color_manual(values = wes_palette("GrandBudapest")) + theme_bw()
 
 points(d369, pch=16, col = 'red')
 points(d430, pch=16, col = 'orange')
@@ -133,7 +153,25 @@ legend(x="topright", legend, col = c("red", "orange", "yellow", "green", "blue",
 #can do this in mothur very easily with distance matrix and design file 
 
 
+#tree test
+install.packages("ape")
 
+library(ape)
+
+inoc_tree <- read.tree(file='data/process/inocula_2194.thetayc.0.03.tre')
+day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.tre')
+
+#for plotting donors by outcome 
+dead <- inoc_tree$tip.label[c(3,6,7,8,15)]
+plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% dead, 'red', 'black'))
+plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% dead, 'red', 'black'))
+
+#for plotting donors by initial disease state
+diah <- inoc_tree$tip.label[c(2,5,7,11)]
+cdiff <- inoc_tree$tip.label[8]
+plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
+plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
+legend("bottomleft", c('diarrhea', 'cdiff infected', 'no diarrhea'), col = c('blue', 'red', 'black'), pch =16)
 
 
 
