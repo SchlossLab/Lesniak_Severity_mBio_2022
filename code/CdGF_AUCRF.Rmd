@@ -51,10 +51,10 @@ OTUs_stool_0_01 <- apply(rel_abund_stool, 2, max) > 1
 rel_abund_stool <- rel_abund_stool[ ,OTUs_stool_0_01]
 
 #random forest regression model to determine Day 0 OTU correlated with increased CFU
-seed <- 1
+seed <- 100316
 n_trees <- 2001
 iters <- 100
-
+n_features <- 30
 ```
 
 ##Can we predict moribundity with the community structure at Day 0?
@@ -64,10 +64,24 @@ iters <- 100
 meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
 
 Predict_df <- merge(meta_file[meta_file$day %in% 0, 
-                              c('cage_id', 'mouse_id', 'Euth_Early')],
+                              c('human_source', 'mouse_id', 'cage_id', 'Euth_Early')],
                     rel_abund_stool, by.x = 'mouse_id', by.y = 'row.names')
+Predict_cage_df <- select(Predict_df, -human_source, -mouse_id, -Euth_Early)
+Predict_source_df <- select(Predict_df, -cage_id, -mouse_id, -Euth_Early)
+Predict_cage_df$cage_id <- factor(Predict_cage_df$cage_id)
+Predict_source_df$human_source <- factor(Predict_source_df$human_source)
 
-Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id)
+# identify OTUs that predict cage/inocula
+set.seed(seed)
+rf_cage <- randomForest(cage_id ~ ., data=Predict_cage_df, importance=TRUE, ntree=n_trees)
+set.seed(seed)
+rf_source <- randomForest(human_source ~ ., data=Predict_source_df, importance=TRUE, ntree=n_trees)
+features_source <- head(sort(rf_source$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), n_features)
+features_cage <- head(sort(rf_cage$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), n_features)
+features_all <- unique(c(names(features_cage), names(features_source)))
+
+# remove cage/inocula OTUs from prediction dataframes
+Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id, -human_source, -one_of(features_all))
 
 # create RF model
 set.seed(seed)
@@ -123,7 +137,7 @@ for(i in 1:length(cage_list)){
   LOcO_predict <- select(LOcO_df, -cage_id)
   train <- LOcO_predict[!by_cage,]
   test <- LOcO_predict[by_cage,]
-  set.seed(j)
+  set.seed(seed)
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
   LOcO_probs[LOcO_df$cage_id == cage_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
@@ -142,9 +156,9 @@ mtext(side=1, text="Specificity", line=2.5)
 legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc),
                                sprintf('Leave-1 mouse-out (AUC: %.3g)',LOO_roc$auc),
                                sprintf('Leave-1 cage-out (AUC: %.3g)',LOcO_roc$auc),
-                               sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc),
-                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
-                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
+                               sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc) #,
+#                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
+#                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
 ),lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','purple','gray','red'), bty='n')
 ```
 
@@ -198,7 +212,9 @@ But how to show since model is already approaching 1?
 
 * Rerun AUCRF with added features and see if they replace any OTUs  
 
-Leave 1 cage out RF with all otus gives and AUC of 0.63-0.68, but using the reduced features selected by AUCRF on the whole dataset gives an AUC of 0.88-0.90  
+Leave 1 cage out RF with all otus gives and AUC of 0.70, but using the reduced features selected by AUCRF on the whole dataset gives an AUC of 0.80  
+
+To remove any cage effect RF could be picking out instead of the actual outcome, I first run RF on all OTUs to predict cage and separately human source. Then select the OTUS that are necessary for the lowest error rate (I went slightly above) from both cage and human souce RFs. Remove those OTUs from the OTU data frame and predict Euthanization with AUCRF
 
 ***  
 ***  
