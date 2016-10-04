@@ -54,7 +54,7 @@ rel_abund_stool <- rel_abund_stool[ ,OTUs_stool_0_01]
 seed <- 1
 n_trees <- 2001
 iters <- 100
-n_features <- 30
+n_features <- 65
 ```
 
 ##Can we predict moribundity with the community structure at Day 0?
@@ -90,9 +90,9 @@ rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
 
 otu_euth_probs <- predict(rf_early_aucrf$RFopt, type = 'prob')
 otu_euth_roc <- roc(Predict_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
-euth_otus <- rf_early_aucrf$Xopt
+euth_otu_feat <- rf_early_aucrf$Xopt
 
-aucrf_data <- Predict_early_euth_df[,c('Euth_Early',euth_otus)]
+aucrf_data <- Predict_early_euth_df[,c('Euth_Early',euth_otu_feat)]
 
 #### 10-fold Cross validated - 10 repetitions
 cv10f_aucs <- c()
@@ -129,7 +129,7 @@ LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
 
 #### leave-one-cage-out
 LOcO_df <- Predict_df %>% 
-                select(Euth_Early, cage_id, one_of(euth_otus))
+                select(Euth_Early, cage_id, one_of(euth_otu_feat))
 cage_list <- as.character(unique(LOcO_df$cage_id))
 
 LOcO_probs <- c()
@@ -165,10 +165,12 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 ```
 
 
-```{r importance, fig.width=10, fig.height=10}
+```{r importance, fig.width=10, fig.height=5}
 
 
 #Importance Plot
+n_rf_features <- 5
+euth_otus <- euth_otu_feat[1:n_rf_features]
 euth_tax <- get_tax(1, euth_otus, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
                             gsub('tu0*', 'TU ', rownames(euth_tax)), 
@@ -202,8 +204,8 @@ RF_features_polt + labs( y = 'Relative Abundance (%) - log10\nClassification (OT
 ### Partial Dependency Plots
 ###### Using optimal RF model generated from whole dataset
   
-```{r partial dependence, fig.width=10, fig.height=10}
-layout(matrix(c(1:20), nrow=5, byrow=TRUE))
+```{r partial dependence, fig.width=10, fig.height=5}
+layout(matrix(c(1:6), nrow=2, byrow=TRUE))
 
 for (i in seq_along(euth_otus)) {
   partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otus[i], xlab='',
