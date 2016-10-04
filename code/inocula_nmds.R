@@ -89,11 +89,14 @@ combo_nmds <- merge(combo_nmds, combo_design, by.x='group', by.y='V1')
 
 #need 3D version of these 
 d0_donor <- read.table(file='data/raw/sample_donor.design', header = F)
+day0_donor_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
 day0_3D_nmds <- merge(day0_3D, d0_donor, by.x='group', by.y='V1')
 
 d0_outcome <- read.table(file='data/raw/d0_only_outcome.design', header=F)
 day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
 day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+
+day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
 
 #use this one
 day0_3D_outcome <- merge(day0_3D_nmds, d0_outcome, by.x='group', by.y='V1')
