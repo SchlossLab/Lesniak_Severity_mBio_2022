@@ -11,6 +11,7 @@ install.packages("reshape")
 library("reshape")
 install.packages("gridExtra")
 library("gridExtra")
+library("ggplot2")
 source('code/read.dist.R')
 
 #read in files
@@ -62,8 +63,11 @@ ggplot(na.omit(melted), aes(variable, value, group = mouse_id)) + geom_line(aes(
 
 #trying multiple plots - put this in a loop and have plot all on one page? or use this to avg by cage 
 
-ggplot(na.omit(subset(melted, melted$cage_id == '369')), aes(variable, value, group = mouse_id)) + geom_line()
+ggplot(na.omit(subset(melted, melted$cage_id == '369')), aes(variable, value, group = mouse_id)) + geom_line() + ggtitle("Cage 369") + xlab("day post infection") +ylab("Theta YC distance from day 0") +theme_bw()
 
+ggplot(na.omit(subset(melted, melted$cage_id == '430')), aes(variable, value, group = mouse_id)) + geom_line() + ggtitle("Cage 430") + xlab("day post infection") +ylab("Theta YC distance from day 0") + theme_bw()
+
+ggplot(na.omit(subset(melted, melted$cage_id == 'OP')), aes(variable, value, group = mouse_id)) + geom_line(aes(color='red')) + ggtitle("Cage OP") + xlab("day post infection") +ylab("Theta YC distance from day 0") + theme_bw()
 
 p <- list()
 i <- 1
