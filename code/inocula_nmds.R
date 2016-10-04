@@ -206,7 +206,7 @@ install.packages("ape")
 library(ape)
 
 inoc_tree <- read.tree(file='data/process/inocula_2194.thetayc.0.03.tre')
-day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.tre')
+day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.ave.tre')
 
 #for plotting donors by outcome 
 dead <- inoc_tree$tip.label[c(3,6,7,8,15)]
@@ -220,6 +220,16 @@ plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% diah, '
 plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
 legend("bottomleft", c('diarrhea', 'cdiff infected', 'no diarrhea'), col = c('blue', 'red', 'black'), pch =16)
 
+#for plotting mice at day 0 by outcome 
 
+mild <- subset(d0_outcome, d0_outcome$V2 == 'Asymptomatic')
+milder <- mild[1]
+
+severe9 <- subset(d0_outcome, d0_outcome$V2 == 'Severe')
+severer <- severe9[1]
+
+#day0 mouse by outcome
+plot(day0_tree, tip.color=ifelse(day0_tree$tip.label %in% severer$V1, 'red', 'black'),  cex=0.7, main = "Day 0 dendrogram")
+legend("bottomleft", c("mild", "severe"), col = c('black', 'red'), pch = 16)
 
 
