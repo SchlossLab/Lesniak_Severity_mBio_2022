@@ -37,6 +37,9 @@ source(tax_function)
 # select only mice with 431 cdiff
 meta_file <- meta_file[meta_file$cdiff_strain == '431', ]
 
+# remove cage NP1 (no confirmed infection)
+meta_file <- meta_file[!meta_file$cage_id == 'NP1', ]
+
 # subset shared
 #Create df with relative abundances
 stool_shared <- shared_file[rownames(meta_file[meta_file$day %in% 0, ]), ]
@@ -101,8 +104,8 @@ cv10f_all_pred <- c()
 for(j in 1:iters){
   set.seed(j)
   sampling <- sample(1:nrow(aucrf_data),nrow(aucrf_data),replace=F)
-  cv10f_probs <- rep(NA,nrow(aucrf_data))
-  for(i in seq(1,nrow(aucrf_data),5)){
+  cv10f_probs <- rep(NA,52)
+  for(i in seq(1,50,5)){
     train <- aucrf_data[sampling[-(i:(i+4))],]
     test <- aucrf_data[sampling[i:(i+4)],]
     set.seed(seed)
@@ -169,8 +172,8 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 
 
 #Importance Plot
-n_rf_features <- 9
-euth_otus <- euth_otu_feat[1:n_rf_features]
+#n_rf_features <- 9
+euth_otus <- euth_otu_feat#[1:n_rf_features]
 euth_tax <- get_tax(1, euth_otus, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
                             gsub('tu0*', 'TU ', rownames(euth_tax)), 
