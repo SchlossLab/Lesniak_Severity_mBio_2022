@@ -64,7 +64,7 @@ n_features <- 65
 
 ```{r roc, fig.width=8, fig.height=8, results= 'hide'}
 #create dataframe for RF-classification
-meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 1, 0)) 
+meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 0, 1)) 
 
 Predict_df <- merge(meta_file[meta_file$day %in% 0, 
                               c('human_source', 'mouse_id', 'cage_id', 'Euth_Early')],
@@ -167,65 +167,38 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 ),lty=c(1,2,2,1,0,0), lwd=2, col=c('black','blue','purple','gray','red'), bty='n')
 ```
 
+### Partial Dependency with Relative Abundance Overlayed Plots
+###### Using optimal RF model generated from whole dataset
+###### Plot labels contain MDA of each OTU
 
-```{r importance, fig.width=10, fig.height=5}
 
+```{r rel abund partial depend, fig.width=10, fig.height=10}
 
-#Importance Plot
 #n_rf_features <- 9
-euth_otus <- euth_otu_feat#[1:n_rf_features]
-euth_tax <- get_tax(1, euth_otus, tax_file)
+#euth_otus <- euth_otu_feat[1:n_rf_features]
+euth_tax <- get_tax(1, euth_otu_feat, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
                             gsub('tu0*', 'TU ', rownames(euth_tax)), 
-                                   ') : ', round(rf_early_aucrf$ranking[euth_otus], 3), sep = '')
+                                   ') : ', round(rf_early_aucrf$ranking[euth_otu_feat], 3), sep = '')
 
+layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 
-RF_features_polt <- Predict_early_euth_df %>% 
-  select(Euth_Early, one_of(euth_otus)) %>% 
-  gather('OTU', 'Value', -Euth_Early) %>% 
-  full_join(data.frame(OTU = names(rf_early_aucrf$ranking[euth_otus]), 
-               MDA =  rf_early_aucrf$ranking[euth_otus])) %>% 
-  ggplot( aes(x = reorder(factor(OTU), MDA), y = Value, fill = Euth_Early, dodge = Euth_Early)) +
-  theme(legend.title=element_blank(), legend.position = c(0.9,0.5),
-        panel.background = element_rect(fill = NA),
-        panel.grid.major = element_line(colour = NA),
-        panel.grid.minor = element_line(colour = NA)) +
-  geom_point(pch = 21, position = position_jitterdodge(), alpha = 0.4, size = 2) + coord_flip() +
-  scale_x_discrete(breaks = rownames(euth_tax), labels = euth_tax$tax_label) +
-  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
-                 geom = "crossbar", width = 0.6, position=position_dodge(width=0.8)) + 
-  scale_fill_manual(values = c('red', 'black'), labels = c('Severe','Mild'),
-                    guide = guide_legend(reverse=TRUE))
-
-RF_features_polt + labs( y = 'Relative Abundance (%)\nClassification (OTU) : MDA', x = '', title = '')
-
-RF_features_polt + labs( y = 'Relative Abundance (%) - log10\nClassification (OTU) : MDA', x = '', title = '') +
-  scale_y_log10()
-```
-  
-  
-### Partial Dependency Plots
-###### Using optimal RF model generated from whole dataset
-
-```{r partial dependence, fig.width=10, fig.height=10}
-layout(matrix(c(1:9), nrow=3, byrow=TRUE))
-
-partial_otu <- c()
 for (i in seq_along(euth_otu_feat)) {
   partial_otu <- partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otu_feat[i], xlab='',
                 main=paste(euth_tax$tax_label[i]))
-points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 0 ,euth_otu_feat[i]], 
-       jitter(rep(0.75*(diff(range(partial_otu$y))) + min(partial_otu$y), 
-                  sum(Predict_early_euth_df$Euth_Early == 0)), 
-              amount = (0.1*(diff(range(partial_otu$y))))), 
-              pch = 21, bg = 'red')
 points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 1 ,euth_otu_feat[i]], 
        jitter(rep(0.25*(diff(range(partial_otu$y))) + min(partial_otu$y), 
                   sum(Predict_early_euth_df$Euth_Early == 1)), 
               amount = (0.1*(diff(range(partial_otu$y))))), 
+              pch = 21, bg = 'red')
+points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 0 ,euth_otu_feat[i]], 
+       jitter(rep(0.75*(diff(range(partial_otu$y))) + min(partial_otu$y), 
+                  sum(Predict_early_euth_df$Euth_Early == 0)), 
+              amount = (0.1*(diff(range(partial_otu$y))))), 
               pch = 21, bg = 'gray')
 }
-
+plot(NULL, xlim = c(0,1), ylim = c(0,1), xlab = '', ylab = '', axes = F)
+legend('topleft', c('Mild', 'Severe'), pch = 21, pt.bg = c('gray','red'), cex = 2)
 ```
 
 Would adding initial increase/slope of CFU or day 1 CFU help predict?  
