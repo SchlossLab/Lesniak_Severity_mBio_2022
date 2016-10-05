@@ -169,7 +169,7 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 
 
 #Importance Plot
-n_rf_features <- 5
+n_rf_features <- 9
 euth_otus <- euth_otu_feat[1:n_rf_features]
 euth_tax <- get_tax(1, euth_otus, tax_file)
 euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
@@ -203,13 +203,24 @@ RF_features_polt + labs( y = 'Relative Abundance (%) - log10\nClassification (OT
   
 ### Partial Dependency Plots
 ###### Using optimal RF model generated from whole dataset
-  
-```{r partial dependence, fig.width=10, fig.height=5}
-layout(matrix(c(1:6), nrow=2, byrow=TRUE))
 
-for (i in seq_along(euth_otus)) {
-  partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otus[i], xlab='',
+```{r partial dependence, fig.width=10, fig.height=10}
+layout(matrix(c(1:9), nrow=3, byrow=TRUE))
+
+partial_otu <- c()
+for (i in seq_along(euth_otu_feat)) {
+  partial_otu <- partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otu_feat[i], xlab='',
                 main=paste(euth_tax$tax_label[i]))
+points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 0 ,euth_otu_feat[i]], 
+       jitter(rep(0.75*(diff(range(partial_otu$y))) + min(partial_otu$y), 
+                  sum(Predict_early_euth_df$Euth_Early == 0)), 
+              amount = (0.1*(diff(range(partial_otu$y))))), 
+              pch = 21, bg = 'red')
+points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 1 ,euth_otu_feat[i]], 
+       jitter(rep(0.25*(diff(range(partial_otu$y))) + min(partial_otu$y), 
+                  sum(Predict_early_euth_df$Euth_Early == 1)), 
+              amount = (0.1*(diff(range(partial_otu$y))))), 
+              pch = 21, bg = 'gray')
 }
 
 ```
