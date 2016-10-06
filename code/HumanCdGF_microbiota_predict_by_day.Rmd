@@ -35,8 +35,6 @@ shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'samp
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
 source(tax_function)
 
-# identify c difficile otus
-cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
@@ -63,7 +61,7 @@ cfu_by_day_comm <-
   filter(day %in% 1:10) %>% 
   select(sample_id, day, log_cfu) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-sample_id, -one_of(cdiff_otu))
+  select(-sample_id)
 
 
 seed <- 18
@@ -360,7 +358,7 @@ cfu_by_day <-
   filter(day %in% 1:10) %>% 
   select(sample_id, day, log_cfu, Early_Euth) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-sample_id, -one_of(cdiff_otu))
+  select(-sample_id)
 
 cfu_by_day %>% 
   select(log_cfu, day, one_of(predictive_otus), Early_Euth) %>% 
