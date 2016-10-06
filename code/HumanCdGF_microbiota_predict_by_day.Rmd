@@ -106,7 +106,7 @@ RandomForest_by_day <- function(i, community_day_0){
       ggplot(data = rf_prediction, aes(x=observed, y=predicted)) + geom_point() + 
         labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + 
         theme_bw() + ggtitle(paste("Random Forest Prediction of C Diff CFU on Day ",
-                                   i, sep = '')) +
+                                   i, sep = '')) + xlim(0,9) + ylim(0,9) + 
         annotate('text', x=0.15*(max(rf_prediction$observed)), 
                  y=0.95*(max(rf_prediction$predicted)), 
                  label=paste('R^2 = ', round(tail(rf_n_features$rsq, 1), 2),'\nMSE = ', 
