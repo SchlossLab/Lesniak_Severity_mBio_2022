@@ -1,0 +1,231 @@
+---
+title: "humanCdGF_predict_cfu"
+author: "Nicholas Lesniak"
+date: "October 7, 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
+```
+
+```{r load packages}
+pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+
+```{r setup environment}
+pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+```{r setup data}
+# read in files
+meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
+shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
+
+# read in files
+meta_file   <- read.table(meta_file, sep = '\t', header = T)
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
+
+# remove samples not used or with other cdiff strains
+meta_file <- 
+  meta_file %>% 
+  filter(cdiff_strain == 431, !cage_id == 'NP1') %>% 
+  select(mouse_id, sample_id, day, log_cfu) %>% 
+  filter(!is.na(log_cfu))
+
+shared_list_days <- select(meta_file, -log_cfu)
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+rel_abund_shared <- 100 * shared_file / mean_otu_counts
+rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
+rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
+
+seed <- 1
+n_trees <- 2001
+rf_plot_list <- list()
+n_features <- 10
+cutoff <- 30
+
+heat.plot <- function(input_maxtrix, high_color = '#660000', low_color = '#FFFFFF', legend_title = NA) {
+  long.df <- data.frame(input_maxtrix)
+  colnames(long.df) <- c(1:10)
+  long.df$community_day <- as.character(c(0:10))
+  long.df %>% gather(cfu_day, variable, -community_day) %>% 
+    ggplot(aes(cfu_day, community_day)) + 
+    geom_tile(aes(fill = variable), color = 'white') +
+    scale_fill_gradient(low = low_color, high = high_color, name = legend_title) +
+    labs(x = 'Day (CFU)', y = 'Day (Community)') + 
+    theme(axis.line.x = element_blank(), axis.line.y = element_blank(), axis.ticks = element_blank()) + 
+    scale_x_discrete(expand = c(0, 0), limits = c('1','2','3','4','5','6','7','8','9','10')) + 
+    scale_y_discrete(expand = c(0, 0), limits = c('0','1','2','3','4','5','6','7','8','9','10')) + 
+    theme(legend.position = 'top', legend.key.width = unit(2, 'cm'))
+}
+```
+
+```{r functions}
+rsq <- matrix(NA, nrow = 11, ncol = 10)
+mse <- matrix(NA, nrow = 11, ncol = 10)
+otu_votes <- rep(0, ncol(rel_abund_shared_01))
+names(otu_votes) <- colnames(rel_abund_shared_01)
+importance.df <- c()
+for(m in 0:10){
+  sample_list <- shared_list_days %>% 
+    filter(day == m) %>% 
+    select(-day)
+  community.df <- rel_abund_shared_01 %>% 
+    right_join(sample_list) %>% 
+    select(-sample_id)
+    for(n in 1:10){
+      cfu_shared.df <- meta_file %>% 
+        filter(day == n) %>% 
+        select(mouse_id, log_cfu) %>% 
+        right_join(community.df) %>% 
+        select(-mouse_id) %>% 
+        filter(!is.na(log_cfu))
+
+      set.seed(seed)
+      rf_all <- randomForest(log_cfu ~ ., data = cfu_shared.df,
+                           importance = TRUE, ntree = n_trees)
+      importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
+      top_important_OTU <- rownames(data.frame(head(importance_sorted, n_features)))
+      set.seed(seed)
+      rf_n_features <- randomForest(log_cfu ~ ., data=cfu_shared.df[ ,c( 'log_cfu',
+                                                                 names(importance_sorted)[1:n_features])], 
+                                  importance=TRUE, ntree=n_trees)
+      rsq[m+1, n] <- round(tail(rf_n_features$rsq, 1), 2)
+      mse[m+1, n] <- round(tail(rf_n_features$mse, 1), 2)
+      otu_votes <- otu_votes + 1*(colnames(rel_abund_shared_01) %in% top_important_OTU)
+      importance.df <- rbind(importance.df, c(RSQ = round(tail(rf_n_features$rsq, 1), 2), 
+                      MSE = round(tail(rf_n_features$mse, 1), 2),
+                      importance(rf_all)[,1]/max(importance(rf_all)[,1])))
+    }
+  }
+
+importance.df <- data.frame(importance.df)
+import_features <- importance.df[importance.df$RSQ >= 0.6 & importance.df$MSE <= 0.8, ]
+import_features <- import_features[ , !colnames(import_features) %in% c('RSQ','MSE')]
+med_import_feat <- apply(import_features, 2, median)
+otus_above_20 <- import_features[,names(med_import_feat)[med_import_feat >= 0.2]]
+top_n_overall <- names(otu_votes)[otu_votes >= cutoff]
+
+rsq_n <- matrix(NA, nrow = 11, ncol = 10)
+mse_n <- matrix(NA, nrow = 11, ncol = 10)
+otu_votes_n <- rep(0, ncol(rel_abund_shared_01))
+names(otu_votes_n) <- colnames(rel_abund_shared_01)
+
+for(m in 0:10){
+  sample_list <- shared_list_days %>% 
+    filter(day == m) %>% 
+    select(-day)
+  community.df <- rel_abund_shared_01 %>% 
+    right_join(sample_list) %>% 
+    select(-sample_id)
+  for(n in 1:10){
+    cfu_shared.df <- meta_file %>% 
+      filter(day == n) %>% 
+      select(mouse_id, log_cfu) %>% 
+      right_join(community.df) %>% 
+      select(log_cfu, one_of(top_n_overall)) %>% 
+      filter(!is.na(log_cfu))
+    
+    set.seed(seed)
+    rf_all <- randomForest(log_cfu ~ ., data = cfu_shared.df,
+                           importance = TRUE, ntree = n_trees)
+    importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
+    top_important_OTU <- rownames(data.frame(head(importance_sorted, n_features)))
+    set.seed(seed)
+    rf_n_features <- randomForest(log_cfu ~ ., data=cfu_shared.df[ ,c( 'log_cfu',
+                                                                       names(importance_sorted)[1:n_features])], 
+                                  importance=TRUE, ntree=n_trees)
+    rsq_n[m+1, n] <- round(tail(rf_n_features$rsq, 1), 2)
+    mse_n[m+1, n] <- round(tail(rf_n_features$mse, 1), 2)
+    otu_votes_n <- otu_votes_n + 1*(colnames(rel_abund_shared_01) %in% top_important_OTU)
+  }
+}
+taxa <- get_tax(1, names(otu_votes_n[otu_votes_n >= 1]), tax_file)
+taxa_names <- paste0(taxa$tax, ' (', gsub('tu0*', 'TU ', rownames(taxa)),')')
+```
+
+### All OTUs input to Random Forest
+```{r all otus, fig.width=10, fig.height=6}
+ggdraw()+
+  draw_plot(heat.plot(rsq, '#003300', legend_title = expression(paste('R'^'2'))), 0, 0, 0.5, 1) + 
+  draw_plot(heat.plot(mse, 'white', '#000066', 'MSE'), 0.5, 0, 0.5, 1)
+#plot(otu_votes[otu_votes >= 10], xlab = 'OTU', ylab = 'Freq')
+```
+
+### OTUs selected by >`r cutoff`% of models generated by all OTU models 
+###### Using the following bacteria: `r taxa_names`
+
+```{r top otus, fig.width=10, fig.height=6}
+
+ggdraw()+
+  draw_plot(heat.plot(rsq_n, '#003300', legend_title = expression(paste('R'^'2'))), 0, 0, 0.5, 1) + 
+  draw_plot(heat.plot(mse_n, 'white', '#000066', 'MSE'), 0.5, 0, 0.5, 1)
+#plot(otu_votes_n[otu_votes_n >= 1], xlab = 'OTU', ylab = 'Freq')
+```
+
+###### Re-runnning the program and only focusing on the OTUs predicting day 9/10 to see if there is consistence in the predictive features gives the following selection:  
+Otu00004 Otu00005 Otu00015 Otu00019 Otu00030 Otu00199 Otu00200 Otu00250   
+      14       17       13       15       13       16       17       19
+      
+```{r boruta feature selection, eval = F}
+bor_all <- c()
+
+for(m in 0:10){
+  sample_list <- shared_list_days %>% 
+    filter(day == m) %>% 
+    select(-day)
+  community.df <- rel_abund_shared_01 %>% 
+    right_join(sample_list) %>% 
+    select(-sample_id)
+    for(n in 9:10){
+      cfu_shared.df <- meta_file %>% 
+        filter(day == n) %>% 
+        select(mouse_id, log_cfu) %>% 
+        right_join(community.df) %>% 
+        select(-mouse_id) %>% 
+        filter(!is.na(log_cfu))
+
+      set.seed(seed)
+      bor_all[[(m*2)+(n-8)]] <- Boruta(log_cfu ~ ., data = cfu_shared.df, maxRuns = 2000)
+    }
+  }
+
+boruta.votes <- rep(0, ncol(rel_abund_shared_01))
+names(boruta.votes) <- colnames(rel_abund_shared_01)
+for(i in 1:22){
+  boruta.votes <- boruta.votes + 1*(bor_all[[i]]$finalDecision   == 'Confirmed')
+}
+plot(boruta.votes)
+boruta.votes[boruta.votes >= 16]
+
+colnames(otus_above_20)
+```
+
+Boruta Confirmed the following OTUs as important for predicting day 9/10 cfu:   
+Otu00004 Otu00005 Otu00015 Otu00030 Otu00081 Otu00199 Otu00200 Otu00250 Otu00297  
+      21       22       21       21       21       22       22       22       20  
+
+Selecting OTUs through collecting the features from the most predictive community/cfu models (R^2 >= 0.6 and MSE <= 0.8), then converting all % Increase in MSE to relative values and taking the median value of of each OTU, then selecting OTUs that fall above the median value results in the following OTUs:  
+"Otu00001" "Otu00002" "Otu00004" "Otu00005" "Otu00012" "Otu00014" "Otu00015" "Otu00016" "Otu00019" "Otu00028" "Otu00030" "Otu00048" "Otu00081" "Otu00101" "Otu00118" "Otu00199" "Otu00200" "Otu00250" "Otu00297"
+```{r }
