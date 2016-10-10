@@ -76,7 +76,7 @@ heat.plot <- function(input_maxtrix, high_color = '#660000', low_color = '#FFFFF
     labs(x = 'Day (CFU)', y = 'Day (Community)') + 
     theme(axis.line.x = element_blank(), axis.line.y = element_blank(), axis.ticks = element_blank()) + 
     scale_x_discrete(expand = c(0, 0), limits = c('1','2','3','4','5','6','7','8','9','10')) + 
-    scale_y_discrete(expand = c(0, 0), limits = c('0','1','2','3','4','5','6','7','8','9','10')) + 
+    scale_y_discrete(expand = c(0, 0), limits = rev(c('0','1','2','3','4','5','6','7','8','9','10'))) + 
     theme(legend.position = 'top', legend.key.width = unit(2, 'cm'))
 }
 ```
@@ -167,9 +167,7 @@ taxa_names <- paste0(taxa$tax, ' (', gsub('tu0*', 'TU ', rownames(taxa)),')')
 
 ### All OTUs input to Random Forest - without mice euthanized early
 ```{r all otus, fig.width=10, fig.height=6}
-ggdraw()+
-  draw_plot(heat.plot(rsq, '#003300', legend_title = expression(paste('R'^'2'))), 0, 0, 0.5, 1) + 
-  draw_plot(heat.plot(mse, 'white', '#000066', 'MSE'), 0.5, 0, 0.5, 1)
+heat.plot(rsq, '#003300', legend_title = expression(paste('R'^'2')))
 #plot(otu_votes[otu_votes >= 10], xlab = 'OTU', ylab = 'Freq')
 ```
 
@@ -177,10 +175,7 @@ ggdraw()+
 ###### Using the following bacteria: `r taxa_names`
 
 ```{r top otus, fig.width=10, fig.height=6}
-
-ggdraw()+
-  draw_plot(heat.plot(rsq_n, '#003300', legend_title = expression(paste('R'^'2'))), 0, 0, 0.5, 1) + 
-  draw_plot(heat.plot(mse_n, 'white', '#000066', 'MSE'), 0.5, 0, 0.5, 1)
+heat.plot(rsq_n, '#003300', legend_title = expression(paste('R'^'2')))
 #plot(otu_votes_n[otu_votes_n >= 1], xlab = 'OTU', ylab = 'Freq')
 ```
 
