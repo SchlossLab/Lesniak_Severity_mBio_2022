@@ -221,5 +221,7 @@ To remove any cage effect RF could be picking out instead of the actual outcome,
 
 * Of note, I tried a few different seeds, and one otu (Turicibacter OTU 120) was identified as a classifier of cage/inocula but wasnt in others and was identified as a classifier of Euthanization. Also we occasionally lose OTU 50 as a classifier
 
+####### Model run with both relative and absolute abundances and no significant difference in their output
+
 ***  
 ***  
