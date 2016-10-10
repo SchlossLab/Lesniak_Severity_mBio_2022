@@ -47,7 +47,7 @@ source(tax_function)
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
-  filter(cdiff_strain == 431, !cage_id == 'NP1') %>% 
+  filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
   select(mouse_id, sample_id, day, log_cfu) %>% 
   filter(!is.na(log_cfu))
 
@@ -165,7 +165,7 @@ taxa <- get_tax(1, names(otu_votes_n[otu_votes_n >= 1]), tax_file)
 taxa_names <- paste0(taxa$tax, ' (', gsub('tu0*', 'TU ', rownames(taxa)),')')
 ```
 
-### All OTUs input to Random Forest
+### All OTUs input to Random Forest - without mice euthanized early
 ```{r all otus, fig.width=10, fig.height=6}
 ggdraw()+
   draw_plot(heat.plot(rsq, '#003300', legend_title = expression(paste('R'^'2'))), 0, 0, 0.5, 1) + 
@@ -184,7 +184,7 @@ ggdraw()+
 #plot(otu_votes_n[otu_votes_n >= 1], xlab = 'OTU', ylab = 'Freq')
 ```
 
-###### Re-runnning the program and only focusing on the OTUs predicting day 9/10 to see if there is consistence in the predictive features gives the following selection:  
+###### Re-runnning the program and only focusing on the OTUs predicting day 9/10 to see if there is consistence in the predictive features gives the following selection  (including all samples):  
 Otu00004 Otu00005 Otu00015 Otu00019 Otu00030 Otu00199 Otu00200 Otu00250   
       14       17       13       15       13       16       17       19
       
