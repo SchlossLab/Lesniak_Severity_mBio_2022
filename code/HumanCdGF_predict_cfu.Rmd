@@ -72,7 +72,7 @@ heat.plot <- function(input_maxtrix, high_color = '#660000', low_color = '#FFFFF
   long.df %>% gather(cfu_day, variable, -community_day) %>% 
     ggplot(aes(cfu_day, community_day)) + 
     geom_tile(aes(fill = variable), color = 'white') +
-    scale_fill_gradient(low = low_color, high = high_color, name = legend_title) +
+    scale_fill_gradient(low = low_color, high = high_color, name = legend_title, limits = c(0,1)) +
     labs(x = 'Day (CFU)', y = 'Day (Community)') + 
     theme(axis.line.x = element_blank(), axis.line.y = element_blank(), axis.ticks = element_blank()) + 
     scale_x_discrete(expand = c(0, 0), limits = c('1','2','3','4','5','6','7','8','9','10')) + 
@@ -251,7 +251,7 @@ taxa_names_r <- paste0(taxa$tax, ' (', gsub('tu0*', 'TU ', rownames(taxa)),')')
 heat.plot(rsq_r, '#003300', legend_title = expression(paste('R'^'2')))
 ```
 
-Removing these data points improves predictability for day 6 and 8 but not the earlier days. If I increase the cutoff to remove all CFU below 4, there is still no improvement and even in some cases decreased performance.
+Removing these data points improves predictability for day 6 and 8 but not the earlier days. If I increase the cutoff to remove all CFU below 5, there is a slight increase in day 3 cfu classification at the cost of decrease day 1 cfu classification.
 
 ### Is there any abnormalities in the OTUs of any these days?
 
@@ -269,6 +269,55 @@ meta_data %>%
     stat_summary(fun.y=mean, geom="line", aes(group = cage_id)) + 
     facet_grid(otu ~., scales='free_y') +
     theme_bw() + labs(x = 'Day', y = 'Relative Abundance (%)')
+```
+
+### Does taking the median CFU improve predicatbility?
+
+```{r predict median CFU, fig.width=6,fig.height=6}
+
+
+rsq_med <- matrix(NA, nrow = 11, ncol = 10)
+otu_votes_med <- rep(0, ncol(rel_abund_shared_01))
+names(otu_votes_med) <- colnames(rel_abund_shared_01)
+for(n in 1:10){
+med_log_cfu <- meta_data %>% 
+  filter(day %in% c(n:10), !cage_id == 'NP1', 
+         Early_Euth == FALSE, cdiff_strain == 431) %>% 
+  select(mouse_id, cage_id, log_cfu) %>% 
+  group_by(mouse_id, cage_id) %>% 
+  summarise(log_cfu_med = median(log_cfu)) %>% ungroup()
+for(m in 0:10){
+  sample_list <- shared_list_days %>% 
+    filter(day == m) %>% 
+    select(-day)
+  community.df <- rel_abund_shared_01 %>% 
+    right_join(sample_list) %>% 
+    select(-sample_id)
+  cfu_shared.df <- med_log_cfu %>% 
+      select(mouse_id, log_cfu_med) %>% 
+      right_join(community.df) %>% 
+      select(-mouse_id) %>% 
+#      select(log_cfu_med, one_of(top_n_overall)) %>% 
+      filter(!is.na(log_cfu_med))
+    set.seed(seed)
+    rf_top <- randomForest(log_cfu_med ~ ., data = cfu_shared.df,
+                           importance = TRUE, ntree = n_trees)
+    importance_sorted <- sort(importance(rf_top)[,1], decreasing = T)
+    top_important_OTU <- rownames(data.frame(head(importance_sorted, n_features)))
+    set.seed(seed)
+    rf_n_features <- randomForest(log_cfu_med ~ ., data=cfu_shared.df[ ,c( 'log_cfu_med',
+                                                                       names(importance_sorted)[1:n_features])], 
+                                  importance=TRUE, ntree=n_trees)
+    importance_final <- sort(importance(rf_n_features)[,1], decreasing = T)
+    top_OTU_final <- rownames(data.frame(head(importance_final, n_features)))
+    rsq_med[m+1, n] <- round(tail(rf_n_features$rsq, 1), 2)
+    otu_votes_med <- otu_votes_med + 1*(colnames(rel_abund_shared_01) %in% top_OTU_final)
+}
+}
+
+heat.plot(rsq_med, '#003300', legend_title = expression(paste('R'^'2'))) + 
+  ggtitle('Day CFU is median value of Day n to Day 10')
+
 ```
 
 ***  
