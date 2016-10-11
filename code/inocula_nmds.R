@@ -16,12 +16,8 @@ meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header 
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
 full_shared <- read.table('data/process/humanCdGF_full.shared', sep='\t', header = T)
 
-
-#orig_shared <- read.table('data/mothur/gf_all.an.0.03.subsample.shared', sep='\t', header = T)
-#remove dashes from group names so the next stuff will work
-#orig_shared[2] <- gsub("-", "", orig_shared$Group)
-
-#make shared file look like a true shared:
+#shared files are processed in a make_meta script to remove erroneous samples 
+#so we need format processed shared to look like a true shared file:
 full_shared_group <- cbind(label=0.03, full_shared[1], numOtus=5671, full_shared[2:ncol(full_shared)])
 colnames(full_shared_group)[2] <- 'Group'
 
@@ -29,7 +25,7 @@ colnames(full_shared_group)[2] <- 'Group'
 inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
 inocula_shared <- full_shared[full_shared$sample_id %in% inocula,]
 
-#subset shared to be day 0 only- will use later for comparison 
+#subset shared to be day 0 only 
 day0 <- rownames(meta_file)[meta_file$day==0]
 day0_shared <- full_shared[full_shared$sample_id %in% day0,]
 
@@ -37,7 +33,7 @@ day0_shared <- full_shared[full_shared$sample_id %in% day0,]
 inocula_shared <- cbind(label=0.03, inocula_shared[1], numOtus=5671, inocula_shared[2:ncol(inocula_shared)])
 colnames(inocula_shared)[2] <- 'Group'
 
-#for day 0 also
+#for day 0 also.. probably could make this a function
 day0_shared <- cbind(label=0.03, day0_shared[1], numOtus=5671, day0_shared[2:ncol(day0_shared)])
 colnames(day0_shared)[2] <- 'Group'
 
