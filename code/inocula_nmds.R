@@ -7,7 +7,9 @@
 #    
 #
 ###################
-install.packages("wesanderson")
+install.packages("rgl")
+library("rgl")
+
 
 #read in files
 meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header = T, row.names = 2)
@@ -71,21 +73,33 @@ combo_nmds <- read.table(file='data/process/inputd0.thetayc.0.03.lt.nmds.axes', 
 inoc_nmds <- read.table(file='data/process/inocula.thetayc.0.03.lt.nmds.axes', header = T)
 day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.nmds.axes', header = T)
 
+day0_3D <- read.table(file='data/process/day0.thetayc.3Dnmds.axes', header = T)
+
 
 #merge design and nmds files to prep for plotting 
 inocula_design <- read.table(file='data/raw/donor.design', header = F)
 inocula_nmds <- merge(inoc_nmds, inocula_design, by.x='group', by.y='V1')
 
+inocula_meta_design <- read.table(file='data/raw/donor_meta.design', header = F)
+inocula_meta_nmds <- merge(inoc_nmds, inocula_meta_design, by.x='group', by.y='V1')
+colnames(inocula_meta_nmds)[5] <- "Disease_status"
 
 combo_design <- read.table(file='data/raw/d0_outcome.design', header = F)
 combo_nmds <- merge(combo_nmds, combo_design, by.x='group', by.y='V1')
 
+#need 3D version of these 
 d0_donor <- read.table(file='data/raw/sample_donor.design', header = F)
 day0_donor_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
+day0_3D_nmds <- merge(day0_3D, d0_donor, by.x='group', by.y='V1')
 
 d0_outcome <- read.table(file='data/raw/d0_only_outcome.design', header=F)
-day0_outcome_nmds <- merge(day0_nmds, d0_outcome, by.x='group', by.y='V1')
+day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
 
+day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+
+#use this one
+day0_3D_outcome <- merge(day0_3D_nmds, d0_outcome, by.x='group', by.y='V1')
 
 #make nmds inocula plot
 severe <- inocula_nmds[grep('Severe', inocula_nmds$V2), c(2,3)]
@@ -96,6 +110,16 @@ points(asymptomatic, pch=16, col = "black")
 legend <- c("severe", "asymptomatic")
 legend(x="topright", legend, col = c("red", "black"), pch=16)
 #amova in mothur output for asymptomatic vs severe DONORS: p-value: 0.508
+
+#nmds inocula plot with clinical metadata, use this one 
+ggplot(inocula_meta_nmds, aes(axis1, axis2, group = Disease_status, color = Disease_status)) + geom_point(size = 3) + 
+  theme_bw() + ggtitle("Similarity of donor inocula communities") + xlab("NMDS Axis 1") + ylab("NMDS Axis 2")
+
+plot3d(inocula_meta_nmds$axis1, inocula_meta_nmds$axis2, inocula_meta_nmds$axis3, type = "p", col = as.numeric(inocula_meta_nmds$Disease_status), size = 5, xlab='NMDS axis 1', ylab= 'NMDS axis 2', zlab= 'NMDS axis 3')
+legend3d("topleft", legend= paste(c("C. difficile", "No diarrhea", "Diarrhea")), pch=16, col=c('black', 'green', 'red'), inset=c(0.08))
+
+plot3d(day0_3D_outcome$axis1, day0_3D_outcome$axis2, day0_3D_outcome$axis3, type = "p", col = as.numeric(day0_3D_outcome$V2.x), pch= as.numeric(day0_3D_outcome$V2.y), size = 5)
+legend3d("topright", legend= unique(day0_3D_outcome$V2.x), pch=16, col=unique(as.numeric(day0_3D_outcome$V2.x)), inset=c(0.08))
 
 #donor and day 0 by outcome plot
 severe2 <- combo_nmds[grep('Severe', combo_nmds$V2), c(2,3)]
@@ -120,12 +144,38 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 
 
 #nmds colored by donor plot
+library("RColorBrewer")
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
+
+day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
 
 plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2, pch=16)
 
-ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2)) + geom_point(aes(size = 3 , color = V2)) + 
-  scale_color_manual(values = wes_palette("GrandBudapest")) + theme_bw()
+#use this plot
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2.x, color = V2.x, shape = V2.y)) + geom_point(size = 3) + 
+   theme_bw() + ggtitle("Similarity of day 0 communities")
+
+d369 <- day0_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
+d430 <- day0_nmds[grep('DA00430', day0_nmds$V2), c(2,3)]
+d431 <- day0_nmds[grep('DA00431', day0_nmds$V2), c(2,3)]
+d578 <- day0_nmds[grep('DA00578', day0_nmds$V2), c(2,3)]
+d581 <- day0_nmds[grep('DA00581', day0_nmds$V2), c(2,3)]
+d884 <- day0_nmds[grep('DA00884', day0_nmds$V2), c(2,3)]
+d953 <- day0_nmds[grep('DA00953', day0_nmds$V2), c(2,3)]
+d1134 <- day0_nmds[grep('DA01134', day0_nmds$V2), c(2,3)]
+d1146 <- day0_nmds[grep('DA01146', day0_nmds$V2), c(2,3)]
+d1245 <- day0_nmds[grep('DA01245', day0_nmds$V2), c(2,3)]
+d1324 <- day0_nmds[grep('DA01324', day0_nmds$V2), c(2,3)]
+d10027 <- day0_nmds[grep('DA10027', day0_nmds$V2), c(2,3)]
+d10034 <- day0_nmds[grep('DA10034', day0_nmds$V2), c(2,3)]
+d10082 <- day0_nmds[grep('DA10082', day0_nmds$V2), c(2,3)]
+d10093 <- day0_nmds[grep('DA10093', day0_nmds$V2), c(2,3)]
+d10148 <- day0_nmds[grep('DA10148', day0_nmds$V2), c(2,3)]
+
+
+
+
 
 points(d369, pch=16, col = 'red')
 points(d430, pch=16, col = 'orange')
@@ -153,13 +203,13 @@ legend(x="topright", legend, col = c("red", "orange", "yellow", "green", "blue",
 #can do this in mothur very easily with distance matrix and design file 
 
 
-#tree test
+#Dendrogram code
 install.packages("ape")
 
 library(ape)
 
 inoc_tree <- read.tree(file='data/process/inocula_2194.thetayc.0.03.tre')
-day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.tre')
+day0_tree <- read.tree(file='data/process/day0.thetayc.0.03.ave.tre')
 
 #for plotting donors by outcome 
 dead <- inoc_tree$tip.label[c(3,6,7,8,15)]
@@ -173,5 +223,16 @@ plot(inoc_tree, type='radial', tip.color=ifelse(inoc_tree$tip.label %in% diah, '
 plot(inoc_tree, tip.color=ifelse(inoc_tree$tip.label %in% diah, 'blue', ifelse(inoc_tree$tip.label %in% cdiff, 'red', 'black')))
 legend("bottomleft", c('diarrhea', 'cdiff infected', 'no diarrhea'), col = c('blue', 'red', 'black'), pch =16)
 
+#for plotting mice at day 0 by outcome 
+
+mild <- subset(d0_outcome, d0_outcome$V2 == 'Asymptomatic')
+milder <- mild[1]
+
+severe9 <- subset(d0_outcome, d0_outcome$V2 == 'Severe')
+severer <- severe9[1]
+
+#day0 mouse by outcome
+plot(day0_tree, tip.color=ifelse(day0_tree$tip.label %in% severer$V1, 'red', 'black'),  cex=0.7, main = "Day 0 dendrogram")
+legend("bottomleft", c("mild", "severe"), col = c('black', 'red'), pch = 16)
 
 
