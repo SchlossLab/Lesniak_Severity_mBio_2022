@@ -352,20 +352,11 @@ cfu_shared_colonized.df <- colonized_cfu %>%
     select(-mouse_id, -cage_id, -one_of(features_all)) %>% 
     filter(!is.na(log_cfu_med))
 
-test <- Boruta(log_cfu_med ~ ., data = cfu_shared_colonized.df, maxRuns = 5000)
-
-cfu_shared_colonized <- cfu_shared_colonized.df %>% 
-  select(log_cfu_med, one_of(names(test$finalDecision[test$finalDecision %in% c('Confirmed', 'Tentative')])))
-
 set.seed(seed)
 rf_all <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df,
                            importance = TRUE, ntree = n_trees, mtry = 14)
-set.seed(seed)
-rf_bor <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized,
-                           importance = TRUE, ntree = n_trees, mtry = 2)
 
-plot(importance_sorted/max(importance_sorted))
-importance_sorted <- sort(importance(rf_bor)[,1], decreasing = T)
+importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
 top_important_OTU <- rownames(data.frame(importance_sorted[importance_sorted/max(importance_sorted) > 0.6]))
 
 set.seed(seed)
