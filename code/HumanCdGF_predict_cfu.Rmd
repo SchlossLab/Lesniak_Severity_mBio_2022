@@ -261,7 +261,7 @@ meta_data %>%
 
 ### Does taking the median CFU improve predicatbility?
 
-```{r predict median CFU, fig.width=6,fig.height=6}
+```{r predict median CFU heatmap, fig.width=6,fig.height=6}
 
 
 rsq_med <- matrix(NA, nrow = 11, ncol = 10)
@@ -313,7 +313,7 @@ heat.plot(rsq_med, '#003300', legend_title = expression(paste('R'^'2'))) +
 #### 1. Can Day 0 community predict the median steady-state-colonized CFU?
 #### 2. Can Day 0 community predict the rate of colonization?
 
-```{r predict median CFU, fig.width=6,fig.height=6}
+```{r predict median CFU, fig.width=10,fig.height=10}
 
 Cage_dep_df <- meta_data %>% 
   filter(day == 0) %>% 
@@ -331,7 +331,7 @@ set.seed(seed)
 rf_source <- randomForest(human_source ~ ., data=Predict_source_df, importance=TRUE, ntree=n_trees)
 features_source <- head(sort(rf_source$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
 features_cage <- head(sort(rf_cage$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
-features_all <- unique(c(names(features_cage), names(features_source)))
+cage_source_features <- unique(c(names(features_cage), names(features_source)))
 
 
 colonized_cfu <- meta_data %>% 
@@ -349,7 +349,7 @@ community_d0.df <- rel_abund_shared_01 %>%
     select(-sample_id)
 cfu_shared_colonized.df <- colonized_cfu %>% 
     right_join(community_d0.df) %>% 
-    select(-mouse_id, -cage_id, -one_of(features_all)) %>% 
+    select(-mouse_id, -cage_id, -one_of(cage_source_features)) %>% 
     filter(!is.na(log_cfu_med))
 
 set.seed(seed)
@@ -359,37 +359,51 @@ rf_all <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df,
 importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
 top_important_OTU <- rownames(data.frame(importance_sorted[importance_sorted/max(importance_sorted) > 0.6]))
 
+top_colonized_df <- data.frame(cfu_shared_colonized.df %>% 
+  select(log_cfu_med, one_of(top_important_OTU)))
+
 set.seed(seed)
-rf_n_features <- randomForest(log_cfu_med ~ ., data=cfu_shared_colonized.df %>% 
-                                    select(log_cfu_med, one_of(top_important_OTU)),
-                                           importance=TRUE, ntree=n_trees, mtry = 2)
+rf_n_features <- randomForest(log_cfu_med ~ ., data=top_colonized_df,
+                              importance=TRUE, ntree=n_trees, mtry = 2,
+                              keep.forest=TRUE)
 
 importance_final <- sort(importance(rf_n_features)[,1], decreasing = T)
 
 rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med, 
                        predicted = rf_n_features$predicted)
 rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
-predict_plot_day <- 
-  ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
-    labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
-         title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-    theme_bw() + xlim(0,9) + ylim(0,9) + 
-    annotate('text', x=0.15*(max(rf_prediction$observed)), 
-             y=0.95*(max(rf_prediction$predicted)), 
-             label=paste0('R^2 = ', round(tail(rf_n_features$rsq, 1), 2)))
+
+ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
+  labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
+       title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
+  theme_bw() + xlim(0,9) + ylim(0,9) + 
+  annotate('text', x=0.15*(max(rf_prediction$observed)), 
+           y=0.95*(max(rf_prediction$predicted)), 
+           label=paste0('R^2 = ', round(tail(rf_n_features$rsq, 1), 2)))
 
 importance.df <- data.frame(otu = names(importance_final),
-                            importance = importance_final)
-otu_taxa <- get_tax(1, importance.df$otu, tax_file)
+                            importance = importance_final,
+                            tax = get_tax(1, names(importance_final), tax_file))
+tax_label <- paste0(importance.df$tax, ' (', 
+                    gsub('tu0*', 'TU ', importance.df$otu), 
+                    ') : ', 
+                    round(importance.df$importance, 3))
 
-importance_plot_day <- 
-  ggplot(data = importance.df, aes(x = factor(otu), y = importance)) + 
-        geom_point() + scale_x_discrete(limits = rev(importance.df$otu),
-                                        labels = rev(paste(otu_taxa[,1],' (',
-                                                       rownames(otu_taxa),')',
-                                                       sep=''))) +
-        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
+layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 
+cage_color <- rainbow(length(unique(rf_prediction$cage_id)))
+for (i in seq_along(importance_final)) {
+  partial_otu <- 
+    partialPlot(rf_n_features, top_colonized_df, names(importance_final)[i],
+                xlab='', main=paste(tax_label[i]), 
+                ylim = c(min(top_colonized_df$log_cfu_med),max(top_colonized_df$log_cfu_med)))
+  for(m in seq_along(unique(rf_prediction$cage_id))){
+    cage <- unique(rf_prediction$cage_id)[m]
+    points(y = top_colonized_df[rf_prediction$cage_id %in% cage, 'log_cfu_med'],
+         x = top_colonized_df[rf_prediction$cage_id %in% cage , names(importance_final)[i]], 
+         pch = 21, bg = cage_color[m])
+  }
+}
 ```
 
 ***  
