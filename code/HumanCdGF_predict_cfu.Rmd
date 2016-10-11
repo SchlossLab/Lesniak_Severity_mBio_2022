@@ -5,20 +5,8 @@ date: "October 7, 2016"
 output: html_document
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height=5)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7, fig.height=8)
 ```
-
-```{r load packages}
-pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
-for (dep in pack_used){
-  if (dep %in% installed.packages()[,"Package"] == FALSE){
-    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
-                     quiet=TRUE);
-  }
-  library(dep, verbose=FALSE, character.only=TRUE)
-}
-```
-
 
 ```{r setup environment}
 pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
@@ -60,7 +48,7 @@ rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
 rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
 
 seed <- 1
-n_trees <- 2001
+n_trees <- 1001
 rf_plot_list <- list()
 n_features <- 10
 cutoff <- 30
@@ -317,6 +305,99 @@ for(m in 0:10){
 
 heat.plot(rsq_med, '#003300', legend_title = expression(paste('R'^'2'))) + 
   ggtitle('Day CFU is median value of Day n to Day 10')
+
+```
+
+
+### Reframing the question for predicting CFU
+#### 1. Can Day 0 community predict the median steady-state-colonized CFU?
+#### 2. Can Day 0 community predict the rate of colonization?
+
+```{r predict median CFU, fig.width=6,fig.height=6}
+
+Cage_dep_df <- meta_data %>% 
+  filter(day == 0) %>% 
+  select(human_source, sample_id, cage_id) %>% 
+  left_join(rel_abund_shared_01)
+Predict_cage_df <- select(Cage_dep_df, -human_source, -sample_id)
+Predict_source_df <- select(Cage_dep_df, -cage_id, -sample_id)
+Predict_cage_df$cage_id <- factor(Predict_cage_df$cage_id)
+Predict_source_df$human_source <- factor(Predict_source_df$human_source)
+
+# identify OTUs that predict cage/inocula
+set.seed(seed)
+rf_cage <- randomForest(cage_id ~ ., data=Predict_cage_df, importance=TRUE, ntree=n_trees)
+set.seed(seed)
+rf_source <- randomForest(human_source ~ ., data=Predict_source_df, importance=TRUE, ntree=n_trees)
+features_source <- head(sort(rf_source$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
+features_cage <- head(sort(rf_cage$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
+features_all <- unique(c(names(features_cage), names(features_source)))
+
+
+colonized_cfu <- meta_data %>% 
+  filter(day %in% c(4:10), !cage_id == 'NP1', 
+         Early_Euth == FALSE, cdiff_strain == 431) %>% 
+  select(mouse_id, cage_id, log_cfu) %>% 
+  group_by(mouse_id, cage_id) %>% 
+  summarise(log_cfu_med = median(log_cfu)) %>% 
+  ungroup()
+sample_list_d0 <- shared_list_days %>% 
+    filter(day == 0) %>% 
+    select(-day)
+community_d0.df <- rel_abund_shared_01 %>% 
+    right_join(sample_list_d0) %>% 
+    select(-sample_id)
+cfu_shared_colonized.df <- colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(-mouse_id, -cage_id, -one_of(features_all)) %>% 
+    filter(!is.na(log_cfu_med))
+
+test <- Boruta(log_cfu_med ~ ., data = cfu_shared_colonized.df, maxRuns = 5000)
+
+cfu_shared_colonized <- cfu_shared_colonized.df %>% 
+  select(log_cfu_med, one_of(names(test$finalDecision[test$finalDecision %in% c('Confirmed', 'Tentative')])))
+
+set.seed(seed)
+rf_all <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df,
+                           importance = TRUE, ntree = n_trees, mtry = 14)
+set.seed(seed)
+rf_bor <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized,
+                           importance = TRUE, ntree = n_trees, mtry = 2)
+
+plot(importance_sorted/max(importance_sorted))
+importance_sorted <- sort(importance(rf_bor)[,1], decreasing = T)
+top_important_OTU <- rownames(data.frame(importance_sorted[importance_sorted/max(importance_sorted) > 0.6]))
+
+set.seed(seed)
+rf_n_features <- randomForest(log_cfu_med ~ ., data=cfu_shared_colonized.df %>% 
+                                    select(log_cfu_med, one_of(top_important_OTU)),
+                                           importance=TRUE, ntree=n_trees, mtry = 2)
+
+importance_final <- sort(importance(rf_n_features)[,1], decreasing = T)
+
+rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med, 
+                       predicted = rf_n_features$predicted)
+rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
+predict_plot_day <- 
+  ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
+    labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
+         title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
+    theme_bw() + xlim(0,9) + ylim(0,9) + 
+    annotate('text', x=0.15*(max(rf_prediction$observed)), 
+             y=0.95*(max(rf_prediction$predicted)), 
+             label=paste0('R^2 = ', round(tail(rf_n_features$rsq, 1), 2)))
+
+importance.df <- data.frame(otu = names(importance_final),
+                            importance = importance_final)
+otu_taxa <- get_tax(1, importance.df$otu, tax_file)
+
+importance_plot_day <- 
+  ggplot(data = importance.df, aes(x = factor(otu), y = importance)) + 
+        geom_point() + scale_x_discrete(limits = rev(importance.df$otu),
+                                        labels = rev(paste(otu_taxa[,1],' (',
+                                                       rownames(otu_taxa),')',
+                                                       sep=''))) +
+        labs(x= '', y = '% Increase in MSE') + theme_bw() + coord_flip()
 
 ```
 
