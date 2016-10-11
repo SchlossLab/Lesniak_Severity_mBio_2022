@@ -14,6 +14,5 @@ data/*
 *.qsub*
 mothur*logfile
 *temp*
-*.docx
 
 .DS*
