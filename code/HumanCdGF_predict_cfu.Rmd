@@ -510,6 +510,10 @@ for (i in seq_along(importance_final)) {
 
 ```
 
+Does not predict colonization rate as well  
+  - could be due to removed (cage/inocula-sensitive) otus  
+  - improper measurement of colonization rate  
+  - colonization rate not microbiome dependent, may be dependent on host factors of acute infection
 
 ***  
   
