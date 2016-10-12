@@ -377,8 +377,9 @@ ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + ge
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
   theme_bw() + xlim(0,9) + ylim(0,9) + 
   annotate('text', x=0.15*(max(rf_prediction$observed)), 
-           y=0.95*(max(rf_prediction$predicted)), 
-           label=paste0('R^2 = ', round(tail(rf_n_features$rsq, 1), 2)))
+           y=0.95*(max(rf_prediction$predicted)), parse = T,
+           label=paste0('R^2 == ', round(tail(rf_n_features$rsq, 1), 2))) + 
+  theme(legend.position = 'none')
 
 importance.df <- data.frame(otu = names(importance_final),
                             importance = importance_final,
@@ -403,6 +404,9 @@ for (i in seq_along(importance_final)) {
          pch = 21, bg = cage_color[m])
   }
 }
+
+
+
 ```
 
 
@@ -475,14 +479,15 @@ importance_final <- sort(importance(rf_col_rate_features)[,1], decreasing = T)
 rf_col_rate_prediction <- data.frame(observed = shared_colonized.df$ratio, 
                        predicted = rf_col_rate_features$predicted)
 rf_cr_prediction <- cbind(cage_id = shared_col_rate.df[,'cage_id'], rf_col_rate_prediction)
-  
+
 ggplot(data = rf_cr_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
   labs(x= 'Observed', y = 'Predicted',
-       title = "Random Forest Prediction of Relative Colonization level of C Difficile from Day 0 Community") + 
+       title = "Random Forest Prediction of Relative Day 1 Colonization Level of C. Difficile from Day 0 Community") + 
   theme_bw() + xlim(0,1) + ylim(0,1) + 
   annotate('text', x=0.15*(max(rf_cr_prediction$observed)), 
-           y=0.95*(max(rf_cr_prediction$predicted)), 
-           label=paste0('R^2 = ', round(tail(rf_col_rate_features$rsq, 1), 2)))
+           y=0.95*(max(rf_cr_prediction$predicted)), parse = T,
+           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) + 
+  theme(legend.position = 'none')
 
 importance.df <- data.frame(otu = names(importance_final),
                             importance = importance_final,
