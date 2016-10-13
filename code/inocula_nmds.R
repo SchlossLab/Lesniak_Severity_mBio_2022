@@ -145,12 +145,64 @@ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
 
 day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+names(day0_donor_nmds)[4] <- "Donor"
+names(day0_donor_nmds)[5] <- "Outcome"
 
 plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2, pch=16)
 
+colors <- c("dodgerblue2","#E31A1C", # red
+             "green4",
+             "#6A3D9A", # purple
+             "#FF7F00", # orange
+             "black","gold1",
+             "skyblue2","#FB9A99", # lt pink
+             "palegreen2",
+             "#CAB2D6", # lt purple
+             "#FDBF6F", # lt orange
+             "gray70", "khaki2",
+             "maroon","orchid1","deeppink1","blue1","steelblue4",
+             "darkturquoise","green1","yellow4","yellow3",
+             "darkorange4","brown”")
+
+
 #use this plot
-ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2.x, color = V2.x, shape = V2.y)) + geom_point(size = 3) + 
-   theme_bw() + ggtitle("Similarity of day 0 communities")
+pdf("fig1B.pdf", width = 13, height = 5)
+
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = V2.x)) + geom_point(aes(fill=Donor), size = 3) +
+   theme_bw() + ggtitle("Similarity of day 0 communities") + scale_shape_discrete(name = "Outcome") + labs(x='NDMS Axis 1', y = 'NDMS axis 2') + scale_color_manual(values = colors)
+
+
+
+
+### Plotting function to plot convex hulls
+### Filename: Plot_ConvexHull.R
+### Notes:
+############################################################################
+
+# INPUTS:
+# xcoords: x-coordinates of point data
+# ycoords: y-coordinates of point data
+# lcolor: line color
+
+# OUTPUTS:
+# convex hull around data points in a particular color (specified by lcolor)
+
+# FUNCTION:
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+} 
+
+
+store <- Plot_ConvexHull(xcoord=day0_donor_nmds$axis1, ycoord = day0_donor_nmds$axis2, lcolor=day0_donor_nmds$V2.x)
+
+
+
+
+
+#geom_polygon(aes(fill = V2.x), alpha = 0.3) makes shitty polygons
+#stat_ellipse()
 
 d369 <- day0_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
 d430 <- day0_nmds[grep('DA00430', day0_nmds$V2), c(2,3)]

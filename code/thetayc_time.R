@@ -21,21 +21,21 @@ theta <- read.dist(file='data/process/shared_subset_2194.thetayc.0.03.lt.dist', 
 
 #compares day0 to every subsequent day. this asks, how different are the communities from the start? can this be linked to outcome?
 
-mouseIDVector <- as.character(unique(meta_file$mouse_id))
-mouseIDVector <- mouseIDVector[mouseIDVector != "inoculum_NA"]
-stability <- as.data.frame(matrix(ncol=10, nrow=length(mouseIDVector)))
-row.names(stability) <- mouseIDVector
-names(stability) <- c(1,2,3,4,5,6,7,8,9,10)
-for (k in 1:10){
-  sampA <- rownames(meta_file)[meta_file$day %in% 0]
-  sampB <- rownames(meta_file)[meta_file$day %in% k]
-  dist <- theta[sampA, sampB]
-  row.names(dist) <- meta_file$mouse_id[rownames(meta_file) %in% rownames(dist)]
-  names(dist) <- meta_file$mouse_id[rownames(meta_file) %in% names(dist)]
-  for (i in mouseIDVector){
-    coord <- dist[i,i]
+mouseIDVector <- as.character(unique(meta_file$mouse_id)) 
+mouseIDVector <- mouseIDVector[mouseIDVector != "inoculum_NA"] 
+stability <- as.data.frame(matrix(ncol=10, nrow=length(mouseIDVector))) 
+row.names(stability) <- mouseIDVector 
+names(stability) <- c(1,2,3,4,5,6,7,8,9,10)  
+for (k in 1:10){ 
+  sampA <- rownames(meta_file)[meta_file$day %in% 0] 
+  sampB <- rownames(meta_file)[meta_file$day %in% k] 
+  dist <- theta[sampA, sampB] 
+  row.names(dist) <- meta_file$mouse_id[rownames(meta_file) %in% rownames(dist)] 
+  names(dist) <- meta_file$mouse_id[rownames(meta_file) %in% names(dist)] 
+  for (i in mouseIDVector){ 
+    coord <- dist[i,i] 
     try(
-    stability[i,k] <- as.numeric(coord), silent = TRUE
+    stability[i,k] <- as.numeric(coord), silent = TRUE 
     )
   }
 }
