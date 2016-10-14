@@ -196,6 +196,9 @@ points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 0 ,euth_otu_fea
                   sum(Predict_early_euth_df$Euth_Early == 0)), 
               amount = (0.1*(diff(range(partial_otu$y))))), 
               pch = 21, bg = 'gray')
+  axis(side = 4, labels = c('Severe', 'Mild'),
+       at = c(0.25*(diff(range(partial_otu$y))) + min(partial_otu$y),
+              0.75*(diff(range(partial_otu$y))) + min(partial_otu$y)))
 }
 plot(NULL, xlim = c(0,1), ylim = c(0,1), xlab = '', ylab = '', axes = F)
 legend('topleft', c('Mild', 'Severe'), pch = 21, pt.bg = c('gray','red'), cex = 2)
