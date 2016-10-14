@@ -37,11 +37,10 @@ non_431 %>%
   filter(day %in% c(0:10), !is.na(log_cfu) ) %>%
   select(mouse_id, day, human_source, cdiff_strain, cage_id, log_cfu) %>% 
   ggplot(aes(x = factor(day), y = log_cfu, color = factor(cdiff_strain))) + geom_point() +
-            stat_summary(fun.y=mean, geom="line", aes(group = cage_id)) + 
+            stat_summary(fun.y=median, geom="line", aes(group = cage_id)) + 
             facet_grid(. ~ human_source) + theme_bw() + 
-            labs(x = 'Day', y = 'C Diff CFU (log10)') +
+            labs(x = 'Day', y = expression(paste(italic('C. Difficile'), ' Log'[10], ' CFU', sep = ''))) +
             theme(legend.justification=c(1,0.5), legend.position=c(1,0.5), 
                   legend.title=element_blank())
-
 ```
 
