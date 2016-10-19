@@ -69,22 +69,9 @@ meta_file$Euth_Early <- factor(ifelse(meta_file[ , 'Early_Euth'] == FALSE, 0, 1)
 Predict_df <- merge(meta_file[meta_file$day %in% 0, 
                               c('human_source', 'mouse_id', 'cage_id', 'Euth_Early')],
                     rel_abund_stool, by.x = 'mouse_id', by.y = 'row.names')
-Predict_cage_df <- select(Predict_df, -human_source, -mouse_id, -Euth_Early)
-Predict_source_df <- select(Predict_df, -cage_id, -mouse_id, -Euth_Early)
-Predict_cage_df$cage_id <- factor(Predict_cage_df$cage_id)
-Predict_source_df$human_source <- factor(Predict_source_df$human_source)
-
-# identify OTUs that predict cage/inocula
-set.seed(seed)
-rf_cage <- randomForest(cage_id ~ ., data=Predict_cage_df, importance=TRUE, ntree=n_trees)
-set.seed(seed)
-rf_source <- randomForest(human_source ~ ., data=Predict_source_df, importance=TRUE, ntree=n_trees)
-features_source <- head(sort(rf_source$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), n_features)
-features_cage <- head(sort(rf_cage$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), n_features)
-features_all <- unique(c(names(features_cage), names(features_source)))
 
 # remove cage/inocula OTUs from prediction dataframes
-Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id, -human_source, -one_of(features_all))
+Predict_early_euth_df <- select(Predict_df, -cage_id, -mouse_id, -human_source)
 
 # create RF model
 set.seed(seed)

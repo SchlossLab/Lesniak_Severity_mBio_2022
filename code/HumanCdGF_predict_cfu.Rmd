@@ -60,25 +60,6 @@ cutoff <- 30
 
 ```{r predict median CFU, fig.width=10,fig.height=10}
 
-Cage_dep_df <- meta_data %>% 
-  filter(day == 0) %>% 
-  select(human_source, sample_id, cage_id) %>% 
-  left_join(rel_abund_shared_01)
-Predict_cage_df <- select(Cage_dep_df, -human_source, -sample_id)
-Predict_source_df <- select(Cage_dep_df, -cage_id, -sample_id)
-Predict_cage_df$cage_id <- factor(Predict_cage_df$cage_id)
-Predict_source_df$human_source <- factor(Predict_source_df$human_source)
-
-# identify OTUs that predict cage/inocula
-set.seed(seed)
-rf_cage <- randomForest(cage_id ~ ., data=Predict_cage_df, importance=TRUE, ntree=n_trees)
-set.seed(seed)
-rf_source <- randomForest(human_source ~ ., data=Predict_source_df, importance=TRUE, ntree=n_trees)
-features_source <- head(sort(rf_source$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
-features_cage <- head(sort(rf_cage$importance[ , 'MeanDecreaseAccuracy'], decreasing = T), 65)
-cage_source_features <- unique(c(names(features_cage), names(features_source)))
-
-
 colonized_cfu <- meta_data %>% 
   filter(day %in% c(4:10), !cage_id == 'NP1', 
          Early_Euth == FALSE, cdiff_strain == 431) %>% 
@@ -94,7 +75,7 @@ community_d0.df <- rel_abund_shared_01 %>%
     select(-sample_id)
 cfu_shared_colonized.df <- colonized_cfu %>% 
     right_join(community_d0.df) %>% 
-    select(-mouse_id, -cage_id, -one_of(cage_source_features)) %>% 
+    select(-mouse_id, -cage_id) %>% 
     filter(!is.na(log_cfu_med))
 
 set.seed(seed)
@@ -203,8 +184,7 @@ col_rate <- meta_data %>%
   right_join(col_rate)
 
 shared_col_rate.df <- col_rate %>% 
-    right_join(community_d0.df) %>% 
-    select(-one_of(cage_source_features))
+    right_join(community_d0.df)
 shared_colonized.df <- select(shared_col_rate.df, -mouse_id, -cage_id)
 
 
