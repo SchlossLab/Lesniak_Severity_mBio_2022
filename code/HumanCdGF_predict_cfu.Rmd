@@ -99,13 +99,42 @@ rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med,
                        predicted = rf_n_features$predicted)
 rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
 
+##### - leave one cage out cv
+LOcO_df <- data.frame(colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    select(log_cfu_med, cage_id, one_of(top_important_OTU)))
+cage_list <- as.character(unique(LOcO_df$cage_id))
+
+LOcO_probs <- c()
+LOcO_rf <- c()
+rsq <- c()
+import_otus <- data.frame(otu = top_important_OTU)
+for(i in 1:length(cage_list)){
+  by_cage <- LOcO_df$cage_id == cage_list[i]
+  LOcO_predict <- select(LOcO_df, -cage_id)
+  train <- LOcO_predict[!by_cage,]
+  test <- LOcO_predict[by_cage,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, pdel=0.99, ntree=500)
+  import_df <- importance(temp_model)
+  colnames(import_df) <- cage_list[i]
+  import_otus <- merge(import_otus, import_df, by.x = 'otu', by.y = 'row.names')
+  rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(cage=rep(cage_list[i], nrow(test)),
+                                             actual=test$log_cfu_med, 
+                                             pred=predict(temp_model, test)))
+}
+LOcO_roc <- roc(LOcO_df$Euth_Early~LOcO_probs)
+##### - leave one cage out cv
+
+
 ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
   labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-  theme_bw() + xlim(0,9) + ylim(0,9) + 
-  annotate('text', x=0.15*(max(rf_prediction$observed)), 
-           y=0.95*(max(rf_prediction$predicted)), parse = T,
-           label=paste0('R^2 == ', round(tail(rf_n_features$rsq, 1), 2))) + 
+  theme_bw() + annotate('text', x=0.15*(max(rf_prediction$observed)), 
+                        y=0.95*(max(rf_prediction$predicted)), parse = T,
+                        label=paste0('R^2 == ', round(tail(rf_n_features$rsq, 1), 2))) + 
   theme(legend.position = 'none')
 
 importance.df <- data.frame(otu = names(importance_final),
