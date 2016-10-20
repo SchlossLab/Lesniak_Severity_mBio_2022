@@ -4,6 +4,7 @@
 ## - subset df by desired tax level, then replace any unclassified with next level up
 get_tax <- function(tax_level=1,row_list=1:length(rownames(tax_file)),df=tax_file){
      if (tax_level %in% c(1:5)){
+          row_list <- as.character(row_list)
           taxonomy <- df[row_list,]
           taxonomy <- strsplit(as.character(taxonomy$Taxonomy),';',fixed=TRUE)
           n <- max(sapply(taxonomy, length))
