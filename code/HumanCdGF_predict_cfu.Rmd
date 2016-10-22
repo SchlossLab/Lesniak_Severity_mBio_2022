@@ -27,7 +27,7 @@ tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
-meta_data   <- read.table(meta_data, sep = '\t', header = T)
+meta_data   <- read.table(meta_data, sep = '\t', header = T, stringsAsFactors = F)
 shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
 source(tax_function)
@@ -49,7 +49,6 @@ rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
 
 seed <- 1
 n_trees <- 1001
-rf_plot_list <- list()
 n_features <- 10
 cutoff <- 30
 
@@ -103,46 +102,107 @@ rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = '
 LOcO_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     filter(!is.na(log_cfu_med)) %>% 
-    select(log_cfu_med, cage_id, one_of(top_important_OTU)))
-cage_list <- as.character(unique(LOcO_df$cage_id))
+    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
+cage_list <- unique(LOcO_df$cage_id)
 
 LOcO_probs <- c()
-LOcO_rf <- c()
 rsq <- c()
 import_otus <- data.frame(otu = top_important_OTU)
 for(i in 1:length(cage_list)){
   by_cage <- LOcO_df$cage_id == cage_list[i]
-  LOcO_predict <- select(LOcO_df, -cage_id)
+  LOcO_predict <- select(LOcO_df, -cage_id, -mouse_id)
   train <- LOcO_predict[!by_cage,]
   test <- LOcO_predict[by_cage,]
   set.seed(seed)
-  temp_model <- randomForest(log_cfu_med~., data=train, pdel=0.99, ntree=500)
+  temp_model <- randomForest(log_cfu_med~., data=train, pdel=0.99, ntree=500, importance=T)
   import_df <- importance(temp_model)
-  colnames(import_df) <- cage_list[i]
+  colnames(import_df)[1] <- cage_list[i]
   import_otus <- merge(import_otus, import_df, by.x = 'otu', by.y = 'row.names')
+  import_otus <- select(import_otus, -IncNodePurity)
   rsq[i] <- round(tail(temp_model$rsq, 1), 2)
-  LOcO_probs <- rbind(LOcO_probs, data.frame(cage=rep(cage_list[i], nrow(test)),
-                                             actual=test$log_cfu_med, 
-                                             pred=predict(temp_model, test)))
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=LOcO_df$mouse_id[by_cage],
+                                             cage_id=rep(cage_list[i], nrow(test))))
 }
-LOcO_roc <- roc(LOcO_df$Euth_Early~LOcO_probs)
+med_otu_importance <- data.frame(otu = import_otus$otu,
+                                 importance = apply(import_otus[, -1], 1, median))
+med_otu_importance <- med_otu_importance[order(med_otu_importance$importance, decreasing = T),]
+
+LOcO_rsq <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+
+#One per cage
+one_mouse_df <- data.frame(colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    filter(!is.na(log_cfu_med))  %>% 
+    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
+
+one_mouse_probs <- c()
+om_rsq <- c()
+om_rsq_rf <- c()
+om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
+one_df <- c()
+om_pred <- c()
+for(i in 1:20){
+    set.seed(i)
+    train <- one_mouse_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
+                             importance = TRUE, ntree = n_trees)
+    om_rsq_rf[i] <- tail(rf_om$rsq, 1)
+    om_pred <- rbind(om_pred,
+                     data.frame(select(test, mouse_id, cage_id, log_cfu_med),
+                          predicted=predict(rf_om, test)))
+    om_rsq[i] <- 1 - (sum((om_pred$log_cfu_med - om_pred$predicted)^2)/
+               sum((om_pred$log_cfu_med - mean(om_pred$log_cfu_med))^2))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
+    om_import_otus <- select(om_import_otus, -IncNodePurity)
+}
+
+om_pred <- rename(om_pred, observed = log_cfu_med)
+
+med_otu_importance_om <- data.frame(otu = om_import_otus$otu,
+                                 importance = apply(import_otus[, -1], 1, median))
+med_otu_importance_om <- med_otu_importance_om[order(med_otu_importance_om$importance, decreasing = T),]
+
+#### merge OOB and leave 1 cage out dataframes
+all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
+                cbind(LOcO_probs, data = rep('LOO', nrow(LOcO_probs))),
+                cbind(om_pred, data = rep('1_mouse', nrow(om_pred))))
+
+ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) + geom_point() + 
+  geom_abline(slope = 1) + 
+  labs(x= 'Observed Log10 CFU', y = 'Predicted Log10 CFU',
+       title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
+  theme_bw() + annotate('text', x=1.05*(min(LOcO_probs$observed)), 
+                        y=0.95*(max(LOcO_probs$predicted)), # parse = T,
+                        label=paste0('OOB ', 'R^2 == ', round(tail(rf_n_features$rsq, 1), 2),
+                                     '\nLOcO ','R^2 == ', round(LOcO_rsq, 2),
+                                     '\n1 mouse', 'R^2 == ', round(tail(om_rsq, 1), 2))) + 
+  theme(legend.position = 'none')
+
+get_tax(1, med_otu_importance$otu, tax_file)
 ##### - leave one cage out cv
 
 
 ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
   labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-  theme_bw() + annotate('text', x=0.15*(max(rf_prediction$observed)), 
+  theme_bw() + annotate('text', x=1.05*(min(rf_prediction$observed)), 
                         y=0.95*(max(rf_prediction$predicted)), parse = T,
                         label=paste0('R^2 == ', round(tail(rf_n_features$rsq, 1), 2))) + 
   theme(legend.position = 'none')
 
-importance.df <- data.frame(otu = names(importance_final),
-                            importance = importance_final,
-                            tax = get_tax(1, names(importance_final), tax_file))
-tax_label <- paste0(importance.df$tax, ' (', 
-                    gsub('tu0*', 'TU ', importance.df$otu), 
-                    ') : ', 
+importance.df <- data.frame(get_tax(1, names(importance_final), tax_file),
+                            importance = importance_final)
+tax_label <- paste0(importance.df$tax_label, ' : ', 
                     round(importance.df$importance, 3))
 
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
