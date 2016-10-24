@@ -95,11 +95,11 @@ rf_rsq <- c()
 otus_used <- c()
 rf_otus <- colnames(cfu_shared_colonized.df)[-1]
 for(i in 1:100){
-  if(length(rf_otus) > 2){
+  if(length(rf_otus) > 1){
   set.seed(seed)
   rf <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', rf_otus)],
                      importance = TRUE, ntree = n_trees)
-  rf_import_otus <- importance(rf)[,1]
+  rf_import_otus <- importance(rf, type = 1)
   otus_used[[i]] <- rf_otus
   rf_otus <- rownames(data.frame(rf_import_otus[rf_import_otus >= mean(rf_import_otus)]))
   rf_rsq[i] <- tail(rf$rsq, 1)
@@ -192,7 +192,7 @@ for(i in 1:20){
       filter(!mouse_id %in% train$mouse_id)
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
-                             importance = TRUE, ntree = n_trees)
+                             importance = TRUE, keep.forest = T, ntree = n_trees)
     om_rsq_rf[i] <- tail(rf_om$rsq, 1)
     om_pred <- rbind(om_pred,
                      data.frame(select(test, mouse_id, cage_id, log_cfu_med),
@@ -204,7 +204,7 @@ for(i in 1:20){
     om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
     om_import_otus <- select(om_import_otus, -IncNodePurity)
 }
-
+plot(om_rsq_rf)
 #####
 test <- c() # test if any model has same train set
   for(i in 2:21){
