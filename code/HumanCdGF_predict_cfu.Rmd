@@ -76,11 +76,6 @@ cfu_shared_colonized.df <- colonized_cfu %>%
     select(-mouse_id, -cage_id) %>% 
     filter(!is.na(log_cfu_med))
 
-test <- data.frame(model = c('boruta',rep('reiterative_rf', 6),rep('one_mouse_per_cg',4)),
-                   numOtus = c(length(boruta_otus), length(otus_used[[1]]),length(otus_used[[2]]),length(otus_used[[3]]),
-                               length(otus_used[[4]]),length(otus_used[[5]]),length(otus_used[[6]]),30,27,6,2),
-                   Rsq = c(tail(rf_boruta$rsq, 1), rf_rsq, 0.72, 0.71, 0.75, 0.71)
-)
 ##### feature reduction #####
 ### boruta
 set.seed(seed)
@@ -101,7 +96,7 @@ for(i in 1:100){
                      importance = TRUE, ntree = n_trees)
   rf_import_otus <- importance(rf, type = 1)
   otus_used[[i]] <- rf_otus
-  rf_otus <- rownames(data.frame(rf_import_otus[rf_import_otus >= mean(rf_import_otus)]))
+  rf_otus <- rownames(rf_import_otus)[rf_import_otus >= mean(rf_import_otus)]
   rf_rsq[i] <- tail(rf$rsq, 1)
   } else {
     set.seed(seed)
@@ -114,14 +109,7 @@ for(i in 1:100){
 }
 #### select top otus from reiteration through RF
 optimum_otus <- otus_used[[which(rf_rsq == max(rf_rsq))]]
-set.seed(seed)
-rf_all <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', optimum_otus)],
-                           importance = TRUE, ntree = n_trees)
-
 reduced_otus <- otus_used[[3]]
-set.seed(seed)
-rf_all <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', reduced_otus)],
-                           importance = TRUE, ntree = n_trees)
 
 ### test models with top subset of otus
 top_important_OTU <- optimum_otus
