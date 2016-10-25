@@ -49,7 +49,8 @@ rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
 
 seed <- 1
 n_trees <- 1001
-
+n_otus <- 12
+iters <- 100
 ```
 
 ### Reframing the question for predicting CFU
@@ -76,48 +77,16 @@ cfu_shared_colonized.df <- colonized_cfu %>%
     filter(!is.na(log_cfu_med))
 
 ##### feature reduction #####
-### boruta
-library(Boruta)
-set.seed(seed)
-rf_features <- Boruta(log_cfu_med ~ ., data = cfu_shared_colonized.df, maxRuns = 2000)
-boruta_otus <- names(rf_features$finalDecision)[rf_features$finalDecision == 'Confirmed']
-set.seed(seed)
-rf_boruta <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', boruta_otus)],
-                           importance = TRUE, ntree = n_trees)
-rf_bor_import <- sort(importance(rf_boruta)[,1], decreasing = T)
-detach('package:Boruta', unload = T)
-detach('package:ranger', unload = T)
-detach('package:randomForest', unload = T)
-library(randomForest)
-### above mean features, reiteratively reduce to 2 otus 
-###### used mean because median results in including many low values in early OTU selection steps
-rf_rsq <- c()
-otus_used <- c()
-rf_otus <- colnames(cfu_shared_colonized.df)[-1]
-for(i in 1:100){
-  if(length(rf_otus) > 1){
-  set.seed(seed)
-  rf <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', rf_otus)],
+###### select top n otus reiteratively and select otus that appear > 50% of iterations
+rf_n_otus <-lapply(1:iters, function(i){
+  set.seed(i)
+  rf <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df,
                      importance = TRUE, ntree = n_trees)
-  rf_import_otus <- importance(rf, type = 1)
-  otus_used[[i]] <- rf_otus
-  rf_otus <- rownames(rf_import_otus)[rf_import_otus >= mean(rf_import_otus)]
-  rf_rsq[i] <- tail(rf$rsq, 1)
-  } else {
-    set.seed(seed)
-    rf <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', rf_otus)],
-                       importance = TRUE, ntree = n_trees)
-    otus_used[[i]] <- rf_otus
-    rf_rsq[i] <- tail(rf$rsq, 1)
-    stop('Only one OTU remains')
-  }
-}
-#### select top otus from reiteration through RF
-optimum_otus <- otus_used[[which(rf_rsq == max(rf_rsq))]]
-reduced_otus <- otus_used[[6]]
+  names(sort(importance(rf)[,1], decreasing = T))[1:n_otus]
+})
+n_otu_freq <- table(unlist(rf_n_otus))
+top_important_OTU <- names(n_otu_freq)[n_otu_freq >= iters/2]
 
-### test models with top subset of otus
-top_important_OTU <- reduced_otus
 top_colonized_df <- data.frame(cfu_shared_colonized.df %>% 
   select(log_cfu_med, one_of(top_important_OTU)))
 
@@ -169,14 +138,13 @@ LOcO_rsq <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
 one_mouse_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     filter(!is.na(log_cfu_med))  %>% 
-    select(log_cfu_med, mouse_id, cage_id, Otu00250, Otu00005))
+    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
 
 om_rsq_rf <- c() # rsq of each rf model
 om_rsq <- c() # cumulative rsq of all models
 om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
-one_df <- c()
 om_pred <- c()
-for(i in 1:500){
+for(i in 1:iters){
     set.seed(i)
     train <- one_mouse_df %>% 
       group_by(cage_id) %>% 
@@ -204,29 +172,28 @@ test_rank <- apply(test, 2, function(x) rank(x))
 test_raw_rank <- apply(test_rank, 1, function(x) sum(x, na.rm = T))
 test_import_rank <- sort(test_raw_rank[test_raw_rank >=  ncol(test_rank)*sum(test_rank[ , 1])/nrow(test_rank)], decreasing = T)
 ### mean
-test_mean <- apply(test, 2, function(x) mean(x, na.rm=T)) # mean importance for each rf model
-test_select <- apply(test, 1, function(x) x >= test_mean) # T for each otu above mean by sample
-test_raw_mean <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above mean imp
-test_import_mean <- sort(test_raw_mean[test_raw_mean > 0.5], decreasing = T)
+#test_mean <- apply(test, 2, function(x) mean(x, na.rm=T)) # mean importance for each rf model
+#test_select <- apply(test, 1, function(x) x >= test_mean) # T for each otu above mean by sample
+#test_raw_mean <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above mean imp
+#test_import_mean <- sort(test_raw_mean[test_raw_mean > 0.5], decreasing = T)
 #### median
-test_med <- apply(test, 2, function(x) median(x, na.rm=T)) # median importance for each rf model
-test_select <- apply(test, 1, function(x) x >= test_med) # T for each otu above median by sample
-test_raw_med <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above med imp
-test_import_med <- sort(test_raw_med[test_raw_med > 0.5], decreasing = T)
+#test_med <- apply(test, 2, function(x) median(x, na.rm=T)) # median importance for each rf model
+#test_select <- apply(test, 1, function(x) x >= test_med) # T for each otu above median by sample
+#test_raw_med <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above med imp
+#test_import_med <- sort(test_raw_med[test_raw_med > 0.5], decreasing = T)
 
 #####
-test <- c() # test if any model has same train set
-  for(i in 2:21){
-  test[i-1] <- colnames(om_import_otus)[i] %in% colnames(om_import_otus)[-c(1,i)]
-}
-any(test) # if true, then trained on the same set of mice multiple times
+#test <- c() # test if any model has same train set
+#  for(i in 2:21){
+#  test[i-1] <- colnames(om_import_otus)[i] %in% colnames(om_import_otus)[-c(1,i)]
+#}
+#any(test) # if true, then trained on the same set of mice multiple times
 #####
 
 om_pred <- rename(om_pred, observed = log_cfu_med)
 
-med_otu_importance_om <- data.frame(otu = om_import_otus$otu,
-                                 importance = apply(om_import_otus[, -1], 1, median))
-med_otu_importance_om <- med_otu_importance_om[order(med_otu_importance_om$importance, decreasing = T),]
+med_otu_importance_om <- data.frame(otu = names(test_import_rank),
+                                 importance = test_import_rank)
 
 #### merge OOB and leave 1 cage out dataframes
 all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
@@ -234,12 +201,11 @@ all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
                 cbind(om_pred, data = rep('1_mouse', nrow(om_pred))))
 
 ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) + geom_point() + 
-  geom_abline(slope = 1) + 
+  # geom_abline(slope = 1) + 
   xlim(c(4,9)) + ylim(c(4,9)) +
   labs(x= 'Observed Log10 CFU', y = 'Predicted Log10 CFU',
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-  theme_bw() + annotate('text', x=1.05*(min(LOcO_probs$observed)), 
-                        y=0.95*(max(LOcO_probs$predicted)), # parse = T,
+  theme_bw() + annotate('text', x = 4.5, y = 8.5, # parse = T,
                         label=paste0('OOB ', 'R^2 == ', round(tail(rf_n_features$rsq, 1), 2),
                                      '\nLOcO ','R^2 == ', round(LOcO_rsq, 2),
                                      '\n1 mouse', 'R^2 == ', round(tail(om_rsq, 1), 2))) + 
