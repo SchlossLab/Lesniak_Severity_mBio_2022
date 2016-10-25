@@ -164,7 +164,7 @@ LOcO_rsq <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
 one_mouse_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     filter(!is.na(log_cfu_med))  %>% 
-    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
+    select(log_cfu_med, mouse_id, cage_id, contains('Otu')))
 
 om_rsq_rf <- c() # rsq of each rf model
 om_rsq <- c() # cumulative rsq of all models
@@ -192,13 +192,30 @@ for(i in 1:20){
     om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
     om_import_otus <- select(om_import_otus, -IncNodePurity)
 }
-plot(om_rsq_rf)
+test <- data.frame(om_import_otus[ , -1], row.names = om_import_otus$otu)
+colnames(test) <- seq(ncol(test))
+
+test_mean <- apply(test, 2, function(x) mean(x, na.rm=T)) # mean importance for each rf model
+test_select <- apply(test, 1, function(x) x >= test_mean) # T for each otu above mean by sample
+test_raw_mean <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above mean imp
+test_import_mean <- sort(test_raw_mean[test_raw_mean > 0.5], decreasing = T)
+
+#### median with 
+test_med <- apply(test, 2, function(x) median(x, na.rm=T)) # median importance for each rf model
+test_select <- apply(test, 1, function(x) x >= test_med) # T for each otu above median by sample
+test_raw_med <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above med imp
+test_import_med <- sort(test_raw_med[test_raw_med > 0.5], decreasing = T)
+
+test_rank <- apply(test, 2, function(x) rank(x))
+test_raw_rank <- apply(test_rank, 1, function(x) sum(x, na.rm = T))
+sort(test_import_rank[test_raw_rank >=  ncol(test_rank)*sum(test_rank[ , 1])/nrow(test_rank)], decreasing = T)
+
 #####
 test <- c() # test if any model has same train set
   for(i in 2:21){
   test[i-1] <- colnames(om_import_otus)[i] %in% colnames(om_import_otus)[-c(1,i)]
 }
-any(test)
+any(test) # if true, then trained on the same set of mice multiple times
 #####
 
 om_pred <- rename(om_pred, observed = log_cfu_med)
