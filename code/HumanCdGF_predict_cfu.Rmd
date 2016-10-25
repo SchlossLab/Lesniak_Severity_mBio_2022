@@ -77,12 +77,18 @@ cfu_shared_colonized.df <- colonized_cfu %>%
 
 ##### feature reduction #####
 ### boruta
+library(Boruta)
 set.seed(seed)
 rf_features <- Boruta(log_cfu_med ~ ., data = cfu_shared_colonized.df, maxRuns = 2000)
 boruta_otus <- names(rf_features$finalDecision)[rf_features$finalDecision == 'Confirmed']
 set.seed(seed)
 rf_boruta <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[, c('log_cfu_med', boruta_otus)],
                            importance = TRUE, ntree = n_trees)
+rf_bor_import <- sort(importance(rf_boruta)[,1], decreasing = T)
+detach('package:Boruta', unload = T)
+detach('package:ranger', unload = T)
+detach('package:randomForest', unload = T)
+library(randomForest)
 ### above mean features, reiteratively reduce to 2 otus 
 ###### used mean because median results in including many low values in early OTU selection steps
 rf_rsq <- c()
@@ -108,10 +114,10 @@ for(i in 1:100){
 }
 #### select top otus from reiteration through RF
 optimum_otus <- otus_used[[which(rf_rsq == max(rf_rsq))]]
-reduced_otus <- otus_used[[3]]
+reduced_otus <- otus_used[[6]]
 
 ### test models with top subset of otus
-top_important_OTU <- optimum_otus
+top_important_OTU <- reduced_otus
 top_colonized_df <- data.frame(cfu_shared_colonized.df %>% 
   select(log_cfu_med, one_of(top_important_OTU)))
 
@@ -163,14 +169,14 @@ LOcO_rsq <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
 one_mouse_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     filter(!is.na(log_cfu_med))  %>% 
-    select(log_cfu_med, mouse_id, cage_id, contains('Otu')))
+    select(log_cfu_med, mouse_id, cage_id, Otu00250, Otu00005))
 
 om_rsq_rf <- c() # rsq of each rf model
 om_rsq <- c() # cumulative rsq of all models
 om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
 one_df <- c()
 om_pred <- c()
-for(i in 1:20){
+for(i in 1:500){
     set.seed(i)
     train <- one_mouse_df %>% 
       group_by(cage_id) %>% 
@@ -193,21 +199,20 @@ for(i in 1:20){
 }
 test <- data.frame(om_import_otus[ , -1], row.names = om_import_otus$otu)
 colnames(test) <- seq(ncol(test))
-
+### rank
+test_rank <- apply(test, 2, function(x) rank(x))
+test_raw_rank <- apply(test_rank, 1, function(x) sum(x, na.rm = T))
+test_import_rank <- sort(test_raw_rank[test_raw_rank >=  ncol(test_rank)*sum(test_rank[ , 1])/nrow(test_rank)], decreasing = T)
+### mean
 test_mean <- apply(test, 2, function(x) mean(x, na.rm=T)) # mean importance for each rf model
 test_select <- apply(test, 1, function(x) x >= test_mean) # T for each otu above mean by sample
 test_raw_mean <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above mean imp
 test_import_mean <- sort(test_raw_mean[test_raw_mean > 0.5], decreasing = T)
-
-#### median with 
+#### median
 test_med <- apply(test, 2, function(x) median(x, na.rm=T)) # median importance for each rf model
 test_select <- apply(test, 1, function(x) x >= test_med) # T for each otu above median by sample
 test_raw_med <- apply(test_select, 2, function(x) sum(x[!is.na(x)])/length(x[!is.na(x)])) # portion of rf model otu is above med imp
 test_import_med <- sort(test_raw_med[test_raw_med > 0.5], decreasing = T)
-
-test_rank <- apply(test, 2, function(x) rank(x))
-test_raw_rank <- apply(test_rank, 1, function(x) sum(x, na.rm = T))
-sort(test_import_rank[test_raw_rank >=  ncol(test_rank)*sum(test_rank[ , 1])/nrow(test_rank)], decreasing = T)
 
 #####
 test <- c() # test if any model has same train set
@@ -279,6 +284,79 @@ for (i in seq_along(importance_final)) {
 }
 
 ```
+
+## Feature reduction
+
+#### Boruta  
+Variance Explained = `r round(tail(rf_boruta$rsq, 1)*100, 2)`%  
+OTUs  
+`r rf_bor_import`  
+
+#### Mean % Increase MSE  
+`r length(otus_used[[1]])` OTUs = Variance Explained = `r round(rf_rsq[[1]]*100, 2)`%  
+`r length(otus_used[[2]])` OTUs = Variance Explained = `r round(rf_rsq[[2]]*100, 2)`%  
+`r length(otus_used[[3]])` OTUs = Variance Explained = `r round(rf_rsq[[3]]*100, 2)`%  
+`r length(otus_used[[4]])` OTUs = Variance Explained = `r round(rf_rsq[[4]]*100, 2)`%  
+`r length(otus_used[[5]])` OTUs = Variance Explained = `r round(rf_rsq[[5]]*100, 2)`%  
+    - OTUs:   `r otus_used[[5]]`  
+`r length(otus_used[[6]])` OTUs = Variance Explained = `r round(rf_rsq[[6]]*100, 2)`%  
+    - OTUs:   `r otus_used[[6]]`  
+`r length(otus_used[[7]])` OTUs = Variance Explained = `r round(rf_rsq[[7]]*100, 2)`%  
+    - OTUs:   `r otus_used[[7]]`  
+
+Either Enterococcus (Otu 5) or Clostridium_XlVa (OTU 19) alone allows for ~65% explained variance
+
+
+#### one mouse model beginning with all otus and removing OTUs ranked below half max
+Rsq 0.6505947 with all otus
+
+Rsq 0.6893368 with otus:
+Otu00001 Otu00002 Otu00003 Otu00004 Otu00005 Otu00006 Otu00009 Otu00011 Otu00012 Otu00014 Otu00015 Otu00016 Otu00017 Otu00018 Otu00019 Otu00021 Otu00022 
+ 19727.0   7883.0  10100.0  20087.0  19774.0  15910.0   6999.0  10213.5  13479.0  16050.0  19178.0  15146.0  11461.0   8879.0  21037.0   8616.0   8201.0 
+Otu00029 Otu00030 Otu00032 Otu00045 Otu00048 Otu00049 Otu00053 Otu00057 Otu00060 Otu00063 Otu00064 Otu00074 Otu00077 Otu00081 Otu00082 Otu00083 Otu00084 
+  9849.0  13750.0   8594.0   7568.0  14825.0  12015.0  12291.0  13443.0  10921.0   8801.0   7474.0   9516.0   8280.0   9914.0  11609.0  12119.0  12961.0 
+Otu00095 Otu00101 Otu00118 Otu00128 Otu00131 Otu00159 Otu00163 Otu00164 Otu00173 Otu00175 Otu00176 Otu00178 Otu00199 Otu00200 Otu00250 Otu00297 Otu00461 
+ 15665.0  15639.0  10566.0  10740.0   9099.0  14344.0   9217.0  18500.0  11910.0   8002.5  19911.0   8550.5  20788.0  21936.0  22797.0  20767.0   7897.5 
+
+Rsq 0.7430718 with otus:
+Otu00001 Otu00004 Otu00005 Otu00006 Otu00012 Otu00014 Otu00015 Otu00016 Otu00019 Otu00030 Otu00048 Otu00057 Otu00095 Otu00101 Otu00159 Otu00164 Otu00176 
+    6855     6074     6119     5436     4061     4580     6285     4193     7725     3766     3350     3980     4305     4138     3282     5724     6645 
+Otu00199 Otu00200 Otu00250 Otu00297 
+    6845     7898     7511     6728 
+ 
+Rsq 0.7447479 with otus:
+Otu00001 Otu00004 Otu00005 Otu00015 Otu00019 Otu00164 Otu00176 Otu00199 Otu00200 Otu00250 Otu00297 
+    3081     2423     3019     3236     3517     2546     2521     2830     3151     3739     2937 
+
+Rsq 0.7572649 with otus:
+Otu00001 Otu00005 Otu00015 Otu00019 Otu00200 Otu00250 
+    1644     1580     1636     1589     2017     2034 
+
+Rsq 0.7499362 with otus:
+Otu00005 Otu00019 Otu00200 Otu00250 
+     758     1121     1421     1700 
+
+Rsq 0.7305611 with otus:
+Otu00005 Otu00019 
+     611      889 
+
+Rsq 0.6887173 with otus:
+Otu00200 Otu00250 
+     550      950 
+
+also tried:
+Otus	Rsq 
+15  5	0.59
+250 19	0.757
+250 5	0.712
+
+Otu		 Rsq
+Otu00001 0.5014594
+Otu00005 0.6353671
+Otu00015 0.4497236
+Otu00019 0.6319819
+Otu00200 0.6557830
+Otu00250 0.7009930
 
 
 #### 2. Can Day 0 community predict the rate of colonization?
