@@ -222,55 +222,55 @@ all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
                 cbind(LOcO_probs, data = rep('LOO', nrow(LOcO_probs))),
                 cbind(om_pred, data = rep('1_mouse', nrow(om_pred))))
 
-ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) + geom_point() + 
-  # geom_abline(slope = 1) + 
-  xlim(c(4,9)) + ylim(c(4,9)) +
+ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) + 
+  geom_abline(color = 'gray', size = 0.5, linetype = 2, slope = 1) + 
+  # geom_point() + 
+  geom_smooth(method = 'lm', se = F) +
+  stat_summary(fun.y=median, geom="point", aes(group = data)) + 
+  stat_summary(fun.data = 'median_hilow') +
+  xlim(c(5,9)) + ylim(c(5,9)) +
   labs(x= 'Observed Log10 CFU', y = 'Predicted Log10 CFU',
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-  theme_bw() + annotate('text', x = 4.5, y = 8.5, # parse = T,
-                        label=paste0('OOB ', 'R^2 == ', round(tail(rf_n_features$rsq, 1), 2),
-                                     '\nLOcO ','R^2 == ', round(LOcO_rsq, 2),
-                                     '\n1 mouse', 'R^2 == ', round(tail(om_rsq, 1), 2))) + 
-  theme(legend.position = 'none')
+  theme_bw() + 
+  scale_color_discrete(name = 'Model',
+                       breaks = c('OOB', 'LOO', '1_mouse'),
+                       labels = c(bquote('OOB (R'^'2'*' = '*.(round(tail(rf_n_features$rsq, 1), 2))*')'),
+                                  bquote('LOO (R'^'2'*' = '*.(round(LOcO_rsq, 2))*')'),
+                                  bquote('OM (R'^'2'*' = '*.(round(om_rsq,2))*')'))) + 
+  theme(legend.justification=c(0,1), legend.position=c(0,1))
 
-get_tax(1, med_otu_importance$otu, tax_file)
-##### - leave one cage out cv
 
 
-ggplot(data = rf_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
-  labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)',
-       title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
-  theme_bw() + annotate('text', x=1.05*(min(rf_prediction$observed)), 
-                        y=0.95*(max(rf_prediction$predicted)), parse = T,
-                        label=paste0('R^2 == ', round(tail(rf_n_features$rsq, 1), 2))) + 
-  theme(legend.position = 'none')
+importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
 
-importance.df <- data.frame(get_tax(1, names(importance_final), tax_file),
-                            importance = importance_final)
-tax_label <- paste0(importance.df$tax_label, ' : ', 
-                    round(importance.df$importance, 3))
+partial_df <- data.frame(colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(mouse_id, cage_id, log_cfu_med, one_of(rownames(importance_om))) %>% 
+    filter(!is.na(log_cfu_med)))
 
-layout(matrix(c(1:9), ncol=3, byrow=TRUE))
+color <- sapply(1:length(unique(partial_df$cage_id)), 
+                           function(n)rgb(sample(c(0:255), 1),sample(c(0:255), 1),
+                                          sample(c(0:255), 1), maxColorValue = 255))
 
-cage_color <- rainbow(length(unique(rf_prediction$cage_id)))
-for (i in seq_along(importance_final)) {
-    partialPlot(rf_n_features, top_colonized_df, names(importance_final)[i],
-                xlab='', main=paste(tax_label[i]))
+layout(matrix(c(1:4), ncol=2, byrow=TRUE))
+plot_loop_output <- lapply(seq_along(importance_om$tax), function(i){
+    partialPlot(rf_n_features, top_colonized_df, rownames(importance_om)[i],
+                xlab='', main=paste(importance_om$tax_label[i]))
     par(new = T)
     plot(y = top_colonized_df[ , 'log_cfu_med'],
-         x = top_colonized_df[ , names(importance_final)[i]], 
+         x = top_colonized_df[ , rownames(importance_om)[i]], 
          pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
-# To color points by cage - Change pch to 21 and un-comment following lines
-#  for(m in seq_along(unique(rf_prediction$cage_id))){
-#    cage <- unique(rf_prediction$cage_id)[m]
-#    points(y = top_colonized_df[rf_prediction$cage_id %in% cage, 'log_cfu_med'],
-#         x = top_colonized_df[rf_prediction$cage_id %in% cage , names(importance_final)[i]], 
-#         pch = 21, bg = cage_color[m], xlab = NA, ylab = NA, axes = F)
-#  }
-}
-
+# To color points by mouse - Change pch to 21 and un-comment following lines
+  lapply(seq_along(unique(partial_df$cage_id)), function(m){
+    mouse <- unique(partial_df$cage_id)[m]
+    points(y = partial_df[partial_df$cage_id %in% mouse, 'log_cfu_med'],
+           x = partial_df[partial_df$cage_id %in% mouse , rownames(importance_om)[i]], 
+           pch = 21, cex = 2, bg = color[m], xlab = NA, ylab = NA, axes = F)
+  })
+})
+rm(plot_loop_output)
 ```
 
 
