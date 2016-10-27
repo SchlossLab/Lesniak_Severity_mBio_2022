@@ -16,12 +16,8 @@ meta_file <- read.table('data/process/human_CdGF_metadata.txt', sep='\t',header 
 shared <- read.table('data/process/human_CdGF.an.unique_list.0.03.subsample.shared', sep='\t',header=T)
 full_shared <- read.table('data/process/humanCdGF_full.shared', sep='\t', header = T)
 
-
-#orig_shared <- read.table('data/mothur/gf_all.an.0.03.subsample.shared', sep='\t', header = T)
-#remove dashes from group names so the next stuff will work
-#orig_shared[2] <- gsub("-", "", orig_shared$Group)
-
-#make shared file look like a true shared:
+#shared files are processed in a make_meta script to remove erroneous samples 
+#so we need format processed shared to look like a true shared file:
 full_shared_group <- cbind(label=0.03, full_shared[1], numOtus=5671, full_shared[2:ncol(full_shared)])
 colnames(full_shared_group)[2] <- 'Group'
 
@@ -29,7 +25,7 @@ colnames(full_shared_group)[2] <- 'Group'
 inocula <- rownames(meta_file)[meta_file$cage_id=='inoculum']
 inocula_shared <- full_shared[full_shared$sample_id %in% inocula,]
 
-#subset shared to be day 0 only- will use later for comparison 
+#subset shared to be day 0 only 
 day0 <- rownames(meta_file)[meta_file$day==0]
 day0_shared <- full_shared[full_shared$sample_id %in% day0,]
 
@@ -37,7 +33,7 @@ day0_shared <- full_shared[full_shared$sample_id %in% day0,]
 inocula_shared <- cbind(label=0.03, inocula_shared[1], numOtus=5671, inocula_shared[2:ncol(inocula_shared)])
 colnames(inocula_shared)[2] <- 'Group'
 
-#for day 0 also
+#for day 0 also.. probably could make this a function
 day0_shared <- cbind(label=0.03, day0_shared[1], numOtus=5671, day0_shared[2:ncol(day0_shared)])
 colnames(day0_shared)[2] <- 'Group'
 
@@ -112,8 +108,13 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 #amova in mothur output for asymptomatic vs severe DONORS: p-value: 0.508
 
 #nmds inocula plot with clinical metadata, use this one 
+
+pdf("fig1B_actual.pdf", width = 8, height = 5)
+
 ggplot(inocula_meta_nmds, aes(axis1, axis2, group = Disease_status, color = Disease_status)) + geom_point(size = 3) + 
-  theme_bw() + ggtitle("Similarity of donor inocula communities") + xlab("NMDS Axis 1") + ylab("NMDS Axis 2")
+  theme_bw() + xlab("NMDS Axis 1") + ylab("NMDS Axis 2") + theme(legend.justification = c(1, 0), legend.position = c(1, 0))
+
+dev.off()
 
 plot3d(inocula_meta_nmds$axis1, inocula_meta_nmds$axis2, inocula_meta_nmds$axis3, type = "p", col = as.numeric(inocula_meta_nmds$Disease_status), size = 5, xlab='NMDS axis 1', ylab= 'NMDS axis 2', zlab= 'NMDS axis 3')
 legend3d("topleft", legend= paste(c("C. difficile", "No diarrhea", "Diarrhea")), pch=16, col=c('black', 'green', 'red'), inset=c(0.08))
@@ -149,12 +150,64 @@ getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
 
 day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+names(day0_donor_nmds)[4] <- "Donor"
+names(day0_donor_nmds)[5] <- "Outcome"
 
 plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, main="Similarity of day 0 communities, colored by donor", col = day0_donor_nmds$V2, pch=16)
 
+colors <- c("dodgerblue2","#E31A1C", # red
+             "green4",
+             "#6A3D9A", # purple
+             "#FF7F00", # orange
+             "black","gold1",
+             "skyblue2","#FB9A99", # lt pink
+             "palegreen2",
+             "#CAB2D6", # lt purple
+             "#FDBF6F", # lt orange
+             "gray70", "khaki2",
+             "maroon","orchid1","deeppink1","blue1","steelblue4",
+             "darkturquoise","green1","yellow4","yellow3",
+             "darkorange4","brown”")
+
+
 #use this plot
-ggplot(day0_donor_nmds, aes(axis1, axis2, group = V2.x, color = V2.x, shape = V2.y)) + geom_point(size = 3) + 
-   theme_bw() + ggtitle("Similarity of day 0 communities")
+pdf("fig1B.pdf", width = 13, height = 5)
+
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = V2.x)) + geom_point(aes(fill=Donor), size = 3) +
+   theme_bw() + ggtitle("Similarity of day 0 communities") + scale_shape_discrete(name = "Outcome") + labs(x='NDMS Axis 1', y = 'NDMS axis 2') + scale_color_manual(values = colors)
+
+
+
+
+### Plotting function to plot convex hulls
+### Filename: Plot_ConvexHull.R
+### Notes:
+############################################################################
+
+# INPUTS:
+# xcoords: x-coordinates of point data
+# ycoords: y-coordinates of point data
+# lcolor: line color
+
+# OUTPUTS:
+# convex hull around data points in a particular color (specified by lcolor)
+
+# FUNCTION:
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+} 
+
+
+store <- Plot_ConvexHull(xcoord=day0_donor_nmds$axis1, ycoord = day0_donor_nmds$axis2, lcolor=day0_donor_nmds$V2.x)
+
+
+
+
+
+#geom_polygon(aes(fill = V2.x), alpha = 0.3) makes shitty polygons
+#stat_ellipse()
 
 d369 <- day0_nmds[grep('DA00369', day0_nmds$V2), c(2,3)]
 d430 <- day0_nmds[grep('DA00430', day0_nmds$V2), c(2,3)]
