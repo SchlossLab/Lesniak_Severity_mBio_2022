@@ -219,19 +219,125 @@ provides a range of clinical outcomes.
 
 \subsubsection{Results}\label{results}
 
+\textbf{Germ-free mice inoculated with human feces as model for C.
+difficile infection.} To generate mice with human-derived microbiomes,
+we inoculated one cage of gnotobiotic C57/BL6 mice with one of 16
+different human fecal donors. Five donors were patients that had
+diarrhea that was not attributable to \emph{C. difficile} infection
+while 11 donors were healthy at time of donation. Stool from a patient
+that was colonized with virulent \emph{C. difficile} was used as a
+positive control. After inoculation with human stool, mice were allowed
+to equilibrate for 14 days. Prior to infection, stool samples were taken
+from each mouse to establish baseline. Then, the \emph{C. difficile}
+strain isolated from the positive control patient's sample (strain 430)
+was used to infect each mouse with 100 spores. Mice were monitored for
+weight loss and clinical signs of disease. Fecal samples were taken to
+enumerate \emph{C. difficile} CFU and for microbiome analysis every day
+for up to 10 days post-infection (Fig 1A). To ensure that the donors we
+selected represented a diverse array of human microbiomes, we sequenced
+the 16S rRNA genes from donor fecal inocula. Ordination of the distances
+between donor communities showed that the donors each had distinctly
+different communities, independent of whether the sample came from a
+sick or healthy person (Fig 1B). Likewise, the starting microbial
+communities of the mice on day 0 were characterizing by sequencing of
+fecal pellets DNA prior to infection. Ordination of all of the mouse
+communities on day 0 shows that mice were similar to each other within
+each cage and donor, but distinct from other donors (Fig 1C). This
+result confirmed that human-associated microbes were able to colonize
+gnotobiotic mice and provide distinct initial communities to test
+\emph{C. difficile} dynamics.
+
+\textbf{C. difficile infection in mice with human-derived microbiota
+cause a range of outcomes.} \emph{C. difficile} colonization was
+monitored by daily plating of stool pellets for \emph{C. difficile} CFU.
+Nearly all of the mice were colonized to 10\textsuperscript{5} --
+10\textsuperscript{7} CFU by one day post-infection and remained
+colonized at that level until the end of the experiment (Fig 2A). As one
+indicator of disease, mouse weights were taken each day post-infection
+and weight-loss was monitored alongside clinical signs of disease. When
+mice were judged to be too ill to continue they were humanely
+euthanized. Overall, disease phenotypes fell into two classes. Mice that
+became severely ill and lost 20\% or more of their starting body weight
+within one to two days post-infection were classified as ``severe''
+whereas mice that were colonized with \emph{C. difficile} but did not
+show signs of disease or severe weight loss were considered to have
+``mild'' disease (Fig 2A, 2B). Interestingly, \emph{C. difficile} was
+able to cause severe disease in both mice that had been colonized with
+healthy stool and those colonized with diarrheal stool, suggesting
+susceptibility to CDI is dependent on the composition of the starting
+microbiome and not associated with donor clinical metadata.
+
+\textbf{Results to be written} 1. Microbes present in the gut prior to
+infection are predictive of C. difficile CFU and severity a. Figure 3:
+Random forest to predict CFU, predictive OTUs b. Figure 4: Random Forest
+predicts CDI severity, predictive OTUs 2. Propensity for severe CDI is
+community-dependent and strain-independent a. Figure 5: Infection of
+mice with different C. difficile strains.
+
 \subsubsection{Discussion}\label{discussion}
+
+• Restate results, • caveats about mouse weights • No donors were
+colonization resistant, discuss donor differences • Discuss prediction
+methods and outcomes • Discuss potential mechanisms for interesting OTUs
+• Discuss different strain results • Future work blah blah
 
 \subsubsection{Materials and Methods}\label{materials-and-methods}
 
+• Mice ULAM number • Donor stool ERIN IRB shit • Bacteria/plating •
+Sequencing • Data analysis, code availability • Machine learning models
+
+\subsection{Acknowledgments}\label{acknowledgments}
+
+Lab, sequencing core, Jhansi
+
 \newpage
 
-Insert figure legends with the first sentence in bold, for example:
+\subsubsection{Figure Legends}\label{figure-legends}
 
-\textbf{Figure 1. Number of OTUs sampled among bacterial and archaeal
-16S rRNA gene sequences for different OTU definitions and level of
-sequencing effort.} Rarefaction curves for different OTU definitions of
-Bacteria (A) and Archaea (B). Rarefaction curves for the coarse
-environments in Table 1 for Bacteria (C) and Archaea (D).
+\textbf{Figure 1. Germ-free mice inoculated with human feces as a model
+for C. difficile infection.} A) Experimental design. Stool from 16
+healthy, diarrheal and CDI patients were independently inoculated into
+3-4 germ-free mice by oral gavage. 14 days later mice were orally
+infected with 100 spores of C. difficile strain 431. Weight and stool
+CFU were monitored for up to 10 days post infection. B) NMDS ordination
+of donor stool communities prior to inoculating mice. Each point
+represents one donor and are colored by clinical diagnosis. C) NDMS
+ordination of the stool communities on day 0. Each symbol represents one
+mouse and is colored by donor. Circles represent mice that experienced
+mild disease and triangles represent those that suffered severe disease.
+
+\textbf{Figure 2. \emph{C. difficile} infection results in mild or
+severe disease.} A) \emph{C. difficile CFU} was enumerated by plating of
+mouse stool pellets daily. Each point represents a mouse and the lines
+represent the median CFU in each group. Error bars are interquartile
+ranges. Red lines and points correspond to mice that succumbed to severe
+disease whereas black lines and points correspond to mice that had mild
+or no disease. B) Mouse weights were recorded and daily percent weight
+loss calculated for each mouse. Data is presented as the median of each
+group and interquartile ranges. Mice that succumbed to severe infection
+typically lost a significant amount of weight by day 1 or 2 post
+infection. Red lines correspond to severely ill mice, black to mice with
+mild disease.
+
+\textbf{Figure 3. Random Forest prediction of \emph{C. difficile}
+colonization level.} A) OTUs above 1\% relative abundance on day 0 were
+used to predict median log\textsubscript{10} CFU of \emph{C. difficile}
+after colonization. OTUs were chosen such that they were not predictive
+of cage or donor. Each point is a mouse colored by cage. B) Partial
+dependency plots of the top six predictive OTUs. Line displats the
+partial dependence of log\textsubscript{10} CFU on the relative
+abundance of each predictive OUT. Each median log\textsubscript{10} CFU
+is plotted against its relative abundance for each predictive OTU.
+
+\textbf{Figure 4. Random Forest prediction of CDI severity.} OTUs above
+1\% relative abundance on day 0 were used to predict disease severity.
+OTUs were chosen such that they were not predictive of cage or donor.
+Predictive classification tested via 10-fold (gray), leave-one-cage-out
+(purple dashed) or leave-one-mouse-out (blue dashed) models are
+displayed in (A). B) Partial dependency plots of most predictive OTUs.
+Line displays the partial dependence of log\textsubscript{10} CFU on OTU
+relative abundance. Points are the OTU relative abundance of each mouse
+colored by outcome (red, severe, black, mild).
 
 \newpage
 

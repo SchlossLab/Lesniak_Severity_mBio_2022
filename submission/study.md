@@ -93,9 +93,21 @@ Lab, sequencing core, Jhansi
 
 \newpage
 
-Insert figure legends with the first sentence in bold, for example:
+###Figure Legends###
 
-**Figure 1. Number of OTUs sampled among bacterial and archaeal 16S rRNA gene sequences for different OTU definitions and level of sequencing effort.** Rarefaction curves for different OTU definitions of Bacteria (A) and Archaea (B). Rarefaction curves for the coarse environments in Table 1 for Bacteria (C) and Archaea (D).
+**Figure 1. Germ-free mice inoculated with human feces as a model for _C. difficile infection._** A) Experimental design. Stool from 16 healthy, diarrheal and CDI patients were independently inoculated into 3-4 germ-free mice by oral gavage. 14 days later mice were orally infected with 100 spores of C. difficile strain 431. Weight and stool CFU were monitored for up to 10 days post infection. B) NMDS ordination of donor stool communities prior to inoculating mice. Each point represents one donor and are colored by clinical diagnosis. C) NDMS ordination of the stool communities on day 0. Each symbol represents one mouse and is colored by donor. Circles represent mice that experienced mild disease and triangles represent those that suffered severe disease. 
+
+**Figure 2. _C. difficile_ infection results in mild or severe disease.** A) _C. difficile CFU_ was enumerated by plating of mouse stool pellets daily. Each point represents a mouse and the lines represent the median CFU in each group. Error bars are interquartile ranges. Red lines and points correspond to mice that succumbed to severe disease whereas black lines and points correspond to mice that had mild or no disease. B) Mouse weights were recorded and daily percent weight loss calculated for each mouse. Data is presented as the median of each group and interquartile ranges. Mice that succumbed to severe infection typically lost a significant amount of weight by day 1 or 2 post infection. Red lines correspond to severely ill mice, black to mice with mild disease. 
+
+**Figure 3. Random Forest prediction of _C. difficile_ colonization level.** A) OTUs above 1% relative abundance on day 0 were used to predict median log~10~ CFU of _C. difficile_ after colonization. OTUs were chosen such that they were not predictive of cage or donor. Each point is a mouse colored by cage. B) Partial dependency plots of the top six predictive OTUs. Line displats the partial dependence of log~10~ CFU on the relative abundance of each predictive OUT. Each median log~10~ CFU is plotted against its relative abundance for each predictive OTU. 
+
+**Figure 4. Random Forest prediction of CDI severity.** OTUs above 1% relative abundance on day 0 were used to predict disease severity. OTUs were chosen such that they were not predictive of cage or donor. Predictive classification tested via 10-fold (gray), leave-one-cage-out (purple dashed) or leave-one-mouse-out (blue dashed) models are displayed in (A). B) Partial dependency plots of most predictive OTUs. Line displays the partial dependence of log~10~ CFU on OTU relative abundance. Points are the OTU relative abundance of each mouse colored by outcome (red, severe, black, mild). 
+
+**Figure 5. Infection of mice with different _C. difficile strains_.** 3 strains of _C. difficile_ were used to infect mice colonized with susceptible (DA00578) or resistant (DA00369, DA00430) human donor stool. A) _C. difficile_ stool CFU was enumerated over 10 days. B) Percent weight loss was calculated each day for each mouse. In both plots, each mouse is a point and lines represent the mean of each cage. 
+
+####Supplement####
+**Table S1: Mouse day 0 communities by donor genera (avg + stdev of cage)**
+
 
 
 \newpage
