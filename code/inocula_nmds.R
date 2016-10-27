@@ -108,8 +108,13 @@ legend(x="topright", legend, col = c("red", "black"), pch=16)
 #amova in mothur output for asymptomatic vs severe DONORS: p-value: 0.508
 
 #nmds inocula plot with clinical metadata, use this one 
+
+pdf("fig1B_actual.pdf", width = 8, height = 5)
+
 ggplot(inocula_meta_nmds, aes(axis1, axis2, group = Disease_status, color = Disease_status)) + geom_point(size = 3) + 
-  theme_bw() + ggtitle("Similarity of donor inocula communities") + xlab("NMDS Axis 1") + ylab("NMDS Axis 2")
+  theme_bw() + xlab("NMDS Axis 1") + ylab("NMDS Axis 2") + theme(legend.justification = c(1, 0), legend.position = c(1, 0))
+
+dev.off()
 
 plot3d(inocula_meta_nmds$axis1, inocula_meta_nmds$axis2, inocula_meta_nmds$axis3, type = "p", col = as.numeric(inocula_meta_nmds$Disease_status), size = 5, xlab='NMDS axis 1', ylab= 'NMDS axis 2', zlab= 'NMDS axis 3')
 legend3d("topleft", legend= paste(c("C. difficile", "No diarrhea", "Diarrhea")), pch=16, col=c('black', 'green', 'red'), inset=c(0.08))

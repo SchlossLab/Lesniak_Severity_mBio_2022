@@ -34,27 +34,16 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={},
-            pdftitle={NAME OF THIS STUDY},
+            pdftitle={Microbiota predict Clostridium difficile severity in germ-free mice colonized with human feces},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
             linkcolor=magenta,
             pdfborder={0 0 0}}
 \urlstyle{same}  % don't use monospace font for urls
-\usepackage{graphicx,grffile}
-\makeatletter
-\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
-\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
-\makeatother
-% Scale images if necessary, so that they will not overflow the page
-% margins by default, and it is still possible to overwrite the defaults
-% using explicit options in \includegraphics[width, height, ...]{}
-\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \setcounter{secnumdepth}{0}
 
 %%% Use protect on footnotes to avoid problems with footnotes in titles
@@ -72,7 +61,8 @@
 }
 
 \setlength{\droptitle}{-2em}
-  \title{\textbf{NAME OF THIS STUDY}}
+  \title{\textbf{Microbiota predict \emph{Clostridium difficile} severity in
+germ-free mice colonized with human feces}}
   \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
   \author{}
@@ -94,53 +84,144 @@
 
 \usepackage{pdfpages}
 
-% Redefines (sub)paragraphs to behave more like sections
-\ifx\paragraph\undefined\else
-\let\oldparagraph\paragraph
-\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
-\fi
-\ifx\subparagraph\undefined\else
-\let\oldsubparagraph\subparagraph
-\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
-\fi
 
 \begin{document}
+
 \maketitle
 
-\vspace{35mm}
-
-Running title: INSERT RUNNING TITLE HERE
 
 \vspace{35mm}
 
-Your Name Here\^{}1, Joeseph P. Schmo\^{}2, Sally J. Rivers\^{}1,
-Patrick D. Schloss\textsuperscript{1\(\dagger\)}
+Running title: Microbiota predict \emph{C. difficile} severity in
+humanized mice
+
+\vspace{35mm}
+
+Kaitlin J. Flynn\textsuperscript{1}, Nicholas
+Lesniak\textsuperscript{1}, Alyxandria M. Schubert\textsuperscript{2},
+Hamide Sinani\textsuperscript{?}, and Patrick D.
+Schloss\textsuperscript{1\(\dagger\)}
 
 \vspace{40mm}
 
-\(\dagger\) To whom correspondence should be addressed:
+\(\dagger\) Corresponding author:
 \href{mailto:pschloss@umich.edu}{\nolinkurl{pschloss@umich.edu}}
 
 1. Department of Microbiology and Immunology, University of Michigan,
-Ann Arbor, MI 48109
+Ann Arbor, Michigan 48109
 
-2. Other department contact information
+2. Food and Drug Administration?
+
+3. Department for Hamide?
 
 \newpage
-
 \linenumbers
 
-\subsection{Abstract}\label{abstract}
+\subsubsection{Abstract}\label{abstract}
+
+\emph{Clostridium difficile} causes diarrheal disease when it
+successfully colonizes a dysbiotic gut microbial community. Current
+mouse models to study \emph{C. difficile} infection (CDI) rely on
+pre-treatment with antibiotics to disrupt the mouse microbiome prior to
+inoculation. This model does not allow for analysis of human-associated
+microbial community members that modulate \emph{C. difficile}
+colonization and expansion. To study human-associated microbes in the
+context of CDI, we inoculated germ-free C57BL/6 mice with one of 16
+human fecal samples from diarrheal or healthy donors and challenged with
+C. difficile 14 days later. Five unique donor-mice combinations resulted
+in severe CDI while the remaining 11 only experienced mild disease. Both
+healthy and diarrheal donors were susceptible to colonization and severe
+symptoms of CDI. To determine if specific microbes were associated with
+disease severity outcomes, we built a classification Random Forest
+machine learning model based on relative abundance data of the
+communities prior to infection. The model identified a number of
+bacterial populations associated with the development of severe CDI,
+including \emph{Bacilliales, Ruminococcaceae, Ruminococcus,
+Staphylococcus, Streptococcus and Bacteriodetes}. Additionally, a
+regression model accurately predicted colonization levels of \emph{C.
+difficile} at one to ten days post-infection. This model explained 99\%
+of the variance in the number of CFU isolated from mouse stool. Members
+of \emph{Lachnospiraceae, Parabacteroides, Bacteroidales, Bacteroidetes,
+Porphyromonadaceae} and unclassified \emph{Bacteria} families were
+predictive of future \emph{C. difficile} colonization levels. Finally,
+challenging these mice with different strains of \emph{C. difficile}
+revealed that susceptible human-associated microbial communities were
+prone to severe disease independent of strain type. Taken together these
+results suggest that human-associated microbial communities can be
+recapitulated in germ-free mice and used to characterize dynamics of
+CDI. Because both healthy and diarrheal patients were susceptible to
+severe CDI, machine-learning models are useful to identify bacterial
+populations that allow colonization and contribute to the development of
+\emph{C. difficile} associated disease in humans.
 
 \newpage
 
-\subsection{Introduction}\label{introduction}
+\subsubsection{Introduction}\label{introduction}
 
-\subsection{Results and Discussion}\label{results-and-discussion}
+Clostridium difficile is an opportunistic pathogen of the human lower
+gastrointestinal tract. Disruption of the native microbial community of
+the gut by antibiotics is the most common risk factor for development of
+C. difficile infection (CDI) (1). C. difficile is a spore-forming
+bacteria and can persist on abiotic surfaces and is not readily killed
+by ethanol-based hand-sanitizers, putting hospital patients particularly
+at risk. Indeed, \textasciitilde{}12\% of hospital acquired infections
+in the United States are due to C. difficile and result in up to 15,000
+deaths annually (2).
 
-\subsection{Conclusions}\label{conclusions}
+Murine models to study CDI typically rely on treating
+conventionally-raised mice with antibiotics either in drinking water or
+by injection to induce susceptibility (3, 4). This model provides a
+convenient way to study C. difficile pathogenesis and virulence factors.
+Numerous microbiome studies have been performed using this model to
+determine the antibiotic classes (5), starting microbial community (6)
+and metabolites (7) that impact development and severity of CDI. While
+informative, these studies are somewhat removed from human disease
+because they only examine mouse-associated microbial communities.
 
-\subsection{Materials and Methods}\label{materials-and-methods}
+Gnotobiotic or germ-free mouse models have been used for a range of
+studies of CDI, including assessment of species-specific interactions
+between C. difficile and competing microbial community members (8),
+analysis of nutrient restriction (9), in vivo transcriptomics of C.
+difficile and examination of host immune response to CDI (10). Further,
+CDI therapeutics such as antibiotics and fecal microbiota transplants
+have been tested extensively in a gnotobiotic-piglet or
+piglet-to-gnotobiotic-mouse model of disease (11), (12). Pigs have a
+longer digestive tract with components more similar to humans than mice
+and are typically infected by strains typical in human infection (13).
+However, the murine and porcine microbiomes typically do not resemble
+those of the human gut.
+
+The power of the gnotobiotic models to study CDI has been further
+realized by first inoculating germ-free mice and piglets with human
+stool microbes. In one study, germ-free piglets were acutely colonized
+with human feces for one week and then treated with tigecycline. After
+challenge with C. difficile none of the antibiotic-treated piglets
+succumbed to infection, while some of the untreated human-colonized pigs
+did (11). Further, germ-free mice colonized with human feces were bred
+over several generations to create a cohort of mice with identical
+human-derived microbiomes (14). These mice were subsequently treated
+with a five-antibiotic cocktail to induce dysbiosis and then were
+successfully colonized by C. difficile (14). While informative, these
+studies were limited in their use of only one human donor as input
+inoculum. In order to best understand the impact of C. difficile
+pathogenesis on human disease, we must have a laboratory model that
+allows for study of a variety of human-derived microbiomes.
+
+To test the impact of individual human microbiomes on CDI, we colonized
+germ-free mice with 16 different human stool donors. We then
+characterized human-associated microbiome response to C. difficile
+challenge. Additionally, the use of machine-learning models allowed us
+to build a predictive model that classified ``at-risk'' microbiomes
+prior to infection with C. difficile. These findings show that
+human-associated microbiomes can be at risk for CDI even in the absence
+of antibiotics and that study of mice colonized with human feces
+provides a range of clinical outcomes.
+
+\subsubsection{Results}\label{results}
+
+\subsubsection{Discussion}\label{discussion}
+
+\subsubsection{Materials and Methods}\label{materials-and-methods}
 
 \newpage
 
@@ -156,7 +237,5 @@ environments in Table 1 for Bacteria (C) and Archaea (D).
 
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
-
-\hypertarget{refs}{}
 
 \end{document}
