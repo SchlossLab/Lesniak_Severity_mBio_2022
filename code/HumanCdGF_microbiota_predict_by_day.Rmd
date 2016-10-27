@@ -35,12 +35,10 @@ shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'samp
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
 source(tax_function)
 
-# identify c difficile otus
-cdiff_otu <- rownames(tax_file[grep('Clostridium_XI', tax_file$Taxonomy),])
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_file %>% 
-  filter(cdiff_strain == 431) %>% 
+  filter(cdiff_strain == 431, !cage_id == 'NP1') %>% 
   select(mouse_id, cage_id, sample_id, day, cdiff_cfu, Early_Euth, log_cfu) %>% 
   filter(!is.na(log_cfu))
 
@@ -63,12 +61,12 @@ cfu_by_day_comm <-
   filter(day %in% 1:10) %>% 
   select(sample_id, day, log_cfu) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-sample_id, -one_of(cdiff_otu))
+  select(-sample_id)
 
 
-seed <- 18
+seed <- 1
 n_trees <- 2001
-set.seed(seed)
+
 
 rf_plot_list <- list()
 n_features <- 10
@@ -79,19 +77,20 @@ RandomForest_by_day <- function(i, community_day_0){
   } else {
     rf_data <- if(community_day_0 == TRUE){
       meta_file %>%
-        filter(day == 1) %>% 
+        filter(day == i) %>% 
         select(log_cfu, mouse_id) %>%
         inner_join(day_0_otu_by_mouse) %>% 
         select(-mouse_id)
     } else {
       cfu_by_day_comm %>% 
-        filter(day == 1) %>% 
+        filter(day == i) %>% 
         select(-day)
     } 
-
+    set.seed(seed)
     rf_all <- randomForest(log_cfu ~ ., data = rf_data,
                    importance = TRUE, ntree = n_trees)
     importance_sorted <- sort(importance(rf_all)[,1], decreasing = T)
+    set.seed(seed)
     rf_n_features <- randomForest(log_cfu ~ ., data=rf_data[ ,c( 'log_cfu',
                               names(importance_sorted)[1:n_features])], 
                            importance=TRUE, ntree=n_trees)
@@ -107,7 +106,7 @@ RandomForest_by_day <- function(i, community_day_0){
       ggplot(data = rf_prediction, aes(x=observed, y=predicted)) + geom_point() + 
         labs(x= 'Observed CFU (log10)', y = 'Predicted CFU (log10)') + 
         theme_bw() + ggtitle(paste("Random Forest Prediction of C Diff CFU on Day ",
-                                   i, sep = '')) +
+                                   i, sep = '')) + xlim(0,9) + ylim(0,9) + 
         annotate('text', x=0.15*(max(rf_prediction$observed)), 
                  y=0.95*(max(rf_prediction$predicted)), 
                  label=paste('R^2 = ', round(tail(rf_n_features$rsq, 1), 2),'\nMSE = ', 
@@ -131,7 +130,6 @@ RandomForest_by_day <- function(i, community_day_0){
 }
 rf_day_0_comm_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = T)
 rf_by_day_com_plots <- lapply(1:10, RandomForest_by_day, community_day_0 = F)
-
 ```
 
 Removing mice which were euthanized early did not significantly change the R2 or MSE
@@ -360,7 +358,7 @@ cfu_by_day <-
   filter(day %in% 1:10) %>% 
   select(sample_id, day, log_cfu, Early_Euth) %>% 
   left_join(rel_abund_shared_01) %>% 
-  select(-sample_id, -one_of(cdiff_otu))
+  select(-sample_id)
 
 cfu_by_day %>% 
   select(log_cfu, day, one_of(predictive_otus), Early_Euth) %>% 
