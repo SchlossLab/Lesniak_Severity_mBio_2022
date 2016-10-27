@@ -21,7 +21,8 @@ get_tax <- function(tax_level=1,row_list=1:length(rownames(tax_file)),df=tax_fil
           tax_out <- gsub('_unclassified', '', tax_out)
           label_out <- paste0(tax_out, ' (', 
                               gsub('tu0*', 'TU ', row_list),')')
-          return(data.frame(tax= tax_out, tax_label = label_out, row.names=row_list))
+          return(data.frame(tax= tax_out, tax_label = label_out, row.names=row_list,
+                            stringsAsFactors = FALSE))
      } else {print(
           'Error: Level must be 1 (genus), 2 (family), 3 (order), 4 (class), 5 (phylum)')
      }
