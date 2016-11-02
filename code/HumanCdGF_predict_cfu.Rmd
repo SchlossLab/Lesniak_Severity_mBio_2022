@@ -36,7 +36,7 @@ source(tax_function)
 meta_file <- 
   meta_data %>% 
   filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
-  select(mouse_id, sample_id, day, log_cfu) %>% 
+  select(mouse_id, cage_id, sample_id, day, log_cfu) %>% 
   filter(!is.na(log_cfu))
 
 shared_list_days <- select(meta_file, -log_cfu)
@@ -297,19 +297,17 @@ mouse_list <- meta_data %>%
 
 mouse_list <- as.character(mouse_list$mouse_id)
 
-col_rate <- c()
-for(i in mouse_list){
+col_rate <- sapply(mouse_list, function(i){
   test <- meta_data %>% 
     filter(!is.na(day), mouse_id == i) %>% 
     select(day, log_cfu) %>% 
     filter(!is.na(log_cfu))
   test$rel_cr <- test$log_cfu/median(test$log_cfu[test$day %in% c(4:10)])
-  colonization_ratio <- sum(test$rel_cr[test$day %in% c(1:4)])/sum(test$day %in% c(1:4))
-  col_rate <- rbind(col_rate, c(mouse_id = i,  ratio = colonization_ratio))
-}
-col_rate <- data.frame(mouse_id = col_rate[ , 1], ratio = as.numeric(col_rate[ , 2]))
+  colonization_ratio <- sum(test$rel_cr[test$day %in% c(1:4)])/sum(test$day %in% c(1:4))})
+col_rate <- data.frame(mouse_id = names(col_rate), ratio = col_rate, 
+                       stringsAsFactors = F, row.names = NULL)
 
-col_rate <- meta_data %>% 
+col_rate_apply <- meta_data %>% 
   select(mouse_id, cage_id) %>% 
   unique() %>% 
   right_join(col_rate)
@@ -317,7 +315,6 @@ col_rate <- meta_data %>%
 shared_col_rate.df <- col_rate %>% 
     inner_join(community_d0.df)
 shared_colonized.df <- select(shared_col_rate.df, -mouse_id, -cage_id)
-
 
 set.seed(seed)
 rf_col_rate <- randomForest(ratio ~ ., data = shared_colonized.df,
@@ -346,8 +343,8 @@ ggplot(data = rf_cr_prediction, aes(x=observed, y=predicted, color = cage_id)) +
   theme_bw() + xlim(0,1) + ylim(0,1) + 
   annotate('text', x=0.15*(max(rf_cr_prediction$observed)), 
            y=0.95*(max(rf_cr_prediction$predicted)), parse = T,
-           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) + 
-  theme(legend.position = 'none')
+           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) # + 
+#  theme(legend.position = 'none')
 
 importance.df <- data.frame(otu = names(importance_final),
                             importance = importance_final,
@@ -358,7 +355,7 @@ layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 cage_color <- rainbow(length(unique(rf_cr_prediction$cage_id)))
 for (i in seq_along(importance_final)) {
     partialPlot(rf_col_rate_features, top_col_rate_df, names(importance_final)[i],
-                xlab='', main=paste(importance.df$tax_label[i]), log = 'x')
+                xlab='', main=paste(importance.df$tax_label[i]))#, log = 'x')
     par(new = T)
     plot(y = top_col_rate_df[ , 'ratio'],
          x = top_col_rate_df[ , names(importance_final)[i]], 
