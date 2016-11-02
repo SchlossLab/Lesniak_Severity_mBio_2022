@@ -4,7 +4,7 @@
 #
 # Create microbiota files for day 0 and plot different ways
 #
-#
+# ## this code is broken for some reason!!!! ack. the selection part.
 #
 #############
 
@@ -12,9 +12,9 @@ install.packages("RColorBrewer")
 library(RColorBrewer)
 
 #import Nick's awesome combined metadata file
-meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=3)
+meta_file <- read.table("data/process/human_CdGF_metadata.txt", header = TRUE, sep='\t', fill = TRUE, row.names=2)
 shared_file <- read.table("data/process/human_CdGF.an.unique_list.0.03.subsample.shared", sep='\t', header = TRUE, row.names=1)
-tax_file <- read.table('data/mothur/gf_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.cons.taxonomy', sep='\t',header = T, row.names = 1)
+tax_file <- read.table('data/process/gf_new.an.taxonomy', sep='\t',header = T, row.names = 1)
 
 #make OTU abundance file
 
@@ -31,7 +31,12 @@ OTU_list <- colnames(rel_abund)[OTUs_1]
 
 #df of OTUs with abundances >1% - by cage and inoculum
 rel_abund_cage <- rel_abund[!meta_file$cage_id=='inoculum',OTUs_1]
+test_cage <- rel_abund[meta_file$mouse_id!='inoculum_NA', OTUs_1]
 inoculum_rel_abund <- rel_abund[meta_file$cage_id=='inoculum',OTUs_1]
+
+#hack for U01 meeting to remove donors
+rel_abund_cage <- rel_abund_cage[-(1:10),]
+rel_abund <- rel_abund[-(1:10),]
 
 #df of OTUs w abundances >1% 
 rel_abund_d0 <- rel_abund[meta_file$day == 0, OTUs_1]
@@ -68,8 +73,8 @@ barplot(t(taxonomy_phylum), ylab='Relative Abundance', main="Taxonomic compositi
 #add a column for cages to the df
 cages <- meta_file$cage_id[meta_file$day==0]
 cages <- na.omit(cages)
-rel_d0[82] <- cages
-colnames(rel_d0)[82] <- "cage"
+rel_d0[(ncol(rel_d0)+1)] <- cages
+colnames(rel_d0)[ncol(rel_d0)] <- "cage"
 
 #or could merge subsetted metafile for cage ids and donor and merge by mouse id. rel_d0$cage <- cage_iDs
 

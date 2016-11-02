@@ -6,11 +6,13 @@
 head.batch
 tail.batch
 
-data/
+data/*
+!data/process
+!data/mothur
+!data/raw
 
 *.qsub*
 mothur*logfile
 *temp*
-*.docx
 
 .DS*
