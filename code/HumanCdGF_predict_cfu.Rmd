@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7,
 ```
 
 ```{r setup environment}
-pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot', 'caret')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -21,9 +21,9 @@ for (dep in pack_used){
 
 ```{r setup data}
 # read in files
-meta_data   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
-shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
-tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+meta_data   <- 'data/process/human_CdGF_metadata.txt'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- 'data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
@@ -32,11 +32,18 @@ shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'samp
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
 source(tax_function)
 
+# set parameters
+seed <- 1
+n_trees <- 1001
+n_otus <- 12
+iters <- 100
+cor_cutoff <- 0.75
+
 # remove samples not used or with other cdiff strains
 meta_file <- 
   meta_data %>% 
   filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
-  select(mouse_id, cage_id, sample_id, day, log_cfu) %>% 
+  select(mouse_id, sample_id, day, log_cfu) %>% 
   filter(!is.na(log_cfu))
 
 shared_list_days <- select(meta_file, -log_cfu)
@@ -45,12 +52,12 @@ shared_list_days <- select(meta_file, -log_cfu)
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
 rel_abund_shared <- 100 * shared_file / mean_otu_counts
 rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
-rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
-
-seed <- 1
-n_trees <- 1001
-n_otus <- 12
-iters <- 100
+# remove correlative otus
+rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
+rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
+cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+rel_abund_01_filtr <- rel_ab_otu_df[,-cor_otus]
+rel_abund_01_filtr$sample_id <- rownames(rel_abund_01_filtr)
 ```
 
 ### Reframing the question for predicting CFU
@@ -68,7 +75,7 @@ colonized_cfu <- meta_data %>%
 sample_list_d0 <- shared_list_days %>% 
     filter(day == 0) %>% 
     select(-day)
-community_d0.df <- rel_abund_shared_01 %>% 
+community_d0.df <- rel_abund_01_filtr %>% 
     right_join(sample_list_d0) %>% 
     select(-sample_id)
 cfu_shared_colonized.df <- colonized_cfu %>% 
@@ -240,17 +247,25 @@ ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) +
   theme(legend.justification=c(0,1), legend.position=c(0,1))
 
 
-
 importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
+features_cor <- sapply(as.character(med_otu_importance_om$otu), 
+                       function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
+importance_om <- get_tax(row_list = unlist(features_cor))
 
-partial_df <- data.frame(colonized_cfu %>% 
-    right_join(community_d0.df) %>% 
-    select(mouse_id, cage_id, log_cfu_med, one_of(rownames(importance_om))) %>% 
+import_rel_ab <- rel_abund_shared_01[ , rownames(importance_om)]
+import_rel_ab$sample_id <- rownames(import_rel_ab)
+partial_df <- data.frame(import_rel_ab %>%
+    right_join(sample_list_d0) %>% 
+    select(-sample_id) %>%
+    left_join(colonized_cfu) %>% 
     filter(!is.na(log_cfu_med)))
 
 color <- sapply(1:length(unique(partial_df$cage_id)), 
-                           function(n)rgb(sample(c(0:255), 1),sample(c(0:255), 1),
-                                          sample(c(0:255), 1), maxColorValue = 255))
+                           function(n){
+                             set.seed(n*n)
+                             rgb(sample(c(0:255), 1),sample(c(0:255), 1),
+                                 sample(c(0:255), 1), maxColorValue = 255)
+                             })
 
 layout(matrix(c(1:4), ncol=2, byrow=TRUE))
 for(otu in seq_along(importance_om$tax)){
@@ -262,7 +277,6 @@ for(otu in seq_along(importance_om$tax)){
          pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
-# To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(partial_df$cage_id)), function(m){
     mouse <- unique(partial_df$cage_id)[m]
     points(y = partial_df[partial_df$cage_id %in% mouse, 'log_cfu_med'],
