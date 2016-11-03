@@ -250,14 +250,11 @@ ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) +
 importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
 features_cor <- sapply(as.character(med_otu_importance_om$otu), 
                        function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
-importance_om <- get_tax(row_list = unlist(features_cor))
+get_tax(row_list = unlist(features_cor))
 
-import_rel_ab <- rel_abund_shared_01[ , rownames(importance_om)]
-import_rel_ab$sample_id <- rownames(import_rel_ab)
-partial_df <- data.frame(import_rel_ab %>%
-    right_join(sample_list_d0) %>% 
-    select(-sample_id) %>%
-    left_join(colonized_cfu) %>% 
+partial_df <- data.frame(colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(mouse_id, cage_id, log_cfu_med, one_of(rownames(importance_om))) %>% 
     filter(!is.na(log_cfu_med)))
 
 color <- sapply(1:length(unique(partial_df$cage_id)), 
@@ -277,6 +274,7 @@ for(otu in seq_along(importance_om$tax)){
          pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
+# To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(partial_df$cage_id)), function(m){
     mouse <- unique(partial_df$cage_id)[m]
     points(y = partial_df[partial_df$cage_id %in% mouse, 'log_cfu_med'],
