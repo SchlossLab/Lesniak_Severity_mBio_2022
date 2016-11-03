@@ -259,7 +259,7 @@ partial_df <- data.frame(colonized_cfu %>%
 
 color <- sapply(1:length(unique(partial_df$cage_id)), 
                            function(n){
-                             set.seed(n*n)
+                             set.seed(n+10) # add modify to generate distinct colors
                              rgb(sample(c(0:255), 1),sample(c(0:255), 1),
                                  sample(c(0:255), 1), maxColorValue = 255)
                              })
@@ -274,6 +274,11 @@ for(otu in seq_along(importance_om$tax)){
          pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
+    if(length(features_cor[[otu]]) > 1){
+    mtext(side = 1, line = 3, cex = 0.6,
+          paste('Bacteria removed in preprocessing due to correlation to this OTU:\n',
+                paste(get_tax(row_list = features_cor[[otu]])$tax_label, collapse = ',')))
+    }
 # To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(partial_df$cage_id)), function(m){
     mouse <- unique(partial_df$cage_id)[m]
