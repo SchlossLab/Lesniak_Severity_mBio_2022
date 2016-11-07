@@ -107,12 +107,12 @@ rfe_ctrl <- rfeControl(functions = rfRFE,
                    verbose = FALSE)
 subsets <- c(1:5, c(seq(10, 70, 10)))
 set.seed(seed)
-rf_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
+rf_cfu_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-top_important_OTU <- predictors(rf_model)
+top_important_OTU <- predictors(rf_cfu_model)
 
-rf_n_features <- rf_model$fit
+rf_n_features <- rf_cfu_model$fit
 rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med, 
                        predicted = rf_n_features$predicted)
 rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
@@ -273,7 +273,7 @@ color <- sapply(1:length(unique(partial_df$cage_id)),
                                  sample(c(0:255), 1), maxColorValue = 255)
                              })
 
-layout(matrix(c(1:16), ncol=4, byrow=TRUE))
+layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 for(otu in seq_along(importance_om$tax)){
     partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
                 xlab='', main=paste(importance_om$tax_label[otu]))
@@ -303,16 +303,16 @@ for(otu in seq_along(importance_om$tax)){
 #### 2. Can Day 0 community predict the rate of colonization?
 
 ```{r predict colonization rate, fig.width=10,fig.height=10}
-
-meta_data %>% 
-  filter(day %in% c(1,2,3,4), !cage_id == 'NP1', 
-         Early_Euth == FALSE, cdiff_strain == 431) %>% 
-  ggplot(aes(x = factor(day), y = log_cfu, color = cage_id)) + 
-    geom_line(aes(group = mouse_id), size=.25, alpha=0.4) + geom_point() +
-    stat_summary(fun.y=mean, geom="line", aes(group = cage_id)) + 
-    theme_bw() + labs(x = 'Day', y = 'C Diff CFU (log10)') +
-    theme(legend.justification=c(1,0), legend.position=c(1,0), 
-          legend.title=element_blank())
+# plot initial C. difficile colonization of mice 
+#meta_data %>% 
+#  filter(day %in% c(1,2,3,4), !cage_id == 'NP1', 
+#         Early_Euth == FALSE, cdiff_strain == 431) %>% 
+#  ggplot(aes(x = factor(day), y = log_cfu, color = cage_id)) + 
+#    geom_line(aes(group = mouse_id), size=.25, alpha=0.4) + geom_point() +
+#    stat_summary(fun.y=mean, geom="line", aes(group = cage_id)) + 
+#    theme_bw() + labs(x = 'Day', y = 'C Diff CFU (log10)') +
+#   theme(legend.justification=c(1,0), legend.position=c(1,0), 
+#          legend.title=element_blank())
 
 mouse_list <- meta_data %>% 
   filter(!is.na(day), !cage_id == 'NP1',  
@@ -330,71 +330,80 @@ col_rate <- sapply(mouse_list, function(i){
     filter(!is.na(log_cfu))
   test$rel_cr <- test$log_cfu/median(test$log_cfu[test$day %in% c(4:10)])
   colonization_ratio <- sum(test$rel_cr[test$day %in% c(1:4)])/sum(test$day %in% c(1:4))})
-col_rate <- data.frame(mouse_id = names(col_rate), ratio = col_rate, 
-                       stringsAsFactors = F, row.names = NULL)
-
-col_rate_apply <- meta_data %>% 
+col_rate <- meta_data %>% 
   select(mouse_id, cage_id) %>% 
   unique() %>% 
-  right_join(col_rate)
+  right_join(data.frame(mouse_id = names(col_rate), ratio = col_rate, 
+                       stringsAsFactors = F, row.names = NULL))
 
-shared_col_rate.df <- col_rate %>% 
+shared_col_rate_df <- col_rate %>% 
     inner_join(community_d0.df)
-shared_colonized.df <- select(shared_col_rate.df, -mouse_id, -cage_id)
+shared_cr_df <- select(shared_col_rate_df, -mouse_id, -cage_id)
 
 set.seed(seed)
-rf_col_rate <- randomForest(ratio ~ ., data = shared_colonized.df,
-                           importance = TRUE, ntree = n_trees, mtry = 14)
+rf_cr_model <- rfe(shared_cr_df[ , -1], shared_cr_df$ratio,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cr_features <- predictors(rf_cr_model)
+rf_col_rate <- rf_cr_model$fit
 
-importance_sorted <- sort(importance(rf_col_rate)[,1], decreasing = T)
-top_important_OTU <- rownames(data.frame(importance_sorted[importance_sorted/max(importance_sorted) > 0.6]))
+cr_prediction <- data.frame(observed = shared_cr_df$ratio, 
+                       predicted = rf_col_rate$predicted)
+cr_prediction <- merge(cr_prediction, col_rate, by.x = 'observed', by.y = 'ratio')
 
-top_col_rate_df <- data.frame(shared_colonized.df %>% 
-  select(ratio, one_of(top_important_OTU)))
+#top_col_rate_df <- data.frame(shared_colonized.df %>% 
+#  select(ratio, one_of(cr_features)) %>% 
+#  left_join(col_rate))
 
-set.seed(seed)
-rf_col_rate_features <- randomForest(ratio ~ ., data=top_col_rate_df,
-                              importance=TRUE, ntree=n_trees, mtry = 2,
-                              keep.forest=TRUE)
+#set.seed(seed)
+#rf_col_rate_features <- randomForest(ratio ~ ., data=top_col_rate_df,
+#                              importance=TRUE, ntree=n_trees, mtry = 2,
+#                              keep.forest=TRUE)
+#importance_final <- sort(importance(rf_col_rate_features)[,1], decreasing = T)
+#rf_col_rate_prediction <- data.frame(observed = shared_colonized.df$ratio, 
+#                       predicted = rf_col_rate_features$predicted)
+#rf_cr_prediction <- cbind(cage_id = shared_col_rate.df[,'cage_id'], rf_col_rate_prediction)
 
-importance_final <- sort(importance(rf_col_rate_features)[,1], decreasing = T)
-
-rf_col_rate_prediction <- data.frame(observed = shared_colonized.df$ratio, 
-                       predicted = rf_col_rate_features$predicted)
-rf_cr_prediction <- cbind(cage_id = shared_col_rate.df[,'cage_id'], rf_col_rate_prediction)
-
-ggplot(data = rf_cr_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
+ggplot(data = cr_prediction, aes(x=observed, y=predicted, color = cage_id)) + geom_point() + 
   labs(x= 'Observed', y = 'Predicted',
        title = "Random Forest Prediction of Relative Day 1 Colonization Level of C. Difficile from Day 0 Community") + 
   theme_bw() + xlim(0,1) + ylim(0,1) + 
-  annotate('text', x=0.15*(max(rf_cr_prediction$observed)), 
-           y=0.95*(max(rf_cr_prediction$predicted)), parse = T,
-           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) # + 
+  annotate('text', x=0.15*(max(cr_prediction$observed)), 
+           y=0.95*(max(cr_prediction$predicted)), parse = T,
+           label=paste("R^2 == ", round(tail(rf_col_rate$rsq, 1), 2))) # + 
 #  theme(legend.position = 'none')
 
-importance.df <- data.frame(otu = names(importance_final),
-                            importance = importance_final,
-                            get_tax(1, names(importance_final), tax_file))
+#importance.df <- data.frame(otu = names(importance_final),
+#                            importance = importance_final,
+#                            get_tax(1, names(importance_final), tax_file))
+
+cr_features_cor <- sapply(as.character(cr_features), 
+                       function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
 
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 
-cage_color <- rainbow(length(unique(rf_cr_prediction$cage_id)))
-for (i in seq_along(importance_final)) {
-    partialPlot(rf_col_rate_features, top_col_rate_df, names(importance_final)[i],
-                xlab='', main=paste(importance.df$tax_label[i]))#, log = 'x')
+cage_color <- rainbow(length(unique(cr_prediction$cage_id)))
+for (otu in seq_along(cr_features)) {
+    partialPlot(rf_col_rate, shared_cr_df, cr_features[otu],
+                xlab='', main=paste(get_tax(row_list = cr_features)$tax_label[otu]))#, log = 'x')
     par(new = T)
-    plot(y = top_col_rate_df[ , 'ratio'],
-         x = top_col_rate_df[ , names(importance_final)[i]], 
-         pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
+    plot(y = shared_col_rate_df[ , 'ratio'],
+         x = shared_col_rate_df[ , cr_features[otu]], 
+         pch = NA, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Relative Colonization')
-# To color points by cage - Change pch to 21 and un-comment following lines
-#  for(m in seq_along(unique(rf_cr_prediction$cage_id))){
-#    cage <- unique(rf_cr_prediction$cage_id)[m]
-#    points(y = top_col_rate_df[rf_cr_prediction$cage_id %in% cage, 'ratio'],
-#         x = top_col_rate_df[rf_cr_prediction$cage_id %in% cage , names(importance_final)[i]], 
-#         pch = 21, bg = cage_color[m])
-#  }
+    if(length(cr_features_cor[[otu]]) > 1){
+      mtext(side = 1, line = 3, cex = 0.6,
+            paste('Bacteria removed in preprocessing due to correlation to this OTU:\n',
+                  paste(get_tax(row_list = cr_features_cor[[otu]])$tax_label, collapse = ',')))
+    }
+# To color points by mouse - Change pch to 21 and un-comment following lines
+  lapply(seq_along(unique(shared_col_rate_df$cage_id)), function(m){
+    mouse <- unique(shared_col_rate_df$cage_id)[m]
+    points(y = shared_col_rate_df[shared_col_rate_df$cage_id %in% mouse, 'ratio'],
+           x = shared_col_rate_df[shared_col_rate_df$cage_id %in% mouse , cr_features[otu]], 
+           pch = 21, cex = 2, bg = color[m], xlab = NA, ylab = NA, axes = F)
+  })
 }
 ```
 
