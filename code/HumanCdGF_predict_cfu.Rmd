@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7,
 ```
 
 ```{r setup environment}
-pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot', 'caret')
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -110,15 +110,7 @@ set.seed(seed)
 rf_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-rf_test <- train(cfu_shared_colonized.df[ , importance_final], cfu_shared_colonized.df$log_cfu_med,
-                 method = 'rf', importance = T)
-partialPlot(rf_test$finalModel, cfu_shared_colonized.df, 'Otu000004')
-
-
-xrf_test <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df[ , 1:30],
-                     importance = TRUE, ntree = 100)
-
-importance_final <- predictors(rf_model)
+top_important_OTU <- predictors(rf_model)
 
 rf_n_features <- rf_model$fit
 rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med, 
@@ -238,7 +230,7 @@ om_pred <- rename(om_pred, observed = log_cfu_med)
 om_import_otus <- data.frame(om_import_otus[ , -1], row.names = om_import_otus$otu)
 colnames(om_import_otus) <- seq(ncol(om_import_otus))
 om_otu_rank <- apply(om_import_otus, 2, function(x) rank(x, na.last = F))
-om_raw_rank <- apply(om_otu_rank, 1, function(x) sum(x, na.rm = T))
+om_raw_rank <- sort(apply(om_otu_rank, 1, function(x) sum(x, na.rm = T)), decreasing = T)
 med_otu_importance_om <- data.frame(otu = names(om_raw_rank),
                                  importance = om_raw_rank)
 
@@ -280,15 +272,15 @@ color <- sapply(1:length(unique(partial_df$cage_id)),
                              rgb(sample(c(0:255), 1),sample(c(0:255), 1),
                                  sample(c(0:255), 1), maxColorValue = 255)
                              })
-partialPlot(rf_n_features, top_colonized_df, x.var=rownames(importance_om)[otu])
-layout(matrix(c(1:4), ncol=2, byrow=TRUE))
+
+layout(matrix(c(1:16), ncol=4, byrow=TRUE))
 for(otu in seq_along(importance_om$tax)){
-    partialPlot(rf_n_features, top_colonized_df, x.var=rownames(importance_om)[otu],
+    partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
                 xlab='', main=paste(importance_om$tax_label[otu]))
     par(new = T)
-    plot(y = top_colonized_df[ , 'log_cfu_med'],
-         x = top_colonized_df[ , rownames(importance_om)[otu]], 
-         pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
+    plot(y = partial_df[ , 'log_cfu_med'],
+         x = partial_df[ , rownames(importance_om)[otu]], 
+         pch = NA, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
     if(length(features_cor[[otu]]) > 1){
