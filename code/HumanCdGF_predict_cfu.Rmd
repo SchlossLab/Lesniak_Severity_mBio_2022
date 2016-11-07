@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7,
 ```
 
 ```{r setup environment}
-pack_used <- c('randomForest','miscTools','tidyr','ggplot2','dplyr', 'pROC', 'knitr', 'cowplot')
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -21,9 +21,10 @@ for (dep in pack_used){
 
 ```{r setup data}
 # read in files
-meta_data   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
-shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
-tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
+meta_data   <- 'data/process/human_CdGF_metadata.txt'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- 'data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
@@ -31,6 +32,13 @@ meta_data   <- read.table(meta_data, sep = '\t', header = T, stringsAsFactors = 
 shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
 tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
 source(tax_function)
+
+# set parameters
+seed <- 1
+n_trees <- 1001
+n_otus <- 12
+iters <- 100
+cor_cutoff <- 0.75
 
 # remove samples not used or with other cdiff strains
 meta_file <- 
@@ -45,12 +53,12 @@ shared_list_days <- select(meta_file, -log_cfu)
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
 rel_abund_shared <- 100 * shared_file / mean_otu_counts
 rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
-rel_abund_shared_01$sample_id <- rownames(rel_abund_shared_01)
-
-seed <- 1
-n_trees <- 1001
-n_otus <- 12
-iters <- 100
+# remove correlative otus
+rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
+rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
+cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+rel_abund_01_filtr <- rel_abund_shared_01[,-cor_otus]
+rel_abund_01_filtr$sample_id <- rownames(rel_abund_01_filtr)
 ```
 
 ### Reframing the question for predicting CFU
@@ -68,7 +76,7 @@ colonized_cfu <- meta_data %>%
 sample_list_d0 <- shared_list_days %>% 
     filter(day == 0) %>% 
     select(-day)
-community_d0.df <- rel_abund_shared_01 %>% 
+community_d0.df <- rel_abund_01_filtr %>% 
     right_join(sample_list_d0) %>% 
     select(-sample_id)
 cfu_shared_colonized.df <- colonized_cfu %>% 
@@ -78,24 +86,33 @@ cfu_shared_colonized.df <- colonized_cfu %>%
 
 ##### feature reduction #####
 ###### select top n otus reiteratively and select otus that appear > 50% of iterations
-rf_n_otus <-lapply(1:iters, function(i){
-  set.seed(i)
-  rf <- randomForest(log_cfu_med ~ ., data = cfu_shared_colonized.df,
-                     importance = TRUE, ntree = n_trees)
-  names(sort(importance(rf)[,1], decreasing = T))[1:n_otus]
-})
-n_otu_freq <- table(unlist(rf_n_otus))
-top_important_OTU <- names(n_otu_freq)[n_otu_freq >= iters/2]
+rfRFE <-  list(summary = defaultSummary,
+               fit = function(x, y, first, last, ...){
+                 library(randomForest)
+                 randomForest(x, y, importance = first, keep.forest = T, ntree = n_trees, ...)
+                 },
+               pred = function(object, x)  predict(object, x),
+               rank = function(object, x, y) {
+                 vimp <- varImp(object)
+                 vimp <- vimp[order(vimp$Overall,decreasing = TRUE),,drop = FALSE]
+                 vimp$var <- rownames(vimp)                  
+                 vimp
+                 },
+               selectSize = pickSizeTolerance,
+               selectVar = pickVars)
 
-top_colonized_df <- data.frame(cfu_shared_colonized.df %>% 
-  select(log_cfu_med, one_of(top_important_OTU)))
-
+rfe_ctrl <- rfeControl(functions = rfRFE,
+                   method = "repeatedcv",
+                   repeats = 10,
+                   verbose = FALSE)
+subsets <- c(1:5, c(seq(10, 70, 10)))
 set.seed(seed)
-rf_n_features <- randomForest(log_cfu_med ~ ., data=top_colonized_df,
-                              importance=TRUE, ntree=n_trees, keep.forest=TRUE)
+rf_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+top_important_OTU <- predictors(rf_model)
 
-importance_final <- sort(importance(rf_n_features)[,1], decreasing = T)
-
+rf_n_features <- rf_model$fit
 rf_prediction <- data.frame(observed = cfu_shared_colonized.df$log_cfu_med, 
                        predicted = rf_n_features$predicted)
 rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
@@ -213,7 +230,7 @@ om_pred <- rename(om_pred, observed = log_cfu_med)
 om_import_otus <- data.frame(om_import_otus[ , -1], row.names = om_import_otus$otu)
 colnames(om_import_otus) <- seq(ncol(om_import_otus))
 om_otu_rank <- apply(om_import_otus, 2, function(x) rank(x, na.last = F))
-om_raw_rank <- apply(om_otu_rank, 1, function(x) sum(x, na.rm = T))
+om_raw_rank <- sort(apply(om_otu_rank, 1, function(x) sum(x, na.rm = T)), decreasing = T)
 med_otu_importance_om <- data.frame(otu = names(om_raw_rank),
                                  importance = om_raw_rank)
 
@@ -240,8 +257,9 @@ ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) +
   theme(legend.justification=c(0,1), legend.position=c(0,1))
 
 
-
 importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
+features_cor <- sapply(as.character(med_otu_importance_om$otu), 
+                       function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
 
 partial_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
@@ -249,19 +267,27 @@ partial_df <- data.frame(colonized_cfu %>%
     filter(!is.na(log_cfu_med)))
 
 color <- sapply(1:length(unique(partial_df$cage_id)), 
-                           function(n)rgb(sample(c(0:255), 1),sample(c(0:255), 1),
-                                          sample(c(0:255), 1), maxColorValue = 255))
+                           function(n){
+                             set.seed(n+10) # add modify to generate distinct colors
+                             rgb(sample(c(0:255), 1),sample(c(0:255), 1),
+                                 sample(c(0:255), 1), maxColorValue = 255)
+                             })
 
-layout(matrix(c(1:4), ncol=2, byrow=TRUE))
+layout(matrix(c(1:16), ncol=4, byrow=TRUE))
 for(otu in seq_along(importance_om$tax)){
-    partialPlot(rf_n_features, top_colonized_df, x.var=rownames(importance_om)[otu],
+    partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
                 xlab='', main=paste(importance_om$tax_label[otu]))
     par(new = T)
-    plot(y = top_colonized_df[ , 'log_cfu_med'],
-         x = top_colonized_df[ , rownames(importance_om)[otu]], 
-         pch = 21, bg = 'gray', xlab = NA, ylab = NA, axes = F)
+    plot(y = partial_df[ , 'log_cfu_med'],
+         x = partial_df[ , rownames(importance_om)[otu]], 
+         pch = NA, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
+    if(length(features_cor[[otu]]) > 1){
+    mtext(side = 1, line = 3, cex = 0.6,
+          paste('Bacteria removed in preprocessing due to correlation to this OTU:\n',
+                paste(get_tax(row_list = features_cor[[otu]])$tax_label, collapse = ',')))
+    }
 # To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(partial_df$cage_id)), function(m){
     mouse <- unique(partial_df$cage_id)[m]
@@ -297,19 +323,17 @@ mouse_list <- meta_data %>%
 
 mouse_list <- as.character(mouse_list$mouse_id)
 
-col_rate <- c()
-for(i in mouse_list){
+col_rate <- sapply(mouse_list, function(i){
   test <- meta_data %>% 
     filter(!is.na(day), mouse_id == i) %>% 
     select(day, log_cfu) %>% 
     filter(!is.na(log_cfu))
   test$rel_cr <- test$log_cfu/median(test$log_cfu[test$day %in% c(4:10)])
-  colonization_ratio <- sum(test$rel_cr[test$day %in% c(1:4)])/sum(test$day %in% c(1:4))
-  col_rate <- rbind(col_rate, c(mouse_id = i,  ratio = colonization_ratio))
-}
-col_rate <- data.frame(mouse_id = col_rate[ , 1], ratio = as.numeric(col_rate[ , 2]))
+  colonization_ratio <- sum(test$rel_cr[test$day %in% c(1:4)])/sum(test$day %in% c(1:4))})
+col_rate <- data.frame(mouse_id = names(col_rate), ratio = col_rate, 
+                       stringsAsFactors = F, row.names = NULL)
 
-col_rate <- meta_data %>% 
+col_rate_apply <- meta_data %>% 
   select(mouse_id, cage_id) %>% 
   unique() %>% 
   right_join(col_rate)
@@ -317,7 +341,6 @@ col_rate <- meta_data %>%
 shared_col_rate.df <- col_rate %>% 
     inner_join(community_d0.df)
 shared_colonized.df <- select(shared_col_rate.df, -mouse_id, -cage_id)
-
 
 set.seed(seed)
 rf_col_rate <- randomForest(ratio ~ ., data = shared_colonized.df,
@@ -346,8 +369,8 @@ ggplot(data = rf_cr_prediction, aes(x=observed, y=predicted, color = cage_id)) +
   theme_bw() + xlim(0,1) + ylim(0,1) + 
   annotate('text', x=0.15*(max(rf_cr_prediction$observed)), 
            y=0.95*(max(rf_cr_prediction$predicted)), parse = T,
-           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) + 
-  theme(legend.position = 'none')
+           label=paste("R^2 == ", round(tail(rf_col_rate_features$rsq, 1), 2))) # + 
+#  theme(legend.position = 'none')
 
 importance.df <- data.frame(otu = names(importance_final),
                             importance = importance_final,
@@ -358,7 +381,7 @@ layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 cage_color <- rainbow(length(unique(rf_cr_prediction$cage_id)))
 for (i in seq_along(importance_final)) {
     partialPlot(rf_col_rate_features, top_col_rate_df, names(importance_final)[i],
-                xlab='', main=paste(importance.df$tax_label[i]), log = 'x')
+                xlab='', main=paste(importance.df$tax_label[i]))#, log = 'x')
     par(new = T)
     plot(y = top_col_rate_df[ , 'ratio'],
          x = top_col_rate_df[ , names(importance_final)[i]], 
