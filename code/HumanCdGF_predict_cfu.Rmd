@@ -186,7 +186,6 @@ one_mouse_df <- data.frame(colonized_cfu %>%
 
 om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
 om_pred <- c()
-om_pp <- c()
 for(i in 1:iters){
     set.seed(i)
     train <- one_mouse_df %>% 
@@ -197,12 +196,6 @@ for(i in 1:iters){
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
                              importance = TRUE, keep.forest = T, ntree = n_trees)
-    for(i in 4:ncol(train)){
-      pp_var <- data.frame(otu = colnames(train)[i],
-                           partialPlot(rf_om, data.frame(select(train, -mouse_id, -cage_id)), 
-                                       x.var= colnames(train)[i], plot = FALSE))
-      om_pp <- rbind(om_pp, pp_var)
-      }
     om_pred <- rbind(om_pred,
                      data.frame(select(test, mouse_id, cage_id, log_cfu_med),
                           predicted=predict(rf_om, test)))
@@ -244,35 +237,6 @@ ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) +
                                   bquote('LOO (R'^'2'*' = '*.(round(LOcO_rsq, 2))*')'),
                                   bquote('OM (R'^'2'*' = '*.(round(om_rsq,2))*')'))) + 
   theme(legend.justification=c(0,1), legend.position=c(0,1))
-
-OTUS <- unique(as.character(om_pp$otu))
-part_plot_cfu <- c()
-for(i in OTUS){
-om_v_oob <- rbind(data.frame(model = 'OM',
-                             om_pp[om_pp$otu == i, ]),
-                  data.frame(model = 'OOB', otu = i,
-                             partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), 
-                                         OTUS[OTUS == i], plot = F)))
-gg_pp <- ggplot(om_v_oob, aes(x,y, group = model, color = model)) +geom_smooth() + ggtitle(i)
-part_plot_cfu[[i]] <- gg_pp
-}
-library(cowplot)
-
-ggdraw() + 
-  draw_plot(part_plot_cfu[[1]])
-plot_grid(part_plot_cfu[[1]], part_plot_cfu[[2]])
-
-do.call('plot_grid',part_plot_cfu)
-i <- 'Otu000004'
-plot(om_pp$x[om_pp$otu == i], om_pp$y[om_pp$otu == i])
-lines(lowess(om_pp$x[om_pp$otu == i], om_pp$y[om_pp$otu == i]))
-library(car)
-scatterplot(y~x, om_pp[om_pp$otu == i, ], spread = F, smoother = gamLine,
-            grid = F, lty = 0)
-
-# partial plot for one_mouse model
-#ggplot(data=om_pp[om_pp$otu==names(final_rank[5]), ], aes(x=x, y=y)) + geom_smooth()
-#  stat_summary(fun.y=median, geom="line")
 
 importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
 features_cor <- sapply(as.character(med_otu_importance_om$otu), 
@@ -420,7 +384,6 @@ om_cr_df <- data.frame(shared_col_rate_df %>%
 
 om_import_otus_cr <- data.frame(otu = colnames(select(om_cr_df, contains('Otu'))))
 om_pred_cr <- c()
-om_pp_cr <- c()
 for(i in 1:iters){
     set.seed(i)
     train <- om_cr_df %>% 
@@ -431,12 +394,6 @@ for(i in 1:iters){
     set.seed(seed)
     rf_om <- randomForest(ratio ~ ., data = select(train, -mouse_id, -cage_id),
                              importance = TRUE, keep.forest = T, ntree = n_trees)
-    for(i in 4:ncol(train)){
-      pp_var <- data.frame(otu = colnames(train)[i],
-                           partialPlot(rf_om, data.frame(select(train, -mouse_id, -cage_id)), 
-                                       x.var= colnames(train)[i], plot = FALSE))
-      om_pp_cr <- rbind(om_pp_cr, pp_var)
-      }
     om_pred_cr <- rbind(om_pred_cr,
                      data.frame(select(test, mouse_id, cage_id, ratio),
                           predicted=predict(rf_om, test)))
@@ -480,14 +437,6 @@ ggplot(data = all_cr_rf, aes(x=observed, y=predicted, color = data)) +
                                   bquote('LOO (R'^'2'*' = '*.(round(LOcO_rsq_cr, 2))*')'),
                                   bquote('OM (R'^'2'*' = '*.(round(om_rsq_cr,2))*')'))) + 
   theme(legend.justification=c(0,1), legend.position=c(0,1))
-
-
-om_v_oob <- rbind(data.frame(model = 'OM',
-                             om_pp_cr[om_pp_cr$otu == 'Otu000004', ]),
-                  data.frame(model = 'OOB', otu = 'Otu000004',
-                             partialPlot(rf_col_rate, shared_cr_df, 'Otu000004',
-                                         plot = F)))
-ggplot(om_v_oob, aes(x,y, group = model, color = model)) +geom_smooth() + geom_point()
 
 cr_features_cor <- sapply(as.character(cr_features), 
                        function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
