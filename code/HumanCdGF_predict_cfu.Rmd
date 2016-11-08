@@ -253,11 +253,22 @@ om_v_oob <- rbind(data.frame(model = 'OM',
                   data.frame(model = 'OOB', otu = i,
                              partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), 
                                          OTUS[OTUS == i], plot = F)))
-part_plot_cfu[[i]] <- list(ggplot(om_v_oob, aes(x,y, group = model, color = model)) +geom_smooth() + geom_point(alpha = 0.5) + ggtitle(i))
+gg_pp <- ggplot(om_v_oob, aes(x,y, group = model, color = model)) +geom_smooth() + ggtitle(i)
+part_plot_cfu[[i]] <- gg_pp
 }
-part_plot_cfu[1]
-part_plot_cfu[2]
-part_plot_cfu[3]
+library(cowplot)
+
+ggdraw() + 
+  draw_plot(part_plot_cfu[[1]])
+plot_grid(part_plot_cfu[[1]], part_plot_cfu[[2]])
+
+do.call('plot_grid',part_plot_cfu)
+i <- 'Otu000004'
+plot(om_pp$x[om_pp$otu == i], om_pp$y[om_pp$otu == i])
+lines(lowess(om_pp$x[om_pp$otu == i], om_pp$y[om_pp$otu == i]))
+library(car)
+scatterplot(y~x, om_pp[om_pp$otu == i, ], spread = F, smoother = gamLine,
+            grid = F, lty = 0)
 
 # partial plot for one_mouse model
 #ggplot(data=om_pp[om_pp$otu==names(final_rank[5]), ], aes(x=x, y=y)) + geom_smooth()
