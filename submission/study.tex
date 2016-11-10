@@ -1,4 +1,4 @@
-\documentclass[11pt,]{article}
+\documentclass[]{article}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
@@ -23,7 +23,6 @@
 \usepackage{microtype}
 \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
-\usepackage[margin=1.0in]{geometry}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -34,7 +33,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={},
-            pdftitle={Microbiota predict Clostridium difficile severity in germ-free mice colonized with human feces},
+            pdftitle={},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -61,10 +60,9 @@
 }
 
 \setlength{\droptitle}{-2em}
-  \title{\textbf{Microbiota predict \emph{Clostridium difficile} severity in
-germ-free mice colonized with human feces}}
-  \pretitle{\vspace{\droptitle}\centering\huge}
-  \posttitle{\par}
+  \title{}
+  \pretitle{\vspace{\droptitle}}
+  \posttitle{}
   \author{}
   \preauthor{}\postauthor{}
   \date{}
@@ -166,7 +164,7 @@ bacteria and can persist on abiotic surfaces and is not readily killed
 by ethanol-based hand-sanitizers, putting hospital patients particularly
 at risk. Indeed, \textasciitilde{}12\% of hospital acquired infections
 in the United States are due to C. difficile and result in up to 15,000
-deaths annually (2).
+deaths annually (2). This is a test (@Britton12).
 
 Murine models to study CDI typically rely on treating
 conventionally-raised mice with antibiotics either in drinking water or
@@ -295,9 +293,9 @@ Lab, sequencing core, Jhansi
 \subsubsection{Figure Legends}\label{figure-legends}
 
 \textbf{Figure 1. Germ-free mice inoculated with human feces as a model
-for C. difficile infection.} A) Experimental design. Stool from 16
-healthy, diarrheal and CDI patients were independently inoculated into
-3-4 germ-free mice by oral gavage. 14 days later mice were orally
+for \emph{C. difficile infection.}} A) Experimental design. Stool from
+16 healthy, diarrheal and CDI patients were independently inoculated
+into 3-4 germ-free mice by oral gavage. 14 days later mice were orally
 infected with 100 spores of C. difficile strain 431. Weight and stool
 CFU were monitored for up to 10 days post infection. B) NMDS ordination
 of donor stool communities prior to inoculating mice. Each point
@@ -339,9 +337,21 @@ Line displays the partial dependence of log\textsubscript{10} CFU on OTU
 relative abundance. Points are the OTU relative abundance of each mouse
 colored by outcome (red, severe, black, mild).
 
+\textbf{Figure 5. Infection of mice with different \emph{C. difficile
+strains}.} 3 strains of \emph{C. difficile} were used to infect mice
+colonized with susceptible (DA00578) or resistant (DA00369, DA00430)
+human donor stool. A) \emph{C. difficile} stool CFU was enumerated over
+10 days. B) Percent weight loss was calculated each day for each mouse.
+In both plots, each mouse is a point and lines represent the mean of
+each cage.
+
+\paragraph{Supplement}\label{supplement}
+
+\textbf{Table S1: Mouse day 0 communities by donor genera (avg + stdev
+of cage)}
+
 \newpage
 
-\subsection*{References}\label{references}
-\addcontentsline{toc}{subsection}{References}
+\subsection{References}\label{references}
 
 \end{document}

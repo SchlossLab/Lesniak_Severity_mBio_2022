@@ -3,9 +3,9 @@ title: "**Microbiota predict _Clostridium difficile_ severity in germ-free mice 
 bibliography: references.bib
 output:
   pdf_document:
-    keep_tex: true
     includes:
       in_header: header.tex
+    keep_tex: yes
 csl: mbio.csl #Get themes at https://github.com/citation-style-language/styles
 fontsize: 11pt
 geometry: margin=1.0in
