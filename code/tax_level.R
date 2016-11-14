@@ -12,11 +12,19 @@ get_tax <- function(tax_level=1,row_list=rownames(tax_file),df=tax_file){
           taxonomy <- data.frame(do.call('rbind', taxonomy))
           taxonomy <- sapply(taxonomy,gsub,pattern="\\(\\d*\\)",replacement="")
           level <- 7-tax_level
-          tax_out <- as.character(taxonomy[,level])
-          for (i in level:2){
-               next_level <- i-1
-               tax_out[is.na(tax_out)] <- 
-                 as.character(taxonomy[is.na(tax_out),next_level])
+          if(length(row_list) < 2){
+            tax_out <- as.character(taxonomy[level])
+            for (i in level:2){
+              next_level <- i-1
+              tax_out[is.na(tax_out)] <- as.character(taxonomy[next_level])
+            }
+          }else{
+           tax_out <- as.character(taxonomy[ ,level])
+            for (i in level:2){
+              next_level <- i-1
+              tax_out[is.na(tax_out)] <- 
+               as.character(taxonomy[is.na(tax_out),next_level])
+            }
           }
           tax_out <- gsub('_unclassified', '', tax_out)
           label_out <- paste0(tax_out, ' (', 
