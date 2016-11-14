@@ -1,0 +1,269 @@
+ncpus-2.pbs
+compute-4-11
+compute-4-11
+compute-4-11
+compute-4-11
+compute-4-11
+compute-4-11
+compute-4-11
+compute-4-11
+Job Id: 1178418.axiom.localdomain
+    Job_Name = run_mothur_gf_remove3.PBS
+    Job_Owner = kjflynn@axiom.localdomain
+    job_state = R
+    queue = first
+    server = axiom.localdomain
+    Account_Name = schloss_lab
+    Checkpoint = u
+    ctime = Fri Sep 23 13:51:08 2016
+    Error_Path = axiom.localdomain:/mnt/EXT/Schloss-data/kaitlin/Schubert_huma
+	nCdGF_XXXX_2016/data/raw/run_mothur_gf_remove3.PBS.e1178418
+    exec_host = compute-4-11/0+compute-4-11/1+compute-4-11/2+compute-4-11/3+co
+	mpute-4-11/4+compute-4-11/5+compute-4-11/6+compute-4-11/7
+    exec_port = 15003+15003+15003+15003+15003+15003+15003+15003
+    Hold_Types = n
+    Join_Path = oe
+    Keep_Files = n
+    Mail_Points = abe
+    Mail_Users = kjflynn@umich.edu
+    mtime = Fri Sep 23 13:51:09 2016
+    Output_Path = axiom.localdomain:/mnt/EXT/Schloss-data/kaitlin/Schubert_hum
+	anCdGF_XXXX_2016/data/raw/run_mothur_gf_remove3.PBS.o1178418
+    Priority = 0
+    qtime = Fri Sep 23 13:51:08 2016
+    Rerunable = True
+    Resource_List.mem = 47gb
+    Resource_List.nodect = 1
+    Resource_List.nodes = 1:ppn=8
+    Resource_List.pmem = 786mb
+    Resource_List.walltime = 500:00:00
+    session_id = 22843
+    Variable_List = PBS_O_QUEUE=first,PBS_O_HOME=/home/kjflynn,
+	PBS_O_LOGNAME=kjflynn,
+	PBS_O_PATH=/share/scratch/schloss/mothur/:/usr/lib64/qt-3.3/bin:/shar
+	e/apps/rhel6/git/2.5.2/bin:/share/apps/rhel6/samtools/1.2/bin:/share/a
+	pps/rhel6/boost/1.59.0/bin:/share/apps/rhel6/python/2.7.9/bin:/share/a
+	pps/rhel6/R/zlib/1.2.8/bin:/share/apps/rhel6/R/3.3.0/bin:/share/apps/r
+	hel6/gcc/4.6.4/bin:/share/apps/rhel6/qpeek/4.2.5/bin:/opt/moab/bin:/us
+	r/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/bioinf/
+	amos/3.1.0/bin:/opt/bioinf/mafft/7.055/bin:/opt/bioinf/meme/4.9.1/bin:
+	/opt/bioinf/rmblast-ncbi-blast_compile/2.2.27/bin:/opt/bioinf/samtools
+	/0.1.18:/opt/bioinf/bin:/opt/bioinf/sratoolkit/2.2.0/bin:/share/apps/s
+	chlosslab/bin:/home/kjflynn/bin,PBS_O_MAIL=/var/spool/mail/kjflynn,
+	PBS_O_SHELL=/bin/bash,PBS_O_LANG=en_US.UTF-8,
+	PBS_O_WORKDIR=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2
+	016/data/raw,PBS_O_HOST=axiom.localdomain,PBS_O_SERVER=axiom,
+	SAM_LINK=/share/apps/rhel6/samtools/1.2/lib,
+	BOOST_INC=/share/apps/rhel6/boost/1.59.0/include,
+	MANPATH=/share/apps/rhel6/git/2.5.2/share/man:/share/apps/rhel6/pytho
+	n/2.7.9/share/man:/opt/moab/share/man:/opt/adaptive/perl/man:,
+	HOSTNAME=axiom.localdomain,SELINUX_ROLE_REQUESTED=,
+	TERM=xterm-256color,SHELL=/bin/bash,HISTSIZE=1000,
+	SSH_CLIENT=10.21.91.137 50779 22,
+	PERL5LIB=:/opt/adaptive/perl/lib/perl5:/opt/moab/lib/perl5,
+	SELINUX_USE_CURRENT_RANGE=,QTDIR=/usr/lib64/qt-3.3,
+	SAM_INC=/share/apps/rhel6/samtools/1.2/include,
+	OLDPWD=/mnt/EXT/Schloss-data/kaitlin,QTINC=/usr/lib64/qt-3.3/include,
+	SSH_TTY=/dev/pts/33,USER=kjflynn,
+	PHRED_PARAMETER_FILE=/opt/bioinf/phred/020425.c/phred.sh,
+	LD_LIBRARY_PATH=/share/apps/rhel6/R/zlib/1.2.8/lib:/share/apps/rhel6/
+	R/3.3.0/lib64/R/lib:/share/apps/rhel6/gcc/4.6.4/lib64:/share/apps/rhel
+	6/gcc/mpfr-3.1.1/lib:/share/apps/rhel6/gcc/mpc-1.0.1/lib:/share/apps/r
+	hel6/gcc/gmp-5.0.5/lib,
+	LS_COLORS=rs=0:di=38;5;27:ln=38;5;51:mh=44;38;5;15:pi=40;38;5;11:so=3
+	8;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38
+	;5;9:mi=05;48;5;232;38;5;15:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=
+	48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;
+	5;15:ex=38;5;34:*.tar=38;5;9:*.tgz=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.
+	lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.zip=38;5;9:*.z=38
+	;5;9:*.Z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lz=38;5;9:*.xz=38;5;9:*.bz2=
+	38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.bz=38;5;9:*.tz=38;5;9:*.deb=38;5;9
+	:*.rpm=38;5;9:*.jar=38;5;9:*.rar=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cp
+	io=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.gif=3
+	8;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=3
+	8;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=
+	38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov
+	=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.og
+	m=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.q
+	t=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmv
+	b=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl
+	=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=
+	38;5;13:*.emf=38;5;13:*.axv=38;5;13:*.anx=38;5;13:*.ogv=38;5;13:*.ogx=
+	38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.mid=38;5;45:*.midi
+	=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=
+	38;5;45:*.wav=38;5;45:*.axa=38;5;45:*.oga=38;5;45:*.spx=38;5;45:*.xspf
+	=38;5;45:,MAIL=/var/spool/mail/kjflynn,
+	PATH=/share/scratch/schloss/mothur/:/usr/lib64/qt-3.3/bin:/share/apps
+	/rhel6/git/2.5.2/bin:/share/apps/rhel6/samtools/1.2/bin:/share/apps/rh
+	el6/boost/1.59.0/bin:/share/apps/rhel6/python/2.7.9/bin:/share/apps/rh
+	el6/R/zlib/1.2.8/bin:/share/apps/rhel6/R/3.3.0/bin:/share/apps/rhel6/g
+	cc/4.6.4/bin:/share/apps/rhel6/qpeek/4.2.5/bin:/opt/moab/bin:/usr/loca
+	l/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/bioinf/amos/3
+	.1.0/bin:/opt/bioinf/mafft/7.055/bin:/opt/bioinf/meme/4.9.1/bin:/opt/b
+	ioinf/rmblast-ncbi-blast_compile/2.2.27/bin:/opt/bioinf/samtools/0.1.1
+	8:/opt/bioinf/bin:/opt/bioinf/sratoolkit/2.2.0/bin:/share/apps/schloss
+	lab/bin:/home/kjflynn/bin,
+	R_LIBS=/home/kjflynn/R/x86_64-redhat-linux-gnu-library/3.3:/home/kjfl
+	ynn/R/x86_64-redhat-linux-gnu-library/3.3,
+	PWD=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/r
+	aw,
+	_LMFILES_=/share/apps/rhel6/Modules/modulefiles/qpeek/4.2.5:/share/ap
+	ps/rhel6/Modules/modulefiles/gcc/4.6.4:/share/apps/rhel6/Modules/modul
+	efiles/R/3.3.0:/share/apps/rhel6/Modules/modulefiles/python/2.7.9:/sha
+	re/apps/rhel6/Modules/modulefiles/boost/1.59.0:/share/apps/rhel6/Modul
+	es/modulefiles/samtools/1.2:/share/apps/rhel6/Modules/modulefiles/git/
+	2.5.2:/usr/share/Modules/modulefiles/use.own,LANG=en_US.UTF-8,
+	MODULEPATH=/share/apps/rhel6/Modules/modulefiles:/usr/share/Modules/m
+	odulefiles:/etc/modulefiles:/home/kjflynn/privatemodules,
+	MOABHOMEDIR=/opt/moab,
+	LOADEDMODULES=qpeek/4.2.5:gcc/4.6.4:R/3.3.0:python/2.7.9:boost/1.59.0
+	:samtools/1.2:git/2.5.2:use.own,
+	SAMTOOLSDIR=/opt/bioinf/samtools/0.1.18,SELINUX_LEVEL_REQUESTED=,
+	HISTCONTROL=ignoredups,KRB5CCNAME=FILE:/tmp/krb5cc_953717_idBswS,
+	SHLVL=1,HOME=/home/kjflynn,LOGNAME=kjflynn,QTLIB=/usr/lib64/qt-3.3/lib,
+	BOOST_LINK=/share/apps/rhel6/boost/1.59.0/lib,CVS_RSH=ssh,
+	SSH_CONNECTION=10.21.91.137 50779 141.214.65.233 22,
+	MODULESHOME=/usr/share/Modules,LESSOPEN=|/usr/bin/lesspipe.sh %s,
+	GIT_EXEC_PATH=/share/apps/rhel6/git/2.5.2/libexec/git-core,
+	G_BROKEN_FILENAMES=1,
+	BASH_FUNC_module()=() {  eval `/usr/bin/modulecmd bash $*`\
+},
+	_=/usr/bin/qsub
+    euser = kjflynn
+    egroup = schlosslab
+    queue_type = E
+    etime = Fri Sep 23 13:51:08 2016
+    submit_args = run_mothur_gf_remove3.PBS
+    start_time = Fri Sep 23 13:51:09 2016
+    Walltime.Remaining = 1800000
+    start_count = 1
+    fault_tolerant = False
+    job_radix = 0
+    submit_host = axiom.localdomain
+
+[H[2J
+
+
+
+
+
+mothur v.1.37.5
+Last updated: 6/9/2016
+
+by
+Patrick D. Schloss
+
+Department of Microbiology & Immunology
+University of Michigan
+pschloss@umich.edu
+http://www.mothur.org
+
+When using, please cite:
+Schloss, P.D., et al., Introducing mothur: Open-source, platform-independent, community-supported software for describing and comparing microbial communities. Appl Environ Microbiol, 2009. 75(23):7537-41.
+
+Distributed under the GNU General Public License
+
+Type 'help()' for information on the commands that are available
+
+Type 'quit()' to exit program
+
+
+
+mothur > set.dir(input=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw, output=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw)
+Mothur's directories:
+outputDir=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/
+inputDir=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/
+
+mothur > remove.seqs(accnos=new_cdiff.seq.accnos, list=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.list)
+Removed 1 sequences from your list file.
+
+Output File Names: 
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.unique.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.01.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.02.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.04.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.05.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.06.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.07.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.08.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.09.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.10.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.11.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.12.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.13.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.14.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.15.pick.list
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.16.pick.list
+
+
+mothur > remove.seqs(accnos=new_cdiff.seq.accnos, count=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.count_table)
+Removed 234381 sequences from your count file.
+
+Output File Names: 
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.pick.count_table
+
+
+mothur > make.shared(list=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.list, count=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.pick.count_table)
+0.03
+
+Output File Names: 
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.shared
+
+
+mothur > classify.otu(list=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.list, count=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.pick.count_table, taxonomy=gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.pick.taxonomy)
+0.03	5671
+
+Output File Names: 
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.0.03.cons.taxonomy
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.0.03.cons.tax.summary
+
+
+mothur > system(mv gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pick.shared gf_new.an.shared)
+
+
+mothur > system(mv /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.an.cons.taxonomy)
+mv: cannot stat `/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy': No such file or directory
+
+
+mothur > sub.sample(shared=gf_new.an.shared, size=2000)
+369-992D10 contains 1208. Eliminating.
+430-304D10 contains 400. Eliminating.
+578-389D2 contains 1767. Eliminating.
+578-984D0 contains 131. Eliminating.
+578-984D2 contains 1641. Eliminating.
+581B-2-D1 contains 1469. Eliminating.
+AMSyes contains 746. Eliminating.
+CON2-2328-D2 contains 1538. Eliminating.
+CON3-NT-D4 contains 1398. Eliminating.
+CON3-NT-D5 contains 59. Eliminating.
+IN2-2673-D9 contains 598. Eliminating.
+NP1-2597D6 contains 1221. Eliminating.
+NP1-2725D7 contains 103. Eliminating.
+NP2-2630D0 contains 932. Eliminating.
+NP2-2630D1 contains 90. Eliminating.
+NP2-2630D3 contains 126. Eliminating.
+NP2-2630D7 contains 23. Eliminating.
+NP2-979D7 contains 478. Eliminating.
+NP2-983D1 contains 36. Eliminating.
+NP2-983D2 contains 49. Eliminating.
+NP2-983D3 contains 25. Eliminating.
+NP2-983D4 contains 76. Eliminating.
+OP-931D0 contains 119. Eliminating.
+OP-931D1 contains 25. Eliminating.
+OP-931D2 contains 993. Eliminating.
+OP-931D3 contains 24. Eliminating.
+OUT2-2510-D2 contains 1463. Eliminating.
+OUTA-2063-D6 contains 1185. Eliminating.
+P2-2564D6 contains 69. Eliminating.
+Y-532D2 contains 1906. Eliminating.
+Sampling 2000 from each group.
+0.03
+
+Output File Names: 
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_new.an.0.03.subsample.shared
+
+
+mothur > quit()
+qsub working directory absolute is
+/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw
