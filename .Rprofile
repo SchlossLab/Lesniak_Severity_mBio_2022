@@ -25,6 +25,6 @@ rm(RPROJ)
 
 local({
   r <- getOption("repos")
-  r["CRAN"] <- "http://cran.cnr.berkeley.edu/"
+  r["CRAN"] <- "https://mirrors.nics.utk.edu/cran/"
   options(repos = r)
 })
