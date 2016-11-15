@@ -111,6 +111,53 @@ for(j in 1:iters){
 }
 cv10f_roc <- roc(cv10f_all_resp~cv10f_all_pred)
 
+#### One_mouse model
+Predict_om_df <- select(Predict_df, 
+                        Euth_Early, human_source, mouse_id, contains('Otu'))
+om_import_otus <- data.frame(otu = colnames(select(Predict_om_df, contains("Otu"))),
+                             importance = NA)
+om_aucs <- c()
+om_all <- c()
+for(j in 1:iters){
+  set.seed(j)
+  mouse_set <- Predict_om_df %>% 
+    group_by(human_source) %>% 
+    sample_n(1) %>% ungroup() 
+  om_probs <- c()
+  om_cage_import <- c()
+  for(n in unique(as.character(mouse_set$human_source))){
+    train <- mouse_set[mouse_set$human_source != n, ]
+    test <- Predict_om_df %>% 
+      filter(human_source %in% n)
+    set.seed(seed)
+    temp_model <- AUCRF(Euth_Early~., data=select(train, -mouse_id, -human_source)
+                      , pdel=0.2, ntree=500, ranking = 'MDA')
+    om_probs <- rbind(om_probs,
+                      data.frame(obs = test$Euth_Early,
+                                 pred = predict(temp_model$RFopt, test, type='prob')[,2]))
+    om_cage_import <- c(om_cage_import, temp_model$Xopt)
+  }
+  om_roc <- roc(om_probs$obs~om_probs$pred)
+  om_import_otus <- merge(om_import_otus,
+                          data.frame(otu = names(table(om_cage_import)),
+                            importance = as.numeric(table(om_cage_import))*om_roc$auc),
+                          by = 'otu', all.x = T, suffixes = c('',round(om_roc$auc, 3)))
+  om_all <- rbind(om_all, om_probs)
+  om_aucs[j] <- om_roc$auc
+}
+om_roc <- roc(om_all$obs~om_all$pred)
+
+raw_importance <- data.frame(om_import_otus[ , -c(1,2)], row.names = om_import_otus$otu)
+
+importance_otus <-   apply(raw_importance, 1, sum, na.rm = T)
+importance_otus <- importance_otus[importance_otus>0]
+importance_otus <- importance_otus[importance_otus > median(om_aucs)*150/2]
+
+### rank importance
+importance_rank <- apply(raw_importance, 2, function(x) rank(x, na.last = T))
+raw_rank <- apply(importance_rank, 1, function(x) sum(x, na.rm = T))
+final_rank <- sort(raw_rank[raw_rank >=  ncol(importance_rank)*sum(importance_rank[ , 1])/nrow(importance_rank)], decreasing = T)
+
 #### leave-one-out
 LOO_probs <- NULL
 LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
@@ -165,7 +212,7 @@ LOdO_roc <- roc(LOdO_df$Euth_Early~LOdO_probs)
 #### plot rocs
 par(mar=c(4,4,1,1))
 plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
-plot(otu_euth_roc, col='black', lwd=2, add=T, lty=1)
+plot(om_roc, col='red', lwd=2, add=T, lty=1)
 plot(cv10f_roc, col='gray', lwd=2, add=T, lty=1)
 plot(LOO_roc, col='blue', lwd=2, add=T, lty=2)
 plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
