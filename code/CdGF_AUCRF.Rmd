@@ -89,6 +89,17 @@ euth_otu_feat <- rf_early_aucrf$Xopt
 
 aucrf_data <- Predict_early_euth_df[,c('Euth_Early',euth_otu_feat)]
 
+#### leave-one-out
+LOO_probs <- NULL
+LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
+ train <- aucrf_data[-i,]
+  test <- aucrf_data[i,]
+  set.seed(seed)
+  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
+  LOO_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
+})
+LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
+
 #### 10-fold Cross validated - 10 repetitions
 cv10f_aucs <- c()
 cv10f_all_resp <- c()
@@ -111,86 +122,65 @@ for(j in 1:iters){
 }
 cv10f_roc <- roc(cv10f_all_resp~cv10f_all_pred)
 
-#### One_mouse model
+#### One_mouse trainset
 Predict_om_df <- select(Predict_df, 
                         Euth_Early, human_source, mouse_id, contains('Otu'))
-om_import_otus <- data.frame(otu = colnames(select(Predict_om_df, contains("Otu"))),
-                             importance = NA)
+om_import_otus <- data.frame(otu = colnames(select(Predict_om_df, contains("Otu"))))
 om_aucs <- c()
 om_all <- c()
+om_probs <- c()
 for(j in 1:iters){
   set.seed(j)
-  mouse_set <- Predict_om_df %>% 
+  train <- Predict_om_df %>% 
     group_by(human_source) %>% 
     sample_n(1) %>% ungroup() 
-  om_probs <- c()
-  om_cage_import <- c()
-  for(n in unique(as.character(mouse_set$human_source))){
-    train <- mouse_set[mouse_set$human_source != n, ]
-    test <- Predict_om_df %>% 
-      filter(human_source %in% n)
-    set.seed(seed)
-    temp_model <- AUCRF(Euth_Early~., data=select(train, -mouse_id, -human_source)
-                      , pdel=0.2, ntree=500, ranking = 'MDA')
-    om_probs <- rbind(om_probs,
-                      data.frame(obs = test$Euth_Early,
-                                 pred = predict(temp_model$RFopt, test, type='prob')[,2]))
-    om_cage_import <- c(om_cage_import, temp_model$Xopt)
-  }
+  test <- filter(Predict_om_df, !mouse_id %in% train$mouse_id)
+  set.seed(seed)
+  temp_model <- AUCRF(Euth_Early~., data=select(train, -mouse_id, -human_source), 
+                      pdel=0.1, ntree=1000, ranking = 'MDA')
+  om_probs <- rbind(om_probs,
+                    data.frame(obs = test$Euth_Early,
+                               pred = predict(temp_model$RFopt, test, type='prob')[,2]))
   om_roc <- roc(om_probs$obs~om_probs$pred)
+  selected_var <- temp_model$ranking[temp_model$Xopt]
   om_import_otus <- merge(om_import_otus,
-                          data.frame(otu = names(table(om_cage_import)),
-                            importance = as.numeric(table(om_cage_import))*om_roc$auc),
-                          by = 'otu', all.x = T, suffixes = c('',round(om_roc$auc, 3)))
+                          data.frame(otu = names(selected_var), 
+                                     rank = rank(selected_var)/max(rank(selected_var))),
+                          by = 'otu', all.x = T, 
+                          suffixes = c('',paste0('_auc_', round(om_roc$auc, 3))))
   om_all <- rbind(om_all, om_probs)
   om_aucs[j] <- om_roc$auc
 }
 om_roc <- roc(om_all$obs~om_all$pred)
 
-raw_importance <- data.frame(om_import_otus[ , -c(1,2)], row.names = om_import_otus$otu)
-
+raw_importance <- data.frame(om_import_otus[ , -c(1)], row.names = om_import_otus$otu)
 importance_otus <-   apply(raw_importance, 1, sum, na.rm = T)
 importance_otus <- importance_otus[importance_otus>0]
-importance_otus <- importance_otus[importance_otus > median(om_aucs)*150/2]
+importance_otus <- importance_otus[importance_otus > mean(importance_otus)]
+om_import_otus <- names(sort(importance_otus, decreasing = T))
 
-### rank importance
-importance_rank <- apply(raw_importance, 2, function(x) rank(x, na.last = T))
-raw_rank <- apply(importance_rank, 1, function(x) sum(x, na.rm = T))
-final_rank <- sort(raw_rank[raw_rank >=  ncol(importance_rank)*sum(importance_rank[ , 1])/nrow(importance_rank)], decreasing = T)
-
-#### leave-one-out
-LOO_probs <- NULL
-LOO_probs <- sapply(1:nrow(aucrf_data), function(i){
- train <- aucrf_data[-i,]
-  test <- aucrf_data[i,]
-  set.seed(seed)
-  temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOO_probs[i] <- predict(temp_model$RFopt, test, type='prob')[,2]
-})
-LOO_roc <- roc(aucrf_data$Euth_Early~LOO_probs)
-
-#### leave-one-cage-out
+#### leave-one-source-out
 LOcO_df <- Predict_df %>% 
-                select(Euth_Early, cage_id, one_of(euth_otu_feat))
-cage_list <- as.character(unique(LOcO_df$cage_id))
+                select(Euth_Early, human_source, one_of(om_import_otus))
+source_list <- as.character(unique(LOcO_df$human_source))
 
 LOcO_probs <- c()
 LOcO_rf <- c()
-for(i in 1:length(cage_list)){
-  by_cage <- LOcO_df$cage_id == cage_list[i]
-  LOcO_predict <- select(LOcO_df, -cage_id)
-  train <- LOcO_predict[!by_cage,]
-  test <- LOcO_predict[by_cage,]
+for(i in 1:length(source_list)){
+  source <- LOcO_df$human_source == source_list[i]
+  LOcO_predict <- select(LOcO_df, -human_source)
+  train <- LOcO_predict[!source,]
+  test <- LOcO_predict[source,]
   set.seed(seed)
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
   LOcO_rf[[i]] <- temp_model$RFopt
-  LOcO_probs[LOcO_df$cage_id == cage_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
+  LOcO_probs[LOcO_df$human_source == source_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
 LOcO_roc <- roc(LOcO_df$Euth_Early~LOcO_probs)
 
 #### leave-2-out
 LOdO_df <- Predict_df %>% 
-                select(Euth_Early, human_source, one_of(euth_otu_feat))
+                select(Euth_Early, human_source, one_of(om_import_otus))
 donor_list <- as.character(unique(LOdO_df$human_source))
 
 LOdO_probs <- c()
@@ -210,23 +200,35 @@ for(i in seq(1,length(donor_list),2)){
 LOdO_roc <- roc(LOdO_df$Euth_Early~LOdO_probs)
 
 #### plot rocs
+# all mice
 par(mar=c(4,4,1,1))
 plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
-plot(om_roc, col='red', lwd=2, add=T, lty=1)
-plot(cv10f_roc, col='gray', lwd=2, add=T, lty=1)
-plot(LOO_roc, col='blue', lwd=2, add=T, lty=2)
-plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
-plot(LOdO_roc, col='red', lwd=2, add=T, lty=3)
+plot(otu_euth_roc, col='gray', lwd=2, add=T, lty=2)
+plot(cv10f_roc, col='black', lwd=2, add=T, lty=1)
+plot(LOO_roc, col='blue', lwd=2, add=T, lty=3)
 mtext(side=2, text="Sensitivity", line=2.5)
 mtext(side=1, text="Specificity", line=2.5)
 legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc),
                                sprintf('Leave-1 mouse-out (AUC: %.3g)',LOO_roc$auc),
-                               sprintf('Leave-1 cage-out (AUC: %.3g)',LOcO_roc$auc),
-                               sprintf('Leave-2 cages-out (AUC: %.3g)',LOdO_roc$auc),
                                sprintf('10-fold CV (AUC: %.3g)',cv10f_roc$auc) #,
 #                               sprintf('OOB vs Leave-1-out: p=%.2g', roc.test(otu_euth_roc,LOO_roc)$p.value),
 #                               sprintf('OOB vs 10-fold CV: p=%.2g', roc.test(otu_euth_roc,cv10f_roc)$p.value)
-),lty=c(1,2,2,2,1,0,0), lwd=2, col=c('black','blue','purple','red','gray'), bty='n')
+),lty=c(2,1,3), lwd=2, col=c('gray','black','blue'), bty='n')
+
+#remove cage bias plots
+par(mar=c(4,4,1,1))
+plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
+plot(om_roc, col='black', lwd=2, add=T, lty=1)
+plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
+plot(LOdO_roc, col='red', lwd=2, add=T, lty=3)
+plot(om_LOcO_roc, col='blue', lwd=2, add=T, lty=2)
+mtext(side=2, text="Sensitivity", line=2.5)
+mtext(side=1, text="Specificity", line=2.5)
+legend(0.3, 0.1, legend=c(sprintf('One-mouse (AUC: %.3g)',om_roc$auc),
+                           sprintf('Leave-1 source-out (AUC: %.3g)',LOcO_roc$auc),
+                           sprintf('Leave-2 sources-out (AUC: %.3g)',LOdO_roc$auc),
+                           sprintf('One-mouse-Leave-1 source-out (AUC: %.3g)',om_LOcO_roc$auc)),
+       lty=c(1,3,3,2), lwd=2, col=c('black','purple','red','blue'), bty='n')
 ```
 
 ### Partial Dependency with Relative Abundance Overlayed Plots
