@@ -199,6 +199,52 @@ for(i in seq(1,length(donor_list),2)){
 }
 LOdO_roc <- roc(LOdO_df$Euth_Early~LOdO_probs)
 
+#### One_mouse-Leave one out model 
+om_loo_df <- select(Predict_df,  
+                    Euth_Early, human_source, mouse_id, one_of(om_import_otus)) 
+om_loo_otus <- data.frame(otu = om_import_otus)
+
+om_loo_aucs <- c() 
+om_loo_all <- c() 
+for(j in 1:iters){ 
+  set.seed(j) 
+  mouse_set <- om_loo_df %>%  
+    group_by(human_source) %>%  
+    sample_n(1) %>% ungroup()  
+  om_loo_probs <- c() 
+  om_source_import <- data.frame(otu = om_import_otus) 
+  for(n in unique(as.character(mouse_set$human_source))){ 
+    train <- mouse_set[mouse_set$human_source != n, ] 
+    test <- om_loo_df %>%  
+      filter(human_source %in% n) 
+    set.seed(seed) 
+    temp_model <- AUCRF(Euth_Early~., data=select(train, -mouse_id, -human_source), 
+                        pdel=0.99, ntree=500, ranking = 'MDA') 
+    om_loo_probs <- rbind(om_loo_probs, 
+                          data.frame(obs = test$Euth_Early, 
+                                     pred = predict(temp_model$RFopt, 
+                                                    test, type='prob')[,2])) 
+    om_source_import <- merge(om_source_import,
+                            data.frame(otu = names(temp_model$ranking), 
+                                       rank = rank(temp_model$ranking)/
+                                              max(rank(temp_model$ranking))),
+                            by = 'otu', all.x = T, 
+                            suffixes = c('',paste0('_', n)))
+  } 
+  om_loo_roc <- roc(om_loo_probs$obs~om_loo_probs$pred) 
+  om_loo_otus <- merge(om_loo_otus, om_source_import,
+                       by = 'otu', all.x = T, suffixes = c('',paste0('_',j)))
+  om_loo_all <- rbind(om_loo_all, om_loo_probs) 
+  om_loo_aucs[j] <- om_loo_roc$auc 
+} 
+om_loo_roc <- roc(om_loo_all$obs~om_loo_all$pred) 
+ 
+raw_importance <- data.frame(om_source_import[ , -c(1,2)], row.names = om_source_import$otu) 
+ 
+om_loo_import_otus <- apply(raw_importance, 1, sum, na.rm = T)
+om_loo_import_otus <- om_loo_import_otus[om_loo_import_otus > mean(om_loo_import_otus)]
+important_otus_om_loo <- names(sort(om_loo_import_otus, decreasing = T))
+
 #### plot rocs
 # all mice
 par(mar=c(4,4,1,1))
@@ -221,13 +267,13 @@ plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i
 plot(om_roc, col='black', lwd=2, add=T, lty=1)
 plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
 plot(LOdO_roc, col='red', lwd=2, add=T, lty=3)
-plot(om_LOcO_roc, col='blue', lwd=2, add=T, lty=2)
+plot(om_loo_roc, col='blue', lwd=2, add=T, lty=2)
 mtext(side=2, text="Sensitivity", line=2.5)
 mtext(side=1, text="Specificity", line=2.5)
-legend(0.3, 0.1, legend=c(sprintf('One-mouse (AUC: %.3g)',om_roc$auc),
+legend(0.4, 0.125, legend=c(sprintf('One-mouse (AUC: %.3g)',om_roc$auc),
                            sprintf('Leave-1 source-out (AUC: %.3g)',LOcO_roc$auc),
                            sprintf('Leave-2 sources-out (AUC: %.3g)',LOdO_roc$auc),
-                           sprintf('One-mouse-Leave-1 source-out (AUC: %.3g)',om_LOcO_roc$auc)),
+                           sprintf('One-mouse-Leave-1 source-out (AUC: %.3g)',om_loo_roc$auc)),
        lty=c(1,3,3,2), lwd=2, col=c('black','purple','red','blue'), bty='n')
 ```
 
@@ -237,19 +283,38 @@ legend(0.3, 0.1, legend=c(sprintf('One-mouse (AUC: %.3g)',om_roc$auc),
 
 
 ```{r rel abund partial depend, fig.width=10, fig.height=10}
-layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 
-for (i in seq_along(euth_otu_feat)) {
-  partial_otu <- partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otu_feat[i], xlab='',
-                main=paste(get_tax(row_list = euth_otu_feat)$tax_label[i]))
-points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 1 ,euth_otu_feat[i]], 
+partialplot_df <- Predict_early_euth_df[,c('Euth_Early',important_otus_om_loo)]
+pp_aucrf <- AUCRF(Euth_Early ~ ., data = partialplot_df,
+                  ntree = 500, pdel = 0.99)
+
+cor_features <- sapply(as.character(important_otus_om_loo), 
+                       function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
+
+
+layout(matrix(c(1:12), ncol=3, byrow=TRUE))
+
+for (i in seq_along(important_otus_om_loo)) {
+  partial_otu <- partialPlot(pp_aucrf$RFopt, partialplot_df, important_otus_om_loo[i], xlab='',
+                main=NULL)
+  if(length(cor_features[[i]]) > 1){
+      title(main = paste0('Unidentifiable Feature (', 
+                          get_tax(row_list = important_otus_om_loo[i])$tax_label,
+                          ' Shown)'))
+      mtext(side = 1, line = 3, cex = 0.6,
+        paste('Correlated features: \n', 
+                  get_tax(row_list = cor_features[[i]])$tax_label, collapse = ','))
+  } else {
+      title(paste(get_tax(row_list = important_otus_om_loo[i])$tax_label))
+  }
+points(partialplot_df[partialplot_df$Euth_Early == 1 ,important_otus_om_loo[i]], 
        jitter(rep(0.25*(diff(range(partial_otu$y))) + min(partial_otu$y), 
-                  sum(Predict_early_euth_df$Euth_Early == 1)), 
+                  sum(partialplot_df$Euth_Early == 1)), 
               amount = (0.1*(diff(range(partial_otu$y))))), 
               pch = 21, bg = 'red')
-points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 0 ,euth_otu_feat[i]], 
+points(partialplot_df[partialplot_df$Euth_Early == 0 ,important_otus_om_loo[i]], 
        jitter(rep(0.75*(diff(range(partial_otu$y))) + min(partial_otu$y), 
-                  sum(Predict_early_euth_df$Euth_Early == 0)), 
+                  sum(partialplot_df$Euth_Early == 0)), 
               amount = (0.1*(diff(range(partial_otu$y))))), 
               pch = 21, bg = 'gray')
   axis(side = 4, labels = c('Severe', 'Mild'),
