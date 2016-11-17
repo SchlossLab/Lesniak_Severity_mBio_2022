@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
-pack_used <- c('randomForest','ggplot2', 'pROC', 'knitr','dplyr','AUCRF', 'tidyr')
+pack_used <- c('randomForest','ggplot2', 'pROC', 'knitr','dplyr','AUCRF', 'tidyr', 'caret')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -25,7 +25,7 @@ for (dep in pack_used){
 
 meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
 shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
-tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
@@ -52,6 +52,12 @@ rel_abund_stool <- 100 * stool_shared / unique(apply(stool_shared, 1, sum))
 OTUs_stool_0_01 <- apply(rel_abund_stool, 2, max) > 1
 #df of OTUs with abundances >1% - by cage and inoculum
 rel_abund_stool <- rel_abund_stool[ ,OTUs_stool_0_01]
+
+# remove correlative otus
+rel_abund_cor <- cor(rel_abund_stool, method = 'spearman')
+cor_cutoff <- 0.75
+cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+rel_abund_stool <- select(rel_abund_stool, -cor_otus)
 
 #random forest regression model to determine Day 0 OTU correlated with increased CFU
 seed <- 1
@@ -182,19 +188,11 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 
 
 ```{r rel abund partial depend, fig.width=10, fig.height=10}
-
-#n_rf_features <- 9
-#euth_otus <- euth_otu_feat[1:n_rf_features]
-euth_tax <- get_tax(1, euth_otu_feat, tax_file)
-euth_tax$tax_label <- paste(euth_tax$tax, ' (', 
-                            gsub('tu0*', 'TU ', rownames(euth_tax)), 
-                                   ') : ', round(rf_early_aucrf$ranking[euth_otu_feat], 3), sep = '')
-
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 
 for (i in seq_along(euth_otu_feat)) {
   partial_otu <- partialPlot(rf_early_aucrf$RFopt, aucrf_data, euth_otu_feat[i], xlab='',
-                main=paste(euth_tax$tax_label[i]))
+                main=paste(get_tax(row_list = euth_otu_feat)$tax_label[i]))
 points(Predict_early_euth_df[Predict_early_euth_df$Euth_Early == 1 ,euth_otu_feat[i]], 
        jitter(rep(0.25*(diff(range(partial_otu$y))) + min(partial_otu$y), 
                   sum(Predict_early_euth_df$Euth_Early == 1)), 
