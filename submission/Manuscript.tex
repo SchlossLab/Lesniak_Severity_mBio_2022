@@ -97,8 +97,8 @@ humanized mice
 
 \vspace{35mm}
 
-Kaitlin J. Flynn\textsuperscript{1}, Nicholas
-Lesniak\textsuperscript{1}, Alyxandria M. Schubert\textsuperscript{2},
+Kaitlin J. Flynn\textsuperscript{1+}, Nicholas
+Lesniak\textsuperscript{1+}, Alyxandria M. Schubert\textsuperscript{2},
 Hamide Sinani\textsuperscript{?}, and Patrick D.
 Schloss\textsuperscript{1\(\dagger\)}
 
@@ -106,6 +106,8 @@ Schloss\textsuperscript{1\(\dagger\)}
 
 \(\dagger\) Corresponding author:
 \href{mailto:pschloss@umich.edu}{\nolinkurl{pschloss@umich.edu}}
+
++ These authors contributed equally to this work
 
 1. Department of Microbiology and Immunology, University of Michigan,
 Ann Arbor, Michigan 48109
@@ -231,6 +233,9 @@ These findings show that human-associated microbiomes can be at risk for
 CDI even in the absence of antibiotics and that study of mice colonized
 with human feces provides a range of clinical outcomes.
 
+\textbf{also want something in the intro about severity maybe, and
+asymptomatic colonization. or in discussion?}
+
 \subsubsection{Results}\label{results}
 
 \textbf{Germ-free mice inoculated with human feces as model for C.
@@ -307,40 +312,105 @@ completely resistant to colonization by \emph{C. difficile} (Fig 2A,
 human-associated gut community prior to challenge is predictive of
 \emph{C. difficile} colonization levels.
 
-\textbf{The microbiome predicts \emph{C. difficile} severity.}
+\textbf{The microbiome predicts \emph{C. difficile} infection severity.}
+As \emph{C. difficile} colonization levels can be predicted by the
+microbiome composition on day 0, we postulated that severity of disease
+could also be predicted from day 0. Using weight loss as a proxy for
+severity, we built a Random Forest classification model based on
+relative abundance to determine which community members were associated
+with either mild or severe disease. We optimized the model using the
+AUC-RF algorithm to generate a Reciever Operating Curve (ROC) with
+maximal Area Under the Curve (AUC) (cite Calle 2011), as used previously
+in our group to classify colon cancer outcomes (cite Niel 2015 gen med).
+The optimized model used X number of OTUs and identified several that
+predicted increased weightloss and subsequent disease severity (Fig 4A,
+4B). The populations that were most commonly found in mice that
+succumbed to \emph{C. difficile} infection were members of the
+\emph{Clostridiales}, \emph{Bacilliales}, \emph{Streptococcus}
+(Lactobacilles?) and \emph{Bacteriodes}. (need more OTUs here, or number
+that were used for model and then group by rank). The AUC was calculated
+using the Out-Of-Bag (OOB) error for each sample (Fig 4A).
+Cross-validation using 10-fold, leave-one-mouse-out and
+leave-one-cage-out resulted in AUCs not significantly different from the
+OOB (Fig 4A). This model reveals that the levels of X OTUs on day 0 can
+predict disease outcome in mice with human-associated microbiomes.
+(probably also going to want a supplemental table for predictive OTUs
+for this and Fig 3)
 
-\textbf{Results to be written}
-
-\begin{enumerate}
-\def\labelenumi{\alph{enumi}.}
-\setcounter{enumi}{1}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  Figure 4: Random Forest predicts CDI severity, predictive OTUs
-\end{enumerate}
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\setcounter{enumi}{1}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  Propensity for severe CDI is community-dependent and
-  strain-independent
-\end{enumerate}
-
-\begin{enumerate}
-\def\labelenumi{\alph{enumi}.}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  Figure 5: Infection of mice with different C. difficile strains.
-\end{enumerate}
+\textbf{Susceptibility to infection is community-dependent.} \emph{C.
+difficile} strains are known to vary in disease phenotypes based both on
+pathogenicity factors of the strain and host microbiome composition
+(cite someone). To test the susceptibility of human-derived microbiomes
+to \emph{C. difficile} infection, two donor-mouse microbiomes that were
+previously shown to be resistant to \emph{C. difficile} strain 431
+induced weight loss (Fig 2B) (DA00396, DA00430) and one that was
+suscpetible to severe disease (DA00578) were independently challenged
+with one of three unique \emph{C. difficile} strains (table or reference
+for toxin prod, etc). As done previously, \emph{C. difficile} stool CFU
+was enumerated daily and mouse weight-loss tracked. Infection of mice
+with resistant communities with virulent strain 458 or the weaker strain
+299 resulted in colonization to levels near that of 431 (Fig 5A) and
+these mice did not experience severe weight loss or show clinical signs
+of disease (Fig 5B). In contrast, infection of mice harboring
+microbiomes susceptible to severe disease (DA00578, Fig 1B) with strain
+395 resulted in colonization and severe weight loss by two days
+post-infection (Fig 5A, 5B). Strain 395 is similarly virulent as strain
+431, and shows a similar infection phenotype in these mice. These
+preliminary results suggest that human-associated microbiomes may be
+more predictive of disease severity than the \emph{C. difficile} strain.
 
 \subsubsection{Discussion}\label{discussion}
 
-• Restate results, • caveats about mouse weights • No donors were
-colonization resistant, discuss donor differences • Discuss prediction
-methods and outcomes • Discuss potential mechanisms for interesting OTUs
-• Discuss different strain results • Future work blah blah
+Study of human-associated microbiomes and their interactions with
+\emph{C. difficile} has been limited by the lack of an appropriate model
+and available samples. Here we colonized 16 groups of mice with human
+donor stool from patients with different clinical profiles or healthy
+volunteers. This created a diverse set of human-associated microbiomes
+in the mice that allowed for testing \emph{C. difficile} infection
+dynamics and community interactions. Our results showed that both
+healthy and diarrheal-associated human communities were susceptible to
+severe disease. Additionally, our results confirmed our and others
+previous studies that proved that resistance to \emph{C. difficile}
+disease is dependent on the entire microbial community and not just one
+or two species (cite alyx). Further, we were able to learn
+classification models that identified specific OTUs within susceptible
+communities that predispose mice to infection. By subsequently infecting
+susceptible or resistant communities with varying strains of \emph{C.
+difficile} we confirmed that the initial state of the human-associated
+microbiome is more predictive of disease severity than the strain used.
+
+Here we were able to colonize germ-free mice with a variety of human
+stool communities from diarrheal or healthy people. After allowing these
+communities to colonize the mice for 2 weeks, they were challenged with
+\emph{C. difficile}. It is important to note that the mouse gut
+environment is different from that of the human, and as such exerts a
+selective pressure on the human stool microbial community that
+stabilizes over the 2 weeks. Thus these mice cannot be considered
+``humanized'' but rather containing human-associated microbes.
+Interestingly, clinical status was not associated with proclivity to
+severe \emph{C. difficile} infection as some healthy donor mice were
+susceptible. A surprising finding was that none of the human-associated
+mouse communities were completely resistant to colonization by \emph{C.
+difficile}. This is in contrast to numerous reports of mouse microbiome
+studies (cite) and the knowledge that in general healthy humans without
+gut perturbations are resistant to \emph{C. difficile} infection (cite).
+On the other hand, it is known that humans, especially health care
+employees, can be asymptomatic carriers of \emph{C. difficile}
+(Furyura-Kanamari). This may explain the fact that the majority of our
+groups of mice were colonized by \emph{C. difficile} but did not display
+outward signs of illness or infection-associated weight loss (Fig 2).
+
+• Discuss prediction methods and outcomes - Nick - we have bugs that
+predict severity, but do we have bugs that predict mild/asymptomatic?
+probably, could discuss here • Discuss potential mechanisms for
+interesting OTUs - Nick
+
+Finally, our pilot experiments testing the efficiency of infection with
+different \emph{C. difficile} strains
+
+Discuss different strain results
+
+• Future work/conclusion section/sentence
 
 \subsubsection{Materials and Methods}\label{materials-and-methods}
 
@@ -360,10 +430,27 @@ submitted to the microbiology lab for \emph{C. difficile} testing.
 check? toxin AB?. Samples from these patients were stored in Cary-Blair
 medium at -80C. All patients consented to participation in the study.
 Donor stool for this study was selected from one patient that tested
-positive for \emph{C. difficile} infection and four patients that
-presented with diarrhea that tested negative for \emph{C. difficile}.
-Healthy donor stool was collected from volunteer donors living in the
-Ann Arbor, MI area.
+positive for \emph{C. difficile} infection and five patients that
+presented with diarrhea and tested negative for \emph{C. difficile}.
+Healthy donor stool was collected from adult volunteers living in the
+Ann Arbor, MI area. 100ul of stool slurry was gavaged into each mouse.
+
+\textbf{\emph{Clostridium difficile} and sample processing} For all
+experiments, 100 spores of \emph{Clostridium difficile} were used to
+orally infect mice as described previously (cite alyx). The \emph{C.
+difficile} strains used were acquired from spore stocks of (WHERE) and
+comprised of strains 431, 395, 299 and 468 (cite?). After gavage, the
+remaining inoculum was diluted and plated to confirm infection dose.
+Bacteria were cultured anaerobically on TCCFA plates and incubated at
+37C. During infection, two fresh stool pellets were collected from each
+mouse daily. One pellet was resuspended in anaerobic phosphate-buffered
+saline and diluted and plated on TCCFA plates to enumerate \emph{C.
+difficile} CFU. The other pellet was frozen at -80C until the end of the
+experiment.
+
+\textbf{DNA isolation and sequencing} Bacterial DNA was isolated from
+banked donor stool and each mouse stool pellet using the MO-BIO
+PowerSoil DNA isolation kit. This DNA was used as template for
 
 • Bacteria/plating • Sequencing • Data analysis, code availability •
 Machine learning models
