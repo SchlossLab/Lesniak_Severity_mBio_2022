@@ -234,38 +234,34 @@ for(i in 1:iters){
                            data.frame(select(test, mouse_id, cage_id, log_cfu_med),
                            predicted=predict(rf_om_loo, test)))
     }
-      #import_df <- importance(rf_om)
-      #colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
-      #om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
-      #om_import_otus <- select(om_import_otus, -IncNodePurity)
 }
+
 om_loo_rsq <- 1 - (sum((om_loo_pred$log_cfu_med - om_loo_pred$predicted)^2)/
                sum((om_loo_pred$log_cfu_med - mean(om_loo_pred$log_cfu_med))^2))
-
 om_loo_pred <- rename(om_loo_pred, observed = log_cfu_med)
-
-cor.test(om_loo_pred$observed, om_loo_pred$predicted, method = 'pearson')
 
 #### merge OOB and leave 1 cage out dataframes
 all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
                 cbind(LOcO_probs, data = rep('LOO', nrow(LOcO_probs))),
+                cbind(om_loo_pred, data = rep('om_loo', nrow(LOcO_probs))),
                 cbind(om_pred, data = rep('1_mouse', nrow(om_pred))))
 
 ggplot(data = all_rf, aes(x=observed, y=predicted, color = data)) + 
-  geom_abline(color = 'gray', size = 0.5, linetype = 2, slope = 1) + 
+  #geom_abline(color = 'gray', size = 0.5, linetype = 2, slope = 1) + 
   # geom_point() + 
-  geom_smooth(method = 'lm', se = F) +
+  #geom_smooth(method = 'lm', se = F) +
   stat_summary(fun.y=median, geom="point", aes(group = data)) + 
   stat_summary(fun.data = 'median_hilow') +
   xlim(c(5,9)) + ylim(c(5,9)) +
   labs(x= 'Observed Log10 CFU', y = 'Predicted Log10 CFU',
        title = "Random Forest Prediction of Colonized C Difficile CFU from Day 0 Community") + 
   theme_bw() + 
-  scale_color_discrete(name = 'Model',
-                       breaks = c('OOB', 'LOO', '1_mouse'),
+  scale_color_discrete(name = NULL,
+                       breaks = c('OOB', 'LOO', '1_mouse', 'om_loo'),
                        labels = c(bquote('OOB (R'^'2'*' = '*.(round(tail(rf_n_features$rsq, 1), 2))*')'),
                                   bquote('LOO (R'^'2'*' = '*.(round(LOcO_rsq, 2))*')'),
-                                  bquote('OM (R'^'2'*' = '*.(round(om_rsq,2))*')'))) + 
+                                  bquote('OM (R'^'2'*' = '*.(round(om_rsq,2))*')'),
+                                  bquote('OM-LOO (R'^'2'*' = '*.(round(om_loo_rsq,2))*')'))) + 
   theme(legend.justification=c(0,1), legend.position=c(0,1))
 
 importance_om <- get_tax(1, med_otu_importance_om$otu, tax_file)
@@ -287,18 +283,23 @@ color <- sapply(1:length(unique(partial_df$cage_id)),
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 for(otu in seq_along(importance_om$tax)){
     partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
-                xlab='', main=paste(importance_om$tax_label[otu]))
+                xlab='', main = NULL)
+    if(length(features_cor[[otu]]) > 1){
+      title(main = paste0('Unidentifiable Feature (', 
+                          get_tax(row_list = rownames(importance_om)[otu])$tax_label,
+                          ' Shown)'))
+      mtext(side = 1, line = 3, cex = 0.6,
+        paste('Correlated features: \n', 
+              paste(get_tax(row_list = features_cor[[otu]])$tax_label, collapse = ', ')))
+      } else {
+      title(paste(get_tax(row_list = rownames(importance_om)[otu])$tax_label))
+        }
     par(new = T)
     plot(y = partial_df[ , 'log_cfu_med'],
          x = partial_df[ , rownames(importance_om)[otu]], 
          pch = NA, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Log10 CFU')
-    if(length(features_cor[[otu]]) > 1){
-    mtext(side = 1, line = 3, cex = 0.6,
-          paste('Bacteria removed in preprocessing due to correlation to this OTU:\n',
-                paste(get_tax(row_list = features_cor[[otu]])$tax_label, collapse = ',')))
-    }
 # To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(partial_df$cage_id)), function(m){
     mouse <- unique(partial_df$cage_id)[m]
@@ -443,15 +444,42 @@ om_raw_rank_cr <- sort(apply(om_otu_rank_cr, 1, function(x) sum(x, na.rm = T)), 
 med_otu_importance_om <- data.frame(otu = names(om_raw_rank_cr),
                                  importance = om_raw_rank_cr)
 
+# one mouse leave one out
+om_loo_pred_cr <- c()
+for(i in 1:iters){
+    set.seed(i)
+    one_mouse <- om_cr_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    for (n in unique(as.character(one_mouse$cage_id))){
+      train <- filter(one_mouse, !cage_id == n)
+      test <- om_cr_df %>% 
+        filter(cage_id == n)
+      set.seed(seed)
+      rf_om_loo_cr <- randomForest(ratio ~ ., data = select(train, -mouse_id, -cage_id),
+                                ntree = 500)
+      om_loo_pred_cr <- rbind(om_loo_pred_cr,
+                           data.frame(select(test, mouse_id, cage_id, ratio),
+                           predicted=predict(rf_om_loo_cr, test)))
+    }
+}
+
+om_loo_rsq_cr <- 1 - (sum((om_loo_pred_cr$ratio - om_loo_pred_cr$predicted)^2)/
+               sum((om_loo_pred_cr$ratio - mean(om_loo_pred_cr$ratio))^2))
+om_loo_pred_cr <- rename(om_loo_pred_cr, observed = ratio)
+
+
+
 #### merge OOB and leave 1 cage out dataframes
 all_cr_rf <- rbind(cbind(cr_prediction, data = rep('OOB', nrow(cr_prediction))),
                 cbind(LOcO_cr_probs, data = rep('LOO', nrow(LOcO_cr_probs))),
+                cbind(om_loo_pred_cr, data = rep('OM_LOO', nrow(om_loo_pred_cr))),
                 cbind(om_pred_cr, data = rep('1_mouse', nrow(om_pred_cr))))
 
 ggplot(data = all_cr_rf, aes(x=observed, y=predicted, color = data)) + 
-  geom_abline(color = 'gray', size = 0.5, linetype = 2, slope = 1) + 
+  #geom_abline(color = 'gray', size = 0.5, linetype = 2, slope = 1) + 
   # geom_point() + 
-  geom_smooth(method = 'lm', se = F) +
+  #geom_smooth(method = 'lm', se = F) +
   stat_summary(fun.y=median, geom="point", aes(group = data)) + 
   stat_summary(fun.data = 'median_hilow') +
   xlim(c(min(all_cr_rf[, c('observed','predicted')]),
@@ -461,11 +489,12 @@ ggplot(data = all_cr_rf, aes(x=observed, y=predicted, color = data)) +
   labs(x= 'Observed Log10 CFU', y = 'Predicted Log10 CFU',
        title = "Random Forest Prediction of C. Difficile Colonization Rate from Day 0 Community") + 
   theme_bw() + 
-  scale_color_discrete(name = 'Model',
-                       breaks = c('OOB', 'LOO', '1_mouse'),
+  scale_color_discrete(name = NULL,
+                       breaks = c('OOB', 'LOO', '1_mouse', 'OM_LOO'),
                        labels = c(bquote('OOB (R'^'2'*' = '*.(round(tail(rf_col_rate$rsq, 1), 2))*')'),
                                   bquote('LOO (R'^'2'*' = '*.(round(LOcO_rsq_cr, 2))*')'),
-                                  bquote('OM (R'^'2'*' = '*.(round(om_rsq_cr,2))*')'))) + 
+                                  bquote('OM (R'^'2'*' = '*.(round(om_rsq_cr,2))*')'),
+                                  bquote('OM_LOO (R'^'2'*' = '*.(round(om_loo_rsq_cr,2))*')'))) + 
   theme(legend.justification=c(0,1), legend.position=c(0,1))
 
 cr_features_cor <- sapply(as.character(cr_features), 
@@ -476,18 +505,23 @@ layout(matrix(c(1:9), ncol=3, byrow=TRUE))
 cage_color <- rainbow(length(unique(cr_prediction$cage_id)))
 for (otu in seq_along(cr_features)) {
     partialPlot(rf_col_rate, shared_cr_df, cr_features[otu],
-                xlab='', main=paste(get_tax(row_list = cr_features)$tax_label[otu]))#, log = 'x')
-    par(new = T)
+                xlab='', main = NULL)
+    if(length(cr_features_cor[[otu]]) > 1){
+      title(main = paste0('Unidentifiable Feature (', 
+                          get_tax(row_list = cr_features[otu])$tax_label,
+                          ' Shown)'))
+      mtext(side = 1, line = 3, cex = 0.6,
+        paste('Correlated features: \n', 
+              paste(get_tax(row_list = cr_features_cor[[otu]])$tax_label, collapse = ', ')))
+      } else {
+      title(paste(get_tax(row_list = cr_features[otu])$tax_label))
+        }
+  par(new = T)
     plot(y = shared_col_rate_df[ , 'ratio'],
          x = shared_col_rate_df[ , cr_features[otu]], 
          pch = NA, bg = 'gray', xlab = NA, ylab = NA, axes = F)
     axis(side = 4)
     mtext(side = 4, line = 3, 'Relative Colonization')
-    if(length(cr_features_cor[[otu]]) > 1){
-      mtext(side = 1, line = 3, cex = 0.6,
-            paste('Bacteria removed in preprocessing due to correlation to this OTU:\n',
-                  paste(get_tax(row_list = cr_features_cor[[otu]])$tax_label, collapse = ',')))
-    }
 # To color points by mouse - Change pch to 21 and un-comment following lines
   lapply(seq_along(unique(shared_col_rate_df$cage_id)), function(m){
     mouse <- unique(shared_col_rate_df$cage_id)[m]
