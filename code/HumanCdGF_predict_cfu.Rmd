@@ -216,6 +216,36 @@ om_raw_rank <- sort(apply(om_otu_rank, 1, function(x) sum(x, na.rm = T)), decrea
 med_otu_importance_om <- data.frame(otu = names(om_raw_rank),
                                  importance = om_raw_rank)
 
+# one mouse leave one out
+om_loo_pred <- c()
+for(i in 1:iters){
+    set.seed(i)
+    one_mouse <- one_mouse_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    for (n in unique(as.character(one_mouse$cage_id))){
+      train <- filter(one_mouse, !cage_id == n)
+      test <- one_mouse_df %>% 
+        filter(cage_id == n)
+      set.seed(seed)
+      rf_om_loo <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
+                                ntree = 500)
+      om_loo_pred <- rbind(om_loo_pred,
+                           data.frame(select(test, mouse_id, cage_id, log_cfu_med),
+                           predicted=predict(rf_om_loo, test)))
+    }
+      #import_df <- importance(rf_om)
+      #colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+      #om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
+      #om_import_otus <- select(om_import_otus, -IncNodePurity)
+}
+om_loo_rsq <- 1 - (sum((om_loo_pred$log_cfu_med - om_loo_pred$predicted)^2)/
+               sum((om_loo_pred$log_cfu_med - mean(om_loo_pred$log_cfu_med))^2))
+
+om_loo_pred <- rename(om_loo_pred, observed = log_cfu_med)
+
+cor.test(om_loo_pred$observed, om_loo_pred$predicted, method = 'pearson')
+
 #### merge OOB and leave 1 cage out dataframes
 all_rf <- rbind(cbind(rf_prediction, data = rep('OOB', nrow(rf_prediction))),
                 cbind(LOcO_probs, data = rep('LOO', nrow(LOcO_probs))),
