@@ -41,44 +41,40 @@ iters <- 100
 cor_cutoff <- 0.75
 
 # remove samples not used or with other cdiff strains
-meta_file <- 
+meta_data <- 
   meta_data %>% 
   filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
-  select(mouse_id, sample_id, day, log_cfu) %>% 
+  select(mouse_id, sample_id, cage_id, day, log_cfu) %>% 
   filter(!is.na(log_cfu))
-
-shared_list_days <- select(meta_file, -log_cfu)
+shared_list_days <- meta_data %>% 
+  filter(day == 0) %>% 
+  select(-day, -log_cfu, -cage_id)
+shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
 
 # create shared with relative abundances over 1%
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
-rel_abund_shared <- 100 * shared_file / mean_otu_counts
+rel_abund_shared <- shared_file
 rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
 # remove correlative otus
 rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
 rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
 cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
 rel_abund_01_filtr <- rel_abund_shared_01[,-cor_otus]
-rel_abund_01_filtr$sample_id <- rownames(rel_abund_01_filtr)
+community_d0.df <- merge(shared_list_days, rel_abund_01_filtr, 
+                         by.x = 'sample_id', by.y = 'row.names') %>% 
+                    select(-sample_id)
 ```
 
 ### Reframing the question for predicting CFU
 #### 1. Can Day 0 community predict the median steady-state-colonized CFU?
 
 ```{r predict median CFU, fig.width=10,fig.height=10}
-
 colonized_cfu <- meta_data %>% 
-  filter(day %in% c(4:10), !cage_id == 'NP1', 
-         Early_Euth == FALSE, cdiff_strain == 431) %>% 
-  select(mouse_id, cage_id, log_cfu) %>% 
+  filter(day %in% c(4:10)) %>% 
   group_by(mouse_id, cage_id) %>% 
   summarise(log_cfu_med = median(log_cfu)) %>% 
   ungroup()
-sample_list_d0 <- shared_list_days %>% 
-    filter(day == 0) %>% 
-    select(-day)
-community_d0.df <- rel_abund_01_filtr %>% 
-    right_join(sample_list_d0) %>% 
-    select(-sample_id)
+
 cfu_shared_colonized.df <- colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     select(-mouse_id, -cage_id) %>% 
@@ -105,7 +101,7 @@ rfe_ctrl <- rfeControl(functions = rfRFE,
                    method = "repeatedcv",
                    repeats = 10,
                    verbose = FALSE)
-subsets <- c(1:5, c(seq(10, 70, 10)))
+subsets <- c(1:20, c(seq(25, 85, 10)))
 set.seed(seed)
 rf_cfu_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
                  sizes = subsets,
@@ -152,37 +148,10 @@ LOcO_rsq <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
                    sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
 
 #One per cage
-one_mouse_initial_df <- data.frame(colonized_cfu %>% 
-    right_join(community_d0.df) %>% 
-    filter(!is.na(log_cfu_med))  %>% 
-    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
-
-om_raw_otus <- data.frame(otu = colnames(select(one_mouse_initial_df, contains('Otu'))))
-for(i in 1:iters){
-    set.seed(i)
-    train <- one_mouse_initial_df %>% 
-      group_by(cage_id) %>% 
-      sample_n(1) %>% ungroup() 
-    test <- one_mouse_initial_df %>% 
-      filter(!mouse_id %in% train$mouse_id)
-    set.seed(seed)
-    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
-                             importance = TRUE, keep.forest = T, ntree = n_trees)
-    import_df <- importance(rf_om)
-    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
-    om_raw_otus <- merge(om_raw_otus, import_df, by.x = 'otu', by.y = 'row.names')
-    om_raw_otus <- select(om_raw_otus, -IncNodePurity)
-}
-raw_importance <- data.frame(om_raw_otus[ , -1], row.names = om_raw_otus$otu)
-### rank importance
-importance_rank <- apply(raw_importance, 2, function(x) rank(x, na.last = F))
-raw_rank <- apply(importance_rank, 1, function(x) sum(x, na.rm = T))
-final_rank <- sort(raw_rank[raw_rank >=  ncol(importance_rank)*sum(importance_rank[ , 1])/nrow(importance_rank)], decreasing = T)
-
 one_mouse_df <- data.frame(colonized_cfu %>% 
     right_join(community_d0.df) %>% 
     filter(!is.na(log_cfu_med))  %>% 
-    select(log_cfu_med, mouse_id, cage_id, one_of(names(final_rank))))
+    select(log_cfu_med, mouse_id, cage_id, one_of(top_important_OTU)))
 
 om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
 om_pred <- c()
@@ -285,7 +254,7 @@ for(otu in seq_along(importance_om$tax)){
     partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
                 xlab='', main = NULL)
     if(length(features_cor[[otu]]) > 1){
-      title(main = paste0('Unidentifiable Feature (', 
+      title(main = paste0('Unidentifiable Feature\n(', 
                           get_tax(row_list = rownames(importance_om)[otu])$tax_label,
                           ' Shown)'))
       mtext(side = 1, line = 3, cex = 0.6,
@@ -317,8 +286,6 @@ for(otu in seq_along(importance_om$tax)){
 ```{r predict colonization rate, fig.width=10,fig.height=10}
 
 mouse_list <- meta_data %>% 
-  filter(!is.na(day), !cage_id == 'NP1',  
-         Early_Euth == FALSE, cdiff_strain == 431) %>% 
   select(mouse_id) %>% 
   unique() %>% 
   filter(!mouse_id == 'NP2_983') # remove NP2_983 no colonization data
@@ -386,32 +353,7 @@ LOcO_rsq_cr <- 1 - (sum((LOcO_cr_probs$observed - LOcO_cr_probs$predicted)^2)/
                    sum((LOcO_cr_probs$observed - mean(LOcO_cr_probs$observed))^2))
 
 #One per cage
-one_mouse_cr_df <- LOcO_cr_df
-
-om_raw_otus_cr <- data.frame(otu = colnames(select(one_mouse_cr_df, contains('Otu'))))
-for(i in 1:iters){
-    set.seed(i)
-    train <- one_mouse_cr_df %>% 
-      group_by(cage_id) %>% 
-      sample_n(1) %>% ungroup() 
-    test <- one_mouse_cr_df %>% 
-      filter(!mouse_id %in% train$mouse_id)
-    set.seed(seed)
-    rf_om <- randomForest(ratio ~ ., data = select(train, -mouse_id, -cage_id),
-                             importance = TRUE, keep.forest = T, ntree = n_trees)
-    import_df <- importance(rf_om)
-    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
-    om_raw_otus_cr <- merge(om_raw_otus_cr, import_df, by.x = 'otu', by.y = 'row.names')
-    om_raw_otus_cr <- select(om_raw_otus_cr, -IncNodePurity)
-}
-raw_importance_cr <- data.frame(om_raw_otus_cr[ , -1], row.names = om_raw_otus_cr$otu)
-### rank importance
-importance_rank_cr <- apply(raw_importance_cr, 2, function(x) rank(x, na.last = F))
-raw_rank_cr <- apply(importance_rank_cr, 1, function(x) sum(x, na.rm = T))
-final_rank_cr <- sort(raw_rank_cr[raw_rank_cr >=  ncol(importance_rank_cr)*sum(importance_rank_cr[ , 1])/nrow(importance_rank_cr)], decreasing = T)
-
-om_cr_df <- data.frame(shared_col_rate_df %>% 
-    select(ratio, mouse_id, cage_id, one_of(names(final_rank_cr))))
+om_cr_df <- LOcO_cr_df
 
 om_import_otus_cr <- data.frame(otu = colnames(select(om_cr_df, contains('Otu'))))
 om_pred_cr <- c()
@@ -507,7 +449,7 @@ for (otu in seq_along(cr_features)) {
     partialPlot(rf_col_rate, shared_cr_df, cr_features[otu],
                 xlab='', main = NULL)
     if(length(cr_features_cor[[otu]]) > 1){
-      title(main = paste0('Unidentifiable Feature (', 
+      title(main = paste0('Unidentifiable Feature\n(', 
                           get_tax(row_list = cr_features[otu])$tax_label,
                           ' Shown)'))
       mtext(side = 1, line = 3, cex = 0.6,
