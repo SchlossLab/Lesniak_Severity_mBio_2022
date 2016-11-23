@@ -23,7 +23,7 @@ for (dep in pack_used){
 # read in files
 setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
 meta_data   <- 'data/process/human_CdGF_metadata.txt'
-shared_file <- 'data/process/humanCdGF_full.shared'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 tax_file <- 'data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
@@ -53,9 +53,10 @@ shared_list_days <- meta_data %>%
 shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
 
 # create shared with relative abundances over 1%
-rel_abund_shared <- 100 * shared_file / apply(shared_file, 1, sum)
-otu_presence <- ifelse(rel_abund_shared >= (1/2000), T, F) 
-rel_abund_shared_01 <- rel_abund_shared[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(rel_abund_shared))]
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+otu_presence <- ifelse(shared_file > 0, T, F) 
+rel_abund_shared <- shared_file[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(shared_file))]
+rel_abund_shared_01 <- 100*rel_abund_shared/mean_otu_counts
 # remove correlative otus
 rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
 rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features

@@ -24,7 +24,7 @@ for (dep in pack_used){
 ```{r setup data, fig.height= 10, fig.width=10}
 
 meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
-shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/humanCdGF_full.shared'
+shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
 tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
@@ -54,10 +54,10 @@ stool_shared <- shared_file[rownames(meta_file[meta_file$day %in% 0, ]), ]
 # rename day 0 community rows by mouse id - since meta rows have day in row names, use mouse id for both
 rownames(stool_shared) <- meta_file$mouse_id[rownames(meta_file) %in% 
                                                rownames(stool_shared) ]
-rel_abund_stool <- 100 * stool_shared / apply(stool_shared, 1, sum)
+rel_abund_stool <- 100 * stool_shared / unique(apply(stool_shared, 1, sum))
 #Create vector of OTUs with median abundances >1%
-otu_presence <- ifelse(rel_abund_stool >= (1/2000), T, F) 
-OTUs_present <- colnames(rel_abund_stool[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(rel_abund_stool))])
+otu_presence <- ifelse(stool_shared > 0, T, F) 
+OTUs_present <- colnames(stool_shared[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(stool_shared))])
 #df of OTUs with present in >10%
 rel_abund_stool <- rel_abund_stool[ ,OTUs_present]
 
