@@ -39,6 +39,7 @@ n_trees <- 1001
 n_otus <- 12
 iters <- 100
 cor_cutoff <- 0.75
+otu_presence_cutoff <- 0.1
 
 # remove samples not used or with other cdiff strains
 meta_data <- 
@@ -53,8 +54,9 @@ shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id
 
 # create shared with relative abundances over 1%
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
-rel_abund_shared <- shared_file
-rel_abund_shared_01 <- rel_abund_shared[ , apply(rel_abund_shared, 2, max) > 1]
+otu_presence <- ifelse(shared_file > 0, T, F) 
+rel_abund_shared <- shared_file[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(shared_file))]
+rel_abund_shared_01 <- 100*rel_abund_shared/mean_otu_counts
 # remove correlative otus
 rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
 rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
@@ -101,7 +103,7 @@ rfe_ctrl <- rfeControl(functions = rfRFE,
                    method = "repeatedcv",
                    repeats = 10,
                    verbose = FALSE)
-subsets <- c(1:20, c(seq(25, 85, 10)))
+subsets <- c(1:15, c(seq(20, 70, 10)))
 set.seed(seed)
 rf_cfu_model <- rfe(cfu_shared_colonized.df[ , -1], cfu_shared_colonized.df$log_cfu_med,
                  sizes = subsets,
@@ -250,6 +252,7 @@ color <- sapply(1:length(unique(partial_df$cage_id)),
                              })
 
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
+par(mar = c(7,4,4,2)+0.1)
 for(otu in seq_along(importance_om$tax)){
     partialPlot(rf_n_features, data.frame(cfu_shared_colonized.df), x.var=rownames(importance_om)[otu],
                 xlab='', main = NULL)
@@ -257,9 +260,10 @@ for(otu in seq_along(importance_om$tax)){
       title(main = paste0('Unidentifiable Feature\n(', 
                           get_tax(row_list = rownames(importance_om)[otu])$tax_label,
                           ' Shown)'))
-      mtext(side = 1, line = 3, cex = 0.6,
+      mtext(side = 1, line = 6, cex = 0.6,
         paste('Correlated features: \n', 
-              paste(get_tax(row_list = features_cor[[otu]])$tax_label, collapse = ', ')))
+              paste(paste0(get_tax(row_list = features_cor[[otu]])$tax_label, c(', ', ',\n ')), 
+                    collapse = '')))
       } else {
       title(paste(get_tax(row_list = rownames(importance_om)[otu])$tax_label))
         }
@@ -443,7 +447,7 @@ cr_features_cor <- sapply(as.character(cr_features),
                        function(i)rownames(rel_abund_cor)[rel_abund_cor[,i] > cor_cutoff])
 
 layout(matrix(c(1:9), ncol=3, byrow=TRUE))
-
+par(mar = c(7,4,4,2)+0.1)
 cage_color <- rainbow(length(unique(cr_prediction$cage_id)))
 for (otu in seq_along(cr_features)) {
     partialPlot(rf_col_rate, shared_cr_df, cr_features[otu],
@@ -452,9 +456,10 @@ for (otu in seq_along(cr_features)) {
       title(main = paste0('Unidentifiable Feature\n(', 
                           get_tax(row_list = cr_features[otu])$tax_label,
                           ' Shown)'))
-      mtext(side = 1, line = 3, cex = 0.6,
+      mtext(side = 1, line = 6, cex = 0.6,
         paste('Correlated features: \n', 
-              paste(get_tax(row_list = cr_features_cor[[otu]])$tax_label, collapse = ', ')))
+              paste(paste0(get_tax(row_list = cr_features_cor[[otu]])$tax_label, c(', ', ',\n ')), 
+                    collapse = '')))
       } else {
       title(paste(get_tax(row_list = cr_features[otu])$tax_label))
         }
