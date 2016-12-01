@@ -102,7 +102,7 @@ Lesniak\textsuperscript{1+}, Alyxandria M. Schubert\textsuperscript{2},
 Hamide Sinani\textsuperscript{?}, and Patrick D.
 Schloss\textsuperscript{1\(\dagger\)}
 
-\vspace{40mm}
+\vspace{35mm}
 
 \(\dagger\) Corresponding author:
 \href{mailto:pschloss@umich.edu}{\nolinkurl{pschloss@umich.edu}}
@@ -122,9 +122,9 @@ Ann Arbor, Michigan 48109
 \subsubsection{Abstract}\label{abstract}
 
 \emph{Clostridium difficile} causes diarrheal disease when it
-successfully colonizes a dysbiotic gut microbial community. Current
+successfully colonizes a disrupted gut microbial community. Current
 mouse models to study \emph{C. difficile} infection (CDI) rely on
-pre-treatment with antibiotics to disrupt the mouse microbiome prior to
+pre-treatment with antibiotics to alter the mouse microbiome prior to
 inoculation. This model does not allow for analysis of human-associated
 microbial community members that modulate \emph{C. difficile}
 colonization and expansion. To study human-associated microbes in the
@@ -208,66 +208,58 @@ The power of the gnotobiotic models to study CDI has been further
 realized by first inoculating germ-free mice and piglets with human
 stool microbes. In one study, germ-free piglets were acutely colonized
 with human feces for one week and then treated with tigecycline. After
-challenge with C. difficile none of the antibiotic-treated piglets
-succumbed to infection, while some of the untreated human-colonized pigs
-did (11). In another study, germ-free mice colonized with human feces
-were bred over several generations to create a cohort of mice with
-identical human-derived microbiomes (14). These mice were subsequently
-treated with a five-antibiotic cocktail to induce dysbiosis and then
-were successfully colonized by \emph{C. difficile} (14). While
-informative, these studies were limited in their use of only one human
-donor as input inoculum. In order to best understand the impact of
-\emph{C. difficile} pathogenesis on human disease, we must have a
-laboratory model that allows for study of a variety of human-derived
-microbiomes.
+challenge with \emph{C. difficile} none of the antibiotic-treated
+piglets succumbed to infection, while some of the untreated
+human-colonized pigs did (11). In another study, germ-free mice
+colonized with human feces were bred over several generations to create
+a cohort of mice with identical human-derived microbiomes (14). These
+mice were subsequently treated with a five-antibiotic cocktail to induce
+dysbiosis and then were successfully colonized by \emph{C. difficile}
+(14). While informative, these studies were limited in their use of only
+one human donor as input inoculum.
 
-Here we designed a laboratory model that allows for studying and
+Here we designed a laboratory system that allows for studying and
 modeling microbial coumminity interactions with \emph{C. difficile}
 infection in mice with human derived microbiomes. To test the impact of
 individual human microbiomes on CDI, we colonized germ-free mice with 16
 different human stool donors. We then characterized human-associated
-microbiome response to C. difficile challenge. Additionally, the use of
-machine-learning models allowed us to build a predictive model that
-classified ``at-risk'' microbiomes prior to infection with C. difficile.
+microbiome response to \emph{C. difficile} challenge. Further, we built
+a predictive model based on bacterial composition that classified
+``at-risk'' microbiomes prior to infection with \emph{C. difficile}.
 These findings show that human-associated microbiomes can be at risk for
-CDI even in the absence of antibiotics and that study of mice colonized
-with human feces provides a range of clinical outcomes.
-
-\textbf{also want something in the intro about severity maybe, and
-asymptomatic colonization. or in discussion?}
+CDI even in the absence of antibiotic-induced dysbiosis. Finally, our
+results indicate that study of mice colonized with human feces can
+replicate a range of clinical outcomes.
 
 \subsubsection{Results}\label{results}
 
 \textbf{Germ-free mice inoculated with human feces as model for C.
 difficile infection.} To generate mice with human-derived microbiomes,
-we inoculated one cage of gnotobiotic C57/BL6 mice with one of 16
+we inoculated one cage each of gnotobiotic C57/BL6 mice with one of 16
 different human fecal donors. Five donors were patients that had
 diarrhea that was not attributable to \emph{C. difficile} infection
 while 11 donors were healthy at time of donation. Stool from a patient
 that was colonized with virulent \emph{C. difficile} was used as a
-positive control. After inoculation with human stool, mice were allowed
-to equilibrate for 14 days. Prior to infection, stool samples were taken
-from each mouse to establish baseline. Then, the \emph{C. difficile}
-strain isolated from the positive control patient's sample (strain 430)
-was used to infect each mouse with 100 spores. Mice were monitored for
-weight loss and clinical signs of disease. Fecal samples were taken to
-enumerate \emph{C. difficile} CFU and for microbiome analysis every day
-for up to 10 days post-infection (Fig 1A). To ensure that the donors we
-selected represented a diverse array of human microbiomes, we sequenced
-the 16S rRNA genes from donor fecal inocula. Ordination of the distances
-between donor communities showed that the donors each had distinctly
-different communities, independent of whether the sample came from a
-sick or healthy person (Fig 1B). Likewise, the starting microbial
-communities of the mice on day 0 were characterizing by sequencing of
-fecal pellets DNA prior to infection. Ordination of all of the mouse
-communities on day 0 shows that mice were similar to each other within
-each cage and donor, but distinct from other donors (Fig 1C). This
-result confirmed that human-associated microbes were able to colonize
-gnotobiotic mice and provide distinct initial communities to test
-\emph{C. difficile} dynamics.
-
-\textbf{need to put in a line to reference supplemental table with RA in
-it}
+positive control. After inoculation with human stool, mice microbiomes
+were allowed to equilibrate for 14 days. Prior to infection, stool
+samples were taken from each mouse to establish baseline microbiome
+composition. Then, 100 spores of \emph{C. difficile} strain 430
+(isolated from the positive control patient) were used to orally infect
+each mouse. Mice were monitored for weight loss and clinical signs of
+disease. Fecal samples were taken to enumerate \emph{C. difficile} CFU
+and for microbiome analysis each day up to 10 days post-infection (Fig
+1A). To ensure that the donors we selected represented a diverse array
+of human microbiomes, we sequenced the 16S rRNA genes from donor fecal
+inocula. Ordination of the distances between donor communities showed
+that the donors each had distinctly different communities, independent
+of whether the sample came from a sick or healthy person (Fig 1B).
+Likewise, the microbial communities of the mice on day 0 were
+characterized by sequencing of fecal pellet DNA prior to infection
+(Table S1). Ordination of day 0 communities shows that mice were similar
+to each other within each cage and donor, but distinct from other donors
+(Fig 1C). This result confirmed that human-associated microbes were able
+to colonize gnotobiotic mice and provide various initial communities to
+test \emph{C. difficile} dynamics.
 
 \textbf{C. difficile infection in mice with human-derived microbiota
 cause a range of outcomes.} \emph{C. difficile} colonization was
@@ -276,21 +268,22 @@ Nearly all of the mice were colonized to 10\textsuperscript{5} --
 10\textsuperscript{7} CFU by one day post-infection and remained
 colonized at that level until the end of the experiment (Fig 2A). As one
 indicator of disease, mouse weights were taken each day post-infection
-and weight-loss was monitored alongside clinical signs of disease. When
-mice were judged to be too ill to continue they were humanely
-euthanized. Overall, disease phenotypes fell into two classes. Mice that
-became severely ill and lost 20\% or more of their starting body weight
-within one to two days post-infection were classified as ``severe''
-whereas mice that were colonized with \emph{C. difficile} but did not
-show signs of disease or severe weight loss were considered to have
-``mild'' disease (Fig 2A, 2B). Interestingly, \emph{C. difficile} was
-able to cause severe disease in both mice that had been colonized with
-healthy stool and those colonized with diarrheal stool, suggesting
-susceptibility to CDI is dependent on the composition of the starting
-microbiome and not associated with donor clinical metadata.
+and weight-loss was monitored alongside clinical signs. When mice were
+judged to be too ill to continue they were humanely euthanized. Overall,
+disease phenotypes fell into two classes. Mice that became severely ill
+and lost 20\% or more of their starting body weight within one to two
+days post-infection were classified as ``severe'' whereas mice that were
+colonized with \emph{C. difficile} but did not show signs of disease or
+severe weight loss were considered to have ``mild'' disease (Fig 2A,
+2B). Interestingly, \emph{C. difficile} was able to cause severe disease
+in both mice that had been colonized with healthy stool and those
+colonized with diarrheal stool, suggesting susceptibility to CDI is
+dependent on the composition of the starting microbiome and not
+associated with donor clinical metadata.
 
-\textbf{Microbes present in the gut prior to infection are predictive of
-\emph{C. difficile} colonization levels} Previous work in our group has
+\textbf{Nick will be updating the next two sections} \textbf{Microbes
+present in the gut prior to infection are predictive of \emph{C.
+difficile} colonization levels} Previous work in our group has
 demonstrated that the microbes present in the mouse microbiome prior to
 \emph{C. difficile} challenge can predict future colonization levels
 (cite Alyx). To determine if the human-associated microbiome in the
@@ -406,11 +399,31 @@ probably, could discuss here • Discuss potential mechanisms for
 interesting OTUs - Nick
 
 Finally, our pilot experiments testing the efficiency of infection with
-different \emph{C. difficile} strains
-
-Discuss different strain results
-
-• Future work/conclusion section/sentence
+different \emph{C. difficile} strains have allowed for testing community
+versus pathogen factors of infection. Our results are consistent with
+previous reports that the composition of the gut microbiome determines
+if an individual is successfully infected or not (cite Alyx and others).
+\emph{C. difficile} strains are known to vary in pathogenecity,
+primarily via the amount of toxin that is produced during infection
+(cite). In these pilot experiments, we challenged a susceptible
+community with another pathogenic strain of \emph{C. difficile} to
+confirm that the susceptibility lied in the community and not in the
+specific challenge strain. In contrast, we exposed a
+resistant/asymptomatic community to a relatively weak strain of \emph{C.
+difficile} and found that the community could be colonized by this one
+as well-- but not cause disease. This suggests that this colony is prone
+to colonization by any \emph{C. difficile} strain. Further experiments
+will test if infecting susceptible communities with weak strains allows
+the mice to survive. It has been recently reported that carriage of a
+non-toxigenic strain of \emph{C. difficile} can prevent additional
+colonization by a pathogenic strain, suggesting some role of
+niche-filling or immunity this provides (cite cite). It would be
+interesting to see if we could make a susceptible community resistant to
+infection and disease by a pathogenic \emph{C. difficle} strain in our
+human-associated microbiome mice. Further work with human-associated
+communities in mice and mathematical modeling will allow for uncovering
+of complex human-associated disease processes and dynamics as they
+relate to human disease.
 
 \subsubsection{Materials and Methods}\label{materials-and-methods}
 
@@ -451,13 +464,17 @@ experiment.
 \textbf{DNA isolation and sequencing} Bacterial DNA was isolated from
 banked donor stool and each mouse stool pellet using the MO-BIO
 PowerSoil DNA isolation kit. This DNA was used as template for
+amplification of the V4 region of the 16S rRNA gene and fragments were
+sequenced on an Illumina MiSeq as previously described (cite Jim paper).
 
-• Bacteria/plating • Sequencing • Data analysis, code availability •
-Machine learning models
+• Sequence curation/mothur, data analysis, code + availability of
+data(SRA) and code (Github) - Nick
 
 \subsection{Acknowledgments}\label{acknowledgments}
 
-Lab, sequencing core, Jhansi
+We would like to thank members of the Schloss lab and Jhansi Leslie for
+analysis advice and the Microbial Systems Laboratory at the University
+of Michigan for sequencing assistance.
 
 \newpage
 
