@@ -169,13 +169,13 @@ cfu_uncor_src_shared_df <- colonized_cfu %>%
     right_join(community_d0.df) %>% 
     select(-mouse_id, -cage_id) %>% 
     filter(!is.na(log_cfu_med))
-cfu_uncor_src_shared_df$cage_id <- as.factor(cfu_uncor_src_shared_df$cage_id)
+cfu_uncor_src_shared_df$human_source <- as.factor(cfu_uncor_src_shared_df$human_source)
 set.seed(seed)
-cfu_uncor_src_cage_rf <- rfe(cfu_uncor_src_shared_df[ , -2], cfu_uncor_src_shared_df$log_cfu_med,
+cfu_uncor_src_rf <- rfe(cfu_uncor_src_shared_df[ , -2], cfu_uncor_src_shared_df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-cfu_uncor_src_cage_features <- predictors(cfu_uncor_src_cage_rf)
-cfu_uncor_src_cage_model <- cfu_uncor_src_cage_rf$fit
+cfu_uncor_src_features <- predictors(cfu_uncor_src_rf)
+cfu_uncor_src_model <- cfu_uncor_src_rf$fit
 #rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
 #                       predicted = rf_n_features$predicted)
 #rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
@@ -183,17 +183,17 @@ cfu_uncor_src_cage_model <- cfu_uncor_src_cage_rf$fit
 
 
 ### - All OTUs + source
-cfu_all_src_cage_shared_df <- colonized_cfu %>% 
+cfu_all_src_shared_df <- colonized_cfu %>% 
     right_join(community_all_d0) %>% 
     select(-mouse_id, -cage_id) %>% 
     filter(!is.na(log_cfu_med))
-cfu_all_src_cage_shared_df$cage_id <- as.factor(cfu_all_src_cage_shared_df$cage_id)
+cfu_all_src_shared_df$human_source <- as.factor(cfu_all_src_shared_df$human_source)
 set.seed(seed)
-cfu_all_src_cage_rf <- rfe(cfu_all_src_cage_shared_df[ , -2], cfu_all_src_cage_shared_df$log_cfu_med,
+cfu_all_src_rf <- rfe(cfu_all_src_shared_df[ , -2], cfu_all_src_shared_df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-cfu_all_src_cage_features <- predictors(cfu_all_src_cage_rf)
-cfu_all_src_cage_model <- cfu_all_src_cage_rf$fit
+cfu_all_src_features <- predictors(cfu_all_src_rf)
+cfu_all_src_model <- cfu_all_src_rf$fit
 
 ### - Uncorrelated OTUs + source/cage
 cfu_uncor_cg_src_shared_df <- colonized_cfu %>% 
@@ -201,76 +201,83 @@ cfu_uncor_cg_src_shared_df <- colonized_cfu %>%
     select(-mouse_id) %>% 
     filter(!is.na(log_cfu_med))
 cfu_uncor_cg_src_shared_df$cage_id <- as.factor(cfu_uncor_cg_src_shared_df$cage_id)
+cfu_uncor_cg_src_shared_df$human_source <- as.factor(cfu_uncor_cg_src_shared_df$human_source)
 set.seed(seed)
-cfu_uncor_cg_src_cage_rf <- rfe(cfu_uncor_cg_src_shared_df[ , -3], cfu_uncor_cg_src_shared_df$log_cfu_med,
+cfu_uncor_cg_src_rf <- rfe(cfu_uncor_cg_src_shared_df[ , -3], cfu_uncor_cg_src_shared_df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-cfu_uncor_cg_src_cage_features <- predictors(cfu_uncor_cg_src_cage_rf)
-cfu_uncor_cg_src_cage_model <- cfu_uncor_cg_src_cage_rf$fit
+cfu_uncor_cg_src_features <- predictors(cfu_uncor_cg_src_rf)
+cfu_uncor_cg_src_model <- cfu_uncor_cg_src_rf$fit
 #rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
 #                       predicted = rf_n_features$predicted)
 #rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
 
 ### - All OTUs + source/cage
-cfu_all_cg_src_cage_shared_df <- colonized_cfu %>% 
+cfu_all_cg_src_shared_df <- colonized_cfu %>% 
     right_join(community_all_d0) %>% 
     select(-mouse_id) %>% 
     filter(!is.na(log_cfu_med))
-cfu_all_cg_src_cage_shared_df$cage_id <- as.factor(cfu_all_cg_src_cage_shared_df$cage_id)
+cfu_all_cg_src_shared_df$cage_id <- as.factor(cfu_all_cg_src_shared_df$cage_id)
+cfu_all_cg_src_shared_df$human_source <- as.factor(cfu_all_cg_src_shared_df$human_source)
 set.seed(seed)
-cfu_all_cg_src_cage_rf <- rfe(cfu_all_cg_src_cage_shared_df[ , -3], cfu_all_cg_src_cage_shared_df$log_cfu_med,
+cfu_all_cg_src_rf <- rfe(cfu_all_cg_src_shared_df[ , -3], cfu_all_cg_src_shared_df$log_cfu_med,
                  sizes = subsets,
                  rfeControl = rfe_ctrl)
-cfu_all_cg_src_cage_features <- predictors(cfu_all_cg_src_cage_rf)
-cfu_all_cg_src_cage_model <- cfu_all_cg_src_cage_rf$fit
+cfu_all_cg_src_features <- predictors(cfu_all_cg_src_rf)
+cfu_all_cg_src_model <- cfu_all_cg_src_rf$fit
 
 ```
 
 ##### All OTUs  
-Model:  
-`r cfu_all_model`  
-Features:  
-`r cfu_all_features`
 
-####  All OTUs + Cage
-Model:  
-`r cfu_all_cage_model`  
-Features:  
-`r cfu_all_cage_features`
+```{r all_otus}
+print(cfu_all_model)
+print(cfu_all_features)
+```
 
-####  Uncorrelated OTUs
-Model:  
-`r cfu_uncor_model`  
-Features:  
-`r cfu_uncor_features`  
+####  All OTUs + Cage  
+```{r all_cg}
+print(cfu_all_cage_model)
+print(cfu_all_cage_features)
+```
+
+####  Uncorrelated OTUs  
+
+```{r uncor}
+print(cfu_uncor_model)
+print(cfu_uncor_features)
+```
 
 ####  Uncorrelated OTUs + Cage
-Model:  
-`r cfu_uncor_cage_model`  
-Features:  
-`r cfu_uncor_cage_features`
+```{r uncor_cg}
+print(cfu_uncor_cage_model)
+print(cfu_uncor_cage_features)
+```
 
+####  All OTUs + Source  
 
-####  All OTUs + Source
-Model:  
-`r cfu_all_src_model`  
-Features:  
-`r cfu_all_src_features`
+```{r all_src}
+print(cfu_all_src_model)
+print(cfu_all_src_features)
+```
 
-####  Uncorrelated OTUs + Source
-Model:  
-`r cfu_uncor_src_model`  
-Features:  
-`r cfu_uncor_src_features`
+####  Uncorrelated OTUs + Source  
 
-####  All OTUs + Source/Cage
-Model:  
-`r cfu_all_cg_src_model`  
-Features:  
-`r cfu_all_cg_src_features`
+```{r uncor_src}
+print(cfu_uncor_src_model)
+print(cfu_uncor_src_features)
+```
+
+####  All OTUs + Source/Cage  
+
+```{r all_cg_src}
+print(cfu_all_cg_src_model)
+print(cfu_all_cg_src_features)
+```
 
 ####  Uncorrelated OTUs + Source/Cage
-Model:  
-`r cfu_uncor_cg_src_model`  
-Features:  
-`r cfu_uncor_cg_src_features`
+
+```{r uncor_cg_src}
+print(cfu_uncor_cg_src_model)
+print(cfu_uncor_cg_src_features)
+```
