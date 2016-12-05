@@ -1,0 +1,276 @@
+---
+title: "Model_CFU"
+author: "Nicholas Lesniak"
+date: "December 5, 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7, fig.height=8)
+```
+
+```{r setup environment}
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+```{r setup data}
+# read in files
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
+meta_data   <- 'data/process/human_CdGF_metadata.txt'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- 'data/process/gf_new.an.taxonomy'
+tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
+
+# read in files
+meta_data   <- read.table(meta_data, sep = '\t', header = T, stringsAsFactors = F)
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
+
+# set parameters
+seed <- 1
+n_trees <- 1001
+n_otus <- 12
+iters <- 100
+cor_cutoff <- 0.75
+otu_presence_cutoff <- 0.1
+
+# remove samples not used or with other cdiff strains
+meta_data <- 
+  meta_data %>% 
+  filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
+  select(mouse_id, sample_id, cage_id, human_source, day, log_cfu) %>% 
+  filter(!is.na(log_cfu))
+shared_list_days <- meta_data %>% 
+  filter(day == 0) %>% 
+  select(-day, -log_cfu, -cage_id, -human_source)
+shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+otu_presence <- ifelse(shared_file > 0, T, F) 
+rel_abund_shared <- shared_file[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(shared_file))]
+rel_abund_shared_01 <- 100*rel_abund_shared/mean_otu_counts
+# remove correlative otus
+rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
+rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
+cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+rel_abund_01_filtr <- rel_abund_shared_01[,-cor_otus]
+community_d0.df <- merge(shared_list_days, rel_abund_01_filtr, 
+                         by.x = 'sample_id', by.y = 'row.names') %>% 
+                    select(-sample_id)
+
+colonized_cfu <- meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  summarise(log_cfu_med = median(log_cfu)) %>% 
+  ungroup()
+
+##### feature reduction #####
+rfRFE <-  list(summary = defaultSummary,
+               fit = function(x, y, first, last, ...){
+                 library(randomForest)
+                 randomForest(x, y, importance = first, keep.forest = T, ntree = n_trees, ...)
+                 },
+               pred = function(object, x)  predict(object, x),
+               rank = function(object, x, y) {
+                 vimp <- varImp(object)
+                 vimp <- vimp[order(vimp$Overall,decreasing = TRUE),,drop = FALSE]
+                 vimp$var <- rownames(vimp)                  
+                 vimp
+                 },
+               selectSize = pickSizeTolerance,
+               selectVar = pickVars)
+
+rfe_ctrl <- rfeControl(functions = rfRFE,
+                   method = "repeatedcv",
+                   repeats = 10,
+                   verbose = FALSE)
+subsets <- c(1:40, c(seq(45, 70, 5)))
+```
+
+### Predicting Colonization Level (Log10 CFU) with Day 0 Community
+
+```{r predict median CFU, fig.width=10,fig.height=10}
+
+### - Uncorrelated OTUs
+cfu_uncor_shared_df <- colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(-mouse_id, -cage_id, -human_source) %>% 
+    filter(!is.na(log_cfu_med))
+set.seed(seed)
+cfu_uncor_rf <- rfe(cfu_uncor_shared_df[ , -1], cfu_uncor_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_uncor_features <- predictors(cfu_uncor_rf)
+cfu_uncor_model <- cfu_uncor_rf$fit
+#rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
+#                       predicted = rf_n_features$predicted)
+#rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
+
+
+### - All OTUs
+community_all_d0 <- merge(shared_list_days, rel_abund_shared_01, 
+                          by.x = 'sample_id', by.y = 'row.names') %>% 
+                     select(-sample_id)
+
+cfu_all_shared_df <- colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id, -cage_id, -human_source) %>% 
+    filter(!is.na(log_cfu_med))
+set.seed(seed)
+cfu_all_rf <- rfe(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_all_features <- predictors(cfu_all_rf)
+cfu_all_model <- cfu_all_rf$fit
+
+
+### - Uncorrelated OTUs + cage
+cfu_uncor_cage_shared_df <- colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(-mouse_id, -human_source) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_uncor_cage_shared_df$cage_id <- as.factor(cfu_uncor_cage_shared_df$cage_id)
+set.seed(seed)
+cfu_uncor_cage_rf <- rfe(cfu_uncor_cage_shared_df[ , -2], cfu_uncor_cage_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_uncor_cage_features <- predictors(cfu_uncor_cage_rf)
+cfu_uncor_cage_model <- cfu_uncor_cage_rf$fit
+#rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
+#                       predicted = rf_n_features$predicted)
+#rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
+
+
+
+### - All OTUs + cage
+cfu_all_cage_shared_df <- colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id, -human_source) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_all_cage_shared_df$cage_id <- as.factor(cfu_all_cage_shared_df$cage_id)
+set.seed(seed)
+cfu_all_cage_rf <- rfe(cfu_all_cage_shared_df[ , -2], cfu_all_cage_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_all_cage_features <- predictors(cfu_all_cage_rf)
+cfu_all_cage_model <- cfu_all_cage_rf$fit
+
+
+### - Uncorrelated OTUs + source
+cfu_uncor_src_shared_df <- colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(-mouse_id, -cage_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_uncor_src_shared_df$cage_id <- as.factor(cfu_uncor_src_shared_df$cage_id)
+set.seed(seed)
+cfu_uncor_src_cage_rf <- rfe(cfu_uncor_src_shared_df[ , -2], cfu_uncor_src_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_uncor_src_cage_features <- predictors(cfu_uncor_src_cage_rf)
+cfu_uncor_src_cage_model <- cfu_uncor_src_cage_rf$fit
+#rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
+#                       predicted = rf_n_features$predicted)
+#rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
+
+
+
+### - All OTUs + source
+cfu_all_src_cage_shared_df <- colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id, -cage_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_all_src_cage_shared_df$cage_id <- as.factor(cfu_all_src_cage_shared_df$cage_id)
+set.seed(seed)
+cfu_all_src_cage_rf <- rfe(cfu_all_src_cage_shared_df[ , -2], cfu_all_src_cage_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_all_src_cage_features <- predictors(cfu_all_src_cage_rf)
+cfu_all_src_cage_model <- cfu_all_src_cage_rf$fit
+
+### - Uncorrelated OTUs + source/cage
+cfu_uncor_cg_src_shared_df <- colonized_cfu %>% 
+    right_join(community_d0.df) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_uncor_cg_src_shared_df$cage_id <- as.factor(cfu_uncor_cg_src_shared_df$cage_id)
+set.seed(seed)
+cfu_uncor_cg_src_cage_rf <- rfe(cfu_uncor_cg_src_shared_df[ , -3], cfu_uncor_cg_src_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_uncor_cg_src_cage_features <- predictors(cfu_uncor_cg_src_cage_rf)
+cfu_uncor_cg_src_cage_model <- cfu_uncor_cg_src_cage_rf$fit
+#rf_prediction <- data.frame(observed = cfu_uncor_shared_df$log_cfu_med, 
+#                       predicted = rf_n_features$predicted)
+#rf_prediction <- merge(rf_prediction, colonized_cfu, by.x = 'observed', by.y = 'log_cfu_med')
+
+### - All OTUs + source/cage
+cfu_all_cg_src_cage_shared_df <- colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_all_cg_src_cage_shared_df$cage_id <- as.factor(cfu_all_cg_src_cage_shared_df$cage_id)
+set.seed(seed)
+cfu_all_cg_src_cage_rf <- rfe(cfu_all_cg_src_cage_shared_df[ , -3], cfu_all_cg_src_cage_shared_df$log_cfu_med,
+                 sizes = subsets,
+                 rfeControl = rfe_ctrl)
+cfu_all_cg_src_cage_features <- predictors(cfu_all_cg_src_cage_rf)
+cfu_all_cg_src_cage_model <- cfu_all_cg_src_cage_rf$fit
+
+```
+
+##### All OTUs  
+Model:  
+`r cfu_all_model`  
+Features:  
+`r cfu_all_features`
+
+####  All OTUs + Cage
+Model:  
+`r cfu_all_cage_model`  
+Features:  
+`r cfu_all_cage_features`
+
+####  Uncorrelated OTUs
+Model:  
+`r cfu_uncor_model`  
+Features:  
+`r cfu_uncor_features`  
+
+####  Uncorrelated OTUs + Cage
+Model:  
+`r cfu_uncor_cage_model`  
+Features:  
+`r cfu_uncor_cage_features`
+
+
+####  All OTUs + Source
+Model:  
+`r cfu_all_src_model`  
+Features:  
+`r cfu_all_src_features`
+
+####  Uncorrelated OTUs + Source
+Model:  
+`r cfu_uncor_src_model`  
+Features:  
+`r cfu_uncor_src_features`
+
+####  All OTUs + Source/Cage
+Model:  
+`r cfu_all_cg_src_model`  
+Features:  
+`r cfu_all_cg_src_features`
+
+####  Uncorrelated OTUs + Source/Cage
+Model:  
+`r cfu_uncor_cg_src_model`  
+Features:  
+`r cfu_uncor_cg_src_features`
