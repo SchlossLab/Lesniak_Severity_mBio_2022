@@ -180,7 +180,7 @@ colors <- c("dodgerblue2","#E31A1C", # red
 #use this plot
 pdf("fig1B.pdf", width = 13, height = 5)
 
-ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = V2.x)) + geom_point(aes(fill=Donor), size = 3) +
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = Outcome)) + geom_point(aes(fill=Donor), size = 3) +
    theme_bw() + ggtitle("Similarity of day 0 communities") + scale_shape_discrete(name = "Outcome") + labs(x='NDMS Axis 1', y = 'NDMS axis 2') + scale_color_manual(values = colors)
 
 

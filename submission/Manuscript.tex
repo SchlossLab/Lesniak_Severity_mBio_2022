@@ -130,31 +130,32 @@ microbial community members that modulate \emph{C. difficile}
 colonization and expansion. To study human-associated microbes in the
 context of CDI, we inoculated germ-free C57BL/6 mice with one of 16
 human fecal samples from diarrheal or healthy donors and challenged with
-C. difficile 14 days later. Five unique donor-mice combinations resulted
-in severe CDI while the remaining 11 only experienced mild disease. Both
-healthy and diarrheal donors were susceptible to colonization and severe
-symptoms of CDI. To determine if specific microbes were associated with
-disease severity outcomes, we built a classification Random Forest
-machine learning model based on relative abundance data of the
-communities prior to infection. The model identified a number of
-bacterial populations associated with the development of severe CDI,
-including \emph{Bacilliales, Ruminococcaceae, Ruminococcus,
-Staphylococcus, Streptococcus and Bacteriodetes}. Additionally, a
-regression model accurately predicted colonization levels of \emph{C.
-difficile} at one to ten days post-infection. This model explained 99\%
-of the variance in the number of CFU isolated from mouse stool. Members
-of \emph{Lachnospiraceae, Parabacteroides, Bacteroidales, Bacteroidetes,
-Porphyromonadaceae} and unclassified \emph{Bacteria} families were
-predictive of future \emph{C. difficile} colonization levels. Finally,
-challenging these mice with different strains of \emph{C. difficile}
-revealed that susceptible human-associated microbial communities were
-prone to severe disease independent of strain type. Taken together these
-results suggest that human-associated microbial communities can be
-recapitulated in germ-free mice and used to characterize dynamics of
-CDI. Because both healthy and diarrheal patients were susceptible to
-severe CDI, machine-learning models are useful to identify bacterial
-populations that allow colonization and contribute to the development of
-\emph{C. difficile} associated disease in humans.
+\emph{C. difficile} 14 days later. Five unique donor-mice combinations
+resulted in severe CDI while the remaining 11 only experienced mild
+disease. Both healthy and diarrheal donors were susceptible to
+colonization and severe symptoms of CDI. To determine if specific
+microbes were associated with disease severity outcomes, we built a
+classification Random Forest machine learning model based on relative
+abundance data of the communities prior to infection. The model
+identified a number of bacterial populations associated with the
+development of severe CDI, including \emph{Bacilliales, Ruminococcaceae,
+Ruminococcus, Staphylococcus, Streptococcus and Bacteriodetes}.
+Additionally, a regression model accurately predicted colonization
+levels of \emph{C. difficile} at one to ten days post-infection. This
+model explained 99\% of the variance in the number of CFU isolated from
+mouse stool. Members of \emph{Lachnospiraceae, Parabacteroides,
+Bacteroidales, Bacteroidetes, Porphyromonadaceae} and unclassified
+\emph{Bacteria} families were predictive of future \emph{C. difficile}
+colonization levels. Finally, challenging these mice with different
+strains of \emph{C. difficile} revealed that susceptible
+human-associated microbial communities were prone to severe disease
+independent of strain type. Taken together these results suggest that
+human-associated microbial communities can be recapitulated in germ-free
+mice and used to characterize dynamics of CDI. Because both healthy and
+diarrheal patients were susceptible to severe CDI, machine-learning
+models are useful to identify bacterial populations that allow
+colonization and contribute to the development of \emph{C. difficile}
+associated disease in humans.
 
 \newpage
 
@@ -166,19 +167,19 @@ persist on abiotic surfaces and are not readily killed by ethanol-based
 hand-sanitizers, putting hospital patients particularly at risk. Indeed,
 \textasciitilde{}12\% of hospital acquired infections in the United
 States are due to \emph{C. difficile} and result in up to 15,000 deaths
-annually (2). Disruption of the native microbial community is the most
-common risk factor for development of \emph{C. difficile} infection
-(CDI) (1). Antibiotic use and inflammatory bowel diseases are associated
-with loss of colonization resistance to \emph{C. difficile} through the
-loss of potentially protective bacterial families such as
+annually {[}1{]}. Disruption of the native microbial community is the
+most common risk factor for development of \emph{C. difficile} infection
+(CDI) {[}2{]}. Antibiotic use and inflammatory bowel diseases are
+associated with loss of colonization resistance to \emph{C. difficile}
+through the loss of potentially protective bacterial families such as
 \emph{Barnesiella} and \emph{Lachnospiraceae} in both mouse models and
-human association experiments (cite alyx 2014 and vincent 2013). The
-composition of the community is clearly important for the acquisition,
-resistance and treatment of \emph{C. difficile} infection, as giving
-patients a healthy fecal microbiome transplant is the most effective
-treatment for this disease (cite Anna 2014). The precise mechanisms of
-colonization resistance and restoration of a healthy community are yet
-to be discovered.
+human association experiments {[}3,4{]}. The composition of the
+community is clearly important for the acquisition, resistance and
+treatment of \emph{C. difficile} infection, as giving patients a healthy
+fecal microbiome transplant is the most effective treatment for this
+disease (cite Anna 2014). The precise mechanisms of colonization
+resistance and restoration of a healthy community are yet to be
+discovered.
 
 Murine models to study CDI typically rely on treating
 conventionally-raised mice with antibiotics either in drinking water or
@@ -294,7 +295,7 @@ used in previous studies. Relative abundance of OTUs with greater than
 the model explained X\% of the variance in colonization levels of
 \emph{C. difficile} (Fig 3A). By refining the model to include only the
 top X predictive OTUs, the model explained X\% of the variance. Partial
-dependency plots of the top 6 OTUs predictive of \emph{C. difficile}
+dependency plots of the top X OTUs predictive of \emph{C. difficile}
 colonization reveal that colonization is positively associated with
 \emph{Bacteriodetes}, \emph{Parabacteriodes} and
 \emph{Porphyromonadaceae} (really?) (Fig 3B). Colonization was
@@ -335,17 +336,17 @@ difficile} strains are known to vary in disease phenotypes based both on
 pathogenicity factors of the strain and host microbiome composition
 (cite someone). To test the susceptibility of human-derived microbiomes
 to \emph{C. difficile} infection, two donor-mouse microbiomes that were
-previously shown to be resistant to \emph{C. difficile} strain 431
-induced weight loss (Fig 2B) (DA00396, DA00430) and one that was
-suscpetible to severe disease (DA00578) were independently challenged
-with one of three unique \emph{C. difficile} strains (table or reference
-for toxin prod, etc). As done previously, \emph{C. difficile} stool CFU
-was enumerated daily and mouse weight-loss tracked. Infection of mice
-with resistant communities with virulent strain 458 or the weaker strain
-299 resulted in colonization to levels near that of 431 (Fig 5A) and
-these mice did not experience severe weight loss or show clinical signs
-of disease (Fig 5B). In contrast, infection of mice harboring
-microbiomes susceptible to severe disease (DA00578, Fig 1B) with strain
+previously shown to be resistant to \emph{C. difficile} strain 430
+induced weight loss (Fig 2B) (DA00396, DA00430-wait isnt this a control)
+and one that was susceptible to severe disease (DA00578) were
+independently challenged with one of three unique \emph{C. difficile}
+strains (\emph{table or reference for toxin prod}, etc). As done
+previously, \emph{C. difficile} stool CFU was enumerated daily and mouse
+weight-loss tracked. Infection of resistant mice with virulent strain
+458 or the weaker strain 299 resulted in colonization to levels near
+that of 431 (Fig 5A). Accordingly, these mice did not experience severe
+weight loss or show clinical signs of disease (Fig 5B). In contrast,
+infection of susceptible mice (DA00578, Fig 1B) with pathogenic strain
 395 resulted in colonization and severe weight loss by two days
 post-infection (Fig 5A, 5B). Strain 395 is similarly virulent as strain
 431, and shows a similar infection phenotype in these mice. These
@@ -358,40 +359,40 @@ Study of human-associated microbiomes and their interactions with
 \emph{C. difficile} has been limited by the lack of an appropriate model
 and available samples. Here we colonized 16 groups of mice with human
 donor stool from patients with different clinical profiles or healthy
-volunteers. This created a diverse set of human-associated microbiomes
-in the mice that allowed for testing \emph{C. difficile} infection
+volunteers. This created a diverse set of human-associated mouse
+microbiomes that allowed for testing \emph{C. difficile} infection
 dynamics and community interactions. Our results showed that both
 healthy and diarrheal-associated human communities were susceptible to
-severe disease. Additionally, our results confirmed our and others
-previous studies that proved that resistance to \emph{C. difficile}
-disease is dependent on the entire microbial community and not just one
-or two species (cite alyx). Further, we were able to learn
-classification models that identified specific OTUs within susceptible
-communities that predispose mice to infection. By subsequently infecting
-susceptible or resistant communities with varying strains of \emph{C.
-difficile} we confirmed that the initial state of the human-associated
-microbiome is more predictive of disease severity than the strain used.
+severe disease. Additionally, our results confirmed previous findings
+that resistance to \emph{C. difficile} disease is dependent on the
+entire microbial community and not just one or two taxa (cite alyx).
+Further, we were able to learn classification models that identified
+specific OTUs within susceptible communities that predispose mice to
+infection. By subsequently infecting susceptible or resistant
+communities with varying strains of \emph{C. difficile} we confirmed
+that the initial state of the human-associated microbiome is more
+predictive of disease severity than the strain used.
 
-Here we were able to colonize germ-free mice with a variety of human
-stool communities from diarrheal or healthy people. After allowing these
-communities to colonize the mice for 2 weeks, they were challenged with
-\emph{C. difficile}. It is important to note that the mouse gut
-environment is different from that of the human, and as such exerts a
-selective pressure on the human stool microbial community that
-stabilizes over the 2 weeks. Thus these mice cannot be considered
-``humanized'' but rather containing human-associated microbes.
-Interestingly, clinical status was not associated with proclivity to
-severe \emph{C. difficile} infection as some healthy donor mice were
-susceptible. A surprising finding was that none of the human-associated
-mouse communities were completely resistant to colonization by \emph{C.
-difficile}. This is in contrast to numerous reports of mouse microbiome
-studies (cite) and the knowledge that in general healthy humans without
-gut perturbations are resistant to \emph{C. difficile} infection (cite).
-On the other hand, it is known that humans, especially health care
-employees, can be asymptomatic carriers of \emph{C. difficile}
-(Furyura-Kanamari). This may explain the fact that the majority of our
-groups of mice were colonized by \emph{C. difficile} but did not display
-outward signs of illness or infection-associated weight loss (Fig 2).
+Here we colonized germ-free mice with a variety of human stool
+communities and allowed these communities to colonize the mice for 2
+weeks, prior to \emph{C. difficile} challenge. It is important to note
+that the mouse gut environment is different from that of the human, and
+as such exerts a selective pressure on the human stool microbial
+community that stabilizes over the 2 weeks. Thus these mice cannot be
+considered ``humanized'' but rather colonized by human-associated
+microbes. Interestingly, clinical status was not associated with
+proclivity to severe \emph{C. difficile} infection as some healthy donor
+mice were susceptible. A surprising finding was that none of the
+human-associated mouse communities were completely resistant to
+colonization by \emph{C. difficile}. This is in contrast to numerous
+reports of mouse microbiome studies (cite) and the knowledge that in
+general healthy humans without gut perturbations are resistant to
+\emph{C. difficile} infection (cite). On the other hand, it is known
+that humans, especially health care employees, can be asymptomatic
+carriers of \emph{C. difficile} (Furyura-Kanamari). This may explain the
+fact that the majority of our groups of mice were colonized by \emph{C.
+difficile} but did not display outward signs of illness or
+infection-associated weight loss (Fig 2).
 
 • Discuss prediction methods and outcomes - Nick - we have bugs that
 predict severity, but do we have bugs that predict mild/asymptomatic?
@@ -403,27 +404,26 @@ different \emph{C. difficile} strains have allowed for testing community
 versus pathogen factors of infection. Our results are consistent with
 previous reports that the composition of the gut microbiome determines
 if an individual is successfully infected or not (cite Alyx and others).
-\emph{C. difficile} strains are known to vary in pathogenecity,
+\emph{C. difficile} strains are known to vary in pathogenicity,
 primarily via the amount of toxin that is produced during infection
-(cite). In these pilot experiments, we challenged a susceptible
-community with another pathogenic strain of \emph{C. difficile} to
-confirm that the susceptibility lied in the community and not in the
-specific challenge strain. In contrast, we exposed a
-resistant/asymptomatic community to a relatively weak strain of \emph{C.
-difficile} and found that the community could be colonized by this one
-as well-- but not cause disease. This suggests that this colony is prone
-to colonization by any \emph{C. difficile} strain. Further experiments
-will test if infecting susceptible communities with weak strains allows
-the mice to survive. It has been recently reported that carriage of a
-non-toxigenic strain of \emph{C. difficile} can prevent additional
-colonization by a pathogenic strain, suggesting some role of
-niche-filling or immunity this provides (cite cite). It would be
-interesting to see if we could make a susceptible community resistant to
-infection and disease by a pathogenic \emph{C. difficle} strain in our
-human-associated microbiome mice. Further work with human-associated
-communities in mice and mathematical modeling will allow for uncovering
-of complex human-associated disease processes and dynamics as they
-relate to human disease.
+(cite). To confirm that disease risk is dependent on the microbiome, we
+challenged susceptibile mice with an additional pathogenic strain of
+\emph{C. difficile} and found that the mice indeed fell ill. In
+contrast, we exposed an asymptomatic community to a relatively weak
+strain of \emph{C. difficile} and found that the community could be
+colonized by this one as well-- but not cause disease. This suggests
+that this particular colony is prone to colonization by any \emph{C.
+difficile} strain. Further experiments will test if infecting
+susceptible communities with weak strains allows the mice to survive. It
+has been recently reported that carriage of a non-toxigenic strain of
+\emph{C. difficile} can prevent additional colonization by a pathogenic
+strain, suggesting a role of niche-filling or immunity this
+pre-colonization provides (cite cite). One interesting experiment would
+be to recapitulate this finding in human-associated mouse microbiomes by
+making a susceptible community resistant to infection. Further work with
+human-associated communities in mice and mathematical modeling will
+allow for uncovering of complex human-associated disease processes and
+dynamics as they relate to human \emph{C. difficile} infection.
 
 \subsubsection{Materials and Methods}\label{materials-and-methods}
 
@@ -455,11 +455,11 @@ difficile} strains used were acquired from spore stocks of (WHERE) and
 comprised of strains 431, 395, 299 and 468 (cite?). After gavage, the
 remaining inoculum was diluted and plated to confirm infection dose.
 Bacteria were cultured anaerobically on TCCFA plates and incubated at
-37C. During infection, two fresh stool pellets were collected from each
-mouse daily. One pellet was resuspended in anaerobic phosphate-buffered
-saline and diluted and plated on TCCFA plates to enumerate \emph{C.
-difficile} CFU. The other pellet was frozen at -80C until the end of the
-experiment.
+37C (cite plate recipe). During infection, two fresh stool pellets were
+collected from each mouse daily. One pellet was resuspended in anaerobic
+phosphate-buffered saline and diluted and plated on TCCFA plates to
+enumerate \emph{C. difficile} CFU. The other pellet was frozen at -80C
+until the end of the experiment.
 
 \textbf{DNA isolation and sequencing} Bacterial DNA was isolated from
 banked donor stool and each mouse stool pellet using the MO-BIO
@@ -473,8 +473,8 @@ data(SRA) and code (Github) - Nick
 \subsection{Acknowledgments}\label{acknowledgments}
 
 We would like to thank members of the Schloss lab and Jhansi Leslie for
-analysis advice and the Microbial Systems Laboratory at the University
-of Michigan for sequencing assistance.
+analysis advice. We would also like to thank the Microbial Systems
+Laboratory at the University of Michigan for sequencing assistance.
 
 \newpage
 
@@ -540,6 +540,31 @@ of cage)}
 
 \newpage
 
-\subsection{References}\label{references}
+\subsection*{References}\label{references}
+\addcontentsline{toc}{subsection}{References}
+
+1. Lessa FC, Mu Y, Bamberg WM, Beldavs ZG, Dumyati GK, Dunn JR, et al.
+Burden ofClostridium difficileInfection in the united states. New
+England Journal of Medicine. New England Journal of Medicine (NEJM/MMS);
+2015;372: 825--834.
+doi:\href{http://dx.doi.org/10.1056/nejmoa1408913}{10.1056/nejmoa1408913}
+
+2. Britton RA, Young VB. Interaction between the intestinal microbiota
+and host in clostridium difficile colonization resistance. Trends in
+Microbiology. Elsevier BV; 2012;20: 313--319.
+doi:\href{http://dx.doi.org/10.1016/j.tim.2012.04.001}{10.1016/j.tim.2012.04.001}
+
+3. Schubert AM, Rogers MAM, Ring C, Mogle J, Petrosino JP, Young VB, et
+al. Microbiome data distinguish patients with clostridium difficile
+infection and non-c. difficile-associated diarrhea from healthy
+controls. mBio. American Society for Microbiology; 2014;5:
+e01021--14--e01021--14.
+doi:\href{http://dx.doi.org/10.1128/mbio.01021-14}{10.1128/mbio.01021-14}
+
+4. Vincent C, Stephens DA, Loo VG, Edens TJ, Behr MA, Dewar K, et al.
+Reductions in intestinal clostridiales precede the development of
+nosocomial clostridium difficile infection. Microbiome. Springer Nature;
+2013;1: 18.
+doi:\href{http://dx.doi.org/10.1186/2049-2618-1-18}{10.1186/2049-2618-1-18}
 
 \end{document}
