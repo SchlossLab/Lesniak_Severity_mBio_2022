@@ -226,6 +226,9 @@ cfu_all_cg_src_rf <- rfe(cfu_all_cg_src_shared_df[ , -3], cfu_all_cg_src_shared_
 cfu_all_cg_src_features <- predictors(cfu_all_cg_src_rf)
 cfu_all_cg_src_model <- cfu_all_cg_src_rf$fit
 
+
+#rownames(rel_abund_cor)[rel_abund_cor[,'Otu000160'] > cor_cutoff]
+#rel_abund_cor[,'Otu000160'][rel_abund_cor[,'Otu000160'] > cor_cutoff]
 ```
 
 ##### All OTUs  
