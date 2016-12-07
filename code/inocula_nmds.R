@@ -107,12 +107,19 @@ legend <- c("severe", "asymptomatic")
 legend(x="topright", legend, col = c("red", "black"), pch=16)
 #amova in mothur output for asymptomatic vs severe DONORS: p-value: 0.508
 
-#nmds inocula plot with clinical metadata, use this one 
+#nmds inocula plot with clinical metadata, use this one, except need just 2D nmds file***
+
+diarrhea <- inocula_meta_nmds[grep('Diarrhea')]
+plot(inocula_meta_nmds$axis1, inocula_meta_nmds$axis2)
 
 pdf("fig1B_actual.pdf", width = 8, height = 5)
 
 ggplot(inocula_meta_nmds, aes(axis1, axis2, group = Disease_status, color = Disease_status)) + geom_point(size = 3) + 
-  theme_bw() + xlab("NMDS Axis 1") + ylab("NMDS Axis 2") + theme(legend.justification = c(1, 0), legend.position = c(1, 0))
+  theme_bw() + xlab("NMDS Axis 1") + ylab("NMDS Axis 2") + theme(legend.justification = c(1, 1), legend.position = c(1, 1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black", linetype='solid')) +
+  theme(legend.background = element_rect(color='black', size=.5, linetype="solid")) + theme(legend.key = element_blank()) +
+  scale_fill_discrete(name="Clinical status", breaks=c("C._difficile", "Diarrhea", "No_diarrhea"), labels=c("C. difficile", "Diarrhea", "Healthy"))
 
 dev.off()
 
@@ -173,7 +180,7 @@ colors <- c("dodgerblue2","#E31A1C", # red
 #use this plot
 pdf("fig1B.pdf", width = 13, height = 5)
 
-ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = V2.x)) + geom_point(aes(fill=Donor), size = 3) +
+ggplot(day0_donor_nmds, aes(axis1, axis2, group = Donor, color = Donor, shape = Outcome)) + geom_point(aes(fill=Donor), size = 3) +
    theme_bw() + ggtitle("Similarity of day 0 communities") + scale_shape_discrete(name = "Outcome") + labs(x='NDMS Axis 1', y = 'NDMS axis 2') + scale_color_manual(values = colors)
 
 
