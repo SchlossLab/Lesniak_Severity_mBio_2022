@@ -117,8 +117,28 @@ feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med',
 ```
 
 #### Predictive OTUs  
-##### OTUs predictive of _Colonization level_:  
-`r names(top_features)`  
+##### OTUs predictive of _Colonization level_ (Top 10%)  
+
+```{r colonization otu importance, fig.width=6, fig.height=6}
+top_otus <- get_tax(row_list = names(top_features))$tax_label
+
+data.frame(OTU = factor(top_otus, 
+                        levels = top_otus[order(top_features)]), 
+           Importance = top_features/max(top_features)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features)-12),
+                                               rep('red', 12)), 
+                                     hjust = 0))
+```
+
+
 
 ```{r predict inocula, fig.width=10,fig.height=10}
 source_all_shared_df <- colonized_cfu %>% 
@@ -155,8 +175,27 @@ src_feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med',
                          decreasing = T)
 ```
 
-##### OTUs predictive of _Inocula Source_:  
-`r names(top_features_src)`  
+##### OTUs predictive of _Inocula Source_ (Top 10%)  
+
+```{r source otu importance, fig.width=6, fig.height=6}
+top_otus_src <- get_tax(row_list = names(top_features_src))$tax_label
+
+data.frame(OTU = factor(top_otus_src, 
+                        levels = top_otus_src[order(top_features_src)]), 
+           Importance = top_features_src/max(top_features_src)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features)-12),
+                                               rep('red', 12)), 
+                                     hjust = 0))
+```
+
 
 There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
 `r names(top_features)[names(top_features) %in% names(top_features_src)]`
@@ -169,14 +208,17 @@ Colonization Level
 
 ```{r plot colonization otu correlations, fig.width=10, fig.height=18}
 subset(cfu_all_shared_df, select = 
-       c("log_cfu_med", names(feat_cor_cfu)[feat_cor_cfu>0.5 & feat_cor_cfu < 1])) %>% 
+       c("log_cfu_med", names(head(top_features,12)))) %>% 
   gather(OTU, abundance, contains('Otu')) %>% 
   ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
-    facet_wrap(~OTU, ncol = 4, scales = 'free_x')
+    facet_wrap(~OTU, ncol = 4, scales = 'free_x') + scale_x_log10()
 ```
 
 Inocula Source  
 `r names(src_feat_cor_cfu)[src_feat_cor_cfu>0.5 & src_feat_cor_cfu < 1]`  
+
+
+
 
 ```{r plot source otu correlations, fig.width=7.5, fig.height=3}
 subset(cfu_all_shared_df, select = 
