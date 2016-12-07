@@ -1,0 +1,158 @@
+---
+title: "Model_CFU"
+author: "Nicholas Lesniak"
+date: "December 5, 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7, fig.height=8)
+```
+
+```{r setup environment}
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+```{r setup data}
+# read in files
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
+meta_data   <- 'data/process/human_CdGF_metadata.txt'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- 'data/process/gf_new.an.taxonomy'
+tax_function <- 'code/tax_level.R'
+
+# read in files
+meta_data   <- read.table(meta_data, sep = '\t', header = T, stringsAsFactors = F)
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
+
+# set parameters
+seed <- 1
+#n_trees <- 1001
+#n_otus <- 12
+#iters <- 100
+#cor_cutoff <- 0.75
+otu_presence_cutoff <- 0.1
+
+# remove samples not used or with other cdiff strains
+meta_data <- 
+  meta_data %>% 
+  filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
+  select(mouse_id, sample_id, cage_id, human_source, day, log_cfu) %>% 
+  filter(!is.na(log_cfu))
+shared_list_days <- meta_data %>% 
+  filter(day == 0) %>% 
+  select(-day, -log_cfu, -cage_id, -human_source)
+shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+otu_presence <- ifelse(shared_file > 0, T, F) 
+rel_abund_shared <- shared_file[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(shared_file))]
+rel_abund_shared_01 <- 100*rel_abund_shared/mean_otu_counts
+
+n_features <- round(0.1*ncol(rel_abund_shared))
+
+## remove correlative otus
+#rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
+#rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
+#cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+#rel_abund_01_filtr <- rel_abund_shared_01[,-cor_otus]
+#community_d0.df <- merge(shared_list_days, rel_abund_01_filtr, 
+#                         by.x = 'sample_id', by.y = 'row.names') %>% 
+#                    select(-sample_id)
+
+colonized_cfu <- meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  summarise(log_cfu_med = median(log_cfu)) %>% 
+  ungroup()
+
+community_all_d0 <- merge(shared_list_days, rel_abund_shared_01, 
+                          by.x = 'sample_id', by.y = 'row.names') %>% 
+                     select(-sample_id)
+```
+
+### Predicting Colonization Level (Log10 CFU) with Day 0 Community
+
+```{r predict median CFU, fig.width=10,fig.height=10}
+cfu_all_shared_df <- colonized_cfu %>% 
+    select(mouse_id, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+
+#output <- data.frame(ntree = NA, ntry = NA, rsq = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(cfu_all_rf$rsq, 1)))
+#  }
+#}
+#
+#ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
+#ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
+
+set.seed(seed)
+cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features <- head(sort(importance(cfu_all_rf)[,1],decreasing = T), n_features)
+feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                                    names(top_features))],
+                             method = 'spearman')[,'log_cfu_med']),
+                     decreasing = T)
+```
+
+OTUs predictive of _Colonization level_:  
+`r names(top_features)`  
+
+```{r predict inocula, fig.width=10,fig.height=10}
+source_all_shared_df <- colonized_cfu %>% 
+    select(mouse_id, human_source) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id)
+source_all_shared_df$human_source <- as.factor(source_all_shared_df$human_source)
+
+#output <- data.frame(ntree = NA, ntry = NA, err = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$human_source,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(source_all_rf$err.rate[,'OOB'], 1)))
+#  }
+#}
+#
+#ggplot(output, aes(x=ntry, y=err, group = ntree, color = as.factor(ntree))) + geom_line()
+#ggplot(output[output$ntry == 15,], aes(x=ntree, y=err)) + geom_line()
+
+set.seed(seed)
+source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$human_source,
+                           ntree = 501,
+                           mtry = 15,
+                           importance = T)
+top_features_src <- head(sort(importance(source_all_rf)[,1],decreasing = T), n_features)
+#any(top_features %in% top_features_src)
+src_feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                                        names(top_features_src))], 
+                                 method = 'spearman')[,'log_cfu_med']), 
+                         decreasing = T)
+```
+
+OTUs predictive of _Inocula Source_:  
+`r names(top_features_src)`  
