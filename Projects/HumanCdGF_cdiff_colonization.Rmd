@@ -110,10 +110,9 @@ cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_m
                            mtry = 15,
                            importance = T)
 top_features <- head(sort(importance(cfu_all_rf)[,1],decreasing = T), n_features)
-feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med', 
-                                                    names(top_features))],
-                             method = 'spearman')[,'log_cfu_med']),
-                     decreasing = T)
+feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                           names(top_features))],
+                    method = 'spearman')[-1,'log_cfu_med']
 ```
 
 #### Predictive OTUs  
@@ -138,7 +137,34 @@ data.frame(OTU = factor(top_otus,
                                      hjust = 0))
 ```
 
+```{r plot colonization otu correlations, fig.width=10, fig.height=10}
+top_n_otus <- get_tax(row_list = names(head(top_features,12)))
+top_n_otus$cor_label <- paste0(top_n_otus$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus)),
+                           ';rho=', round(feat_cor_cfu[names(feat_cor_cfu) 
+                                                       %in% rownames(top_n_otus)], 
+                                          2), ')')
+top_n_otus$cor_label <- factor(top_n_otus$cor_label,
+                               levels = top_n_otus$cor_label[order(head(top_features,12),
+                                                                   decreasing = T)])
+top_n_otus$OTU <- rownames(top_n_otus)
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", rownames(top_n_otus))) %>% 
+  gather(OTU, abundance, contains('Otu')) %>%
+  left_join(top_n_otus) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') + 
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0, 0.01, 0.1, 1, 10, 100)) +
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(linetype = 1, size = .1, color = 'gray'),
+          panel.grid.minor.x = element_line(linetype = 1, size = .1, color = 'gray'))
+```
 
+***
 
 ```{r predict inocula, fig.width=10,fig.height=10}
 source_all_shared_df <- colonized_cfu %>% 
@@ -169,10 +195,9 @@ source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$
                            importance = T)
 top_features_src <- head(sort(importance(source_all_rf)[,1],decreasing = T), n_features)
 #any(names(top_features) %in% names(top_features_src))
-src_feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med', 
-                                                        names(top_features_src))], 
-                                 method = 'spearman')[,'log_cfu_med']), 
-                         decreasing = T)
+src_feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                               names(top_features_src))], 
+                        method = 'spearman')[-1,'log_cfu_med']
 ```
 
 ##### OTUs predictive of _Inocula Source_ (Top 10%)  
@@ -197,33 +222,36 @@ data.frame(OTU = factor(top_otus_src,
 ```
 
 
+```{r plot source otu correlations, fig.width=10, fig.height=10}
+top_n_otus_src <- get_tax(row_list = names(head(top_features_src,12)))
+top_n_otus_src$cor_label <- paste0(top_n_otus_src$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus_src)),
+                           ';rho=', round(src_feat_cor_cfu[names(src_feat_cor_cfu) 
+                                                       %in% rownames(top_n_otus_src)], 
+                                          2), ')')
+top_n_otus_src$OTU <- rownames(top_n_otus_src)
+top_n_otus_src$cor_label <- factor(top_n_otus_src$cor_label,
+                               levels = top_n_otus_src$cor_label[order(head(top_features_src,12),
+                                                                   decreasing = T)])
+
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", rownames(top_n_otus_src))) %>% 
+  gather(OTU, abundance, contains('Otu')) %>%
+  left_join(top_n_otus_src) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0, 0.01, 0.1, 1, 10, 100)) +
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(linetype = 1, size = .1, color = 'gray'),
+          panel.grid.minor.x = element_line(linetype = 1, size = .1, color = 'gray'))
+```
+
+***  
+
+
 There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
 `r names(top_features)[names(top_features) %in% names(top_features_src)]`
-
-#### Predictive OTUs that correlate with CFU  
-The following predictive OTUs correlate with CFU (Spearman's _rho_ > 0.5)  
-
-Colonization Level  
-`r names(feat_cor_cfu)[feat_cor_cfu>0.5 & feat_cor_cfu < 1]`  
-
-```{r plot colonization otu correlations, fig.width=10, fig.height=18}
-subset(cfu_all_shared_df, select = 
-       c("log_cfu_med", names(head(top_features,12)))) %>% 
-  gather(OTU, abundance, contains('Otu')) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
-    facet_wrap(~OTU, ncol = 4, scales = 'free_x') + scale_x_log10()
-```
-
-Inocula Source  
-`r names(src_feat_cor_cfu)[src_feat_cor_cfu>0.5 & src_feat_cor_cfu < 1]`  
-
-
-
-
-```{r plot source otu correlations, fig.width=7.5, fig.height=3}
-subset(cfu_all_shared_df, select = 
-       c("log_cfu_med", names(src_feat_cor_cfu)[src_feat_cor_cfu>0.5 & src_feat_cor_cfu < 1])) %>% 
-  gather(OTU, abundance, contains('Otu')) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
-    facet_wrap(~OTU, ncol = 3, scales = 'free_x')
-```
