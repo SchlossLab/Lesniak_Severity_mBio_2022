@@ -116,7 +116,8 @@ feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med',
                      decreasing = T)
 ```
 
-OTUs predictive of _Colonization level_:  
+#### Predictive OTUs  
+##### OTUs predictive of _Colonization level_:  
 `r names(top_features)`  
 
 ```{r predict inocula, fig.width=10,fig.height=10}
@@ -147,12 +148,40 @@ source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$
                            mtry = 15,
                            importance = T)
 top_features_src <- head(sort(importance(source_all_rf)[,1],decreasing = T), n_features)
-#any(top_features %in% top_features_src)
+#any(names(top_features) %in% names(top_features_src))
 src_feat_cor_cfu <- sort(abs(cor(cfu_all_shared_df[ , c('log_cfu_med', 
                                                         names(top_features_src))], 
                                  method = 'spearman')[,'log_cfu_med']), 
                          decreasing = T)
 ```
 
-OTUs predictive of _Inocula Source_:  
+##### OTUs predictive of _Inocula Source_:  
 `r names(top_features_src)`  
+
+There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features)[names(top_features) %in% names(top_features_src)]`
+
+#### Predictive OTUs that correlate with CFU  
+The following predictive OTUs correlate with CFU (Spearman's _rho_ > 0.5)  
+
+Colonization Level  
+`r names(feat_cor_cfu)[feat_cor_cfu>0.5 & feat_cor_cfu < 1]`  
+
+```{r plot colonization otu correlations, fig.width=10, fig.height=18}
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", names(feat_cor_cfu)[feat_cor_cfu>0.5 & feat_cor_cfu < 1])) %>% 
+  gather(OTU, abundance, contains('Otu')) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+    facet_wrap(~OTU, ncol = 4, scales = 'free_x')
+```
+
+Inocula Source  
+`r names(src_feat_cor_cfu)[src_feat_cor_cfu>0.5 & src_feat_cor_cfu < 1]`  
+
+```{r plot source otu correlations, fig.width=7.5, fig.height=3}
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", names(src_feat_cor_cfu)[src_feat_cor_cfu>0.5 & src_feat_cor_cfu < 1])) %>% 
+  gather(OTU, abundance, contains('Otu')) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+    facet_wrap(~OTU, ncol = 3, scales = 'free_x')
+```
