@@ -137,11 +137,11 @@ data.frame(OTU = factor(top_otus,
                                      hjust = 0))
 ```
 
-```{r plot colonization otu correlations, fig.width=10, fig.height=10}
+```{r plot colonization otu correlations, fig.width=10, fig.height=8}
 top_n_otus <- get_tax(row_list = names(head(top_features,12)))
 top_n_otus$cor_label <- paste0(top_n_otus$tax, '(OTU',
                            gsub('Otu0*', '', rownames(top_n_otus)),
-                           ';rho=', round(feat_cor_cfu[names(feat_cor_cfu) 
+                           ';rho= ', round(feat_cor_cfu[names(feat_cor_cfu) 
                                                        %in% rownames(top_n_otus)], 
                                           2), ')')
 top_n_otus$cor_label <- factor(top_n_otus$cor_label,
@@ -152,16 +152,20 @@ subset(cfu_all_shared_df, select =
        c("log_cfu_med", rownames(top_n_otus))) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
   left_join(top_n_otus) %>% 
+  mutate(abundance = abundance + 0.001) %>% 
   ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
-    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
-    ylim(5, 9) + scale_x_log10(breaks = c(0, 0.01, 0.1, 1, 10, 100)) +
+    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    geom_vline(xintercept = 0.0015, color = 'gray') + 
     theme(strip.background = element_rect(colour=NULL, fill='white'),
           panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
-          panel.grid.major.x = element_line(linetype = 1, size = .1, color = 'gray'),
-          panel.grid.minor.x = element_line(linetype = 1, size = .1, color = 'gray'))
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank())
 ```
 
 ***
@@ -222,11 +226,11 @@ data.frame(OTU = factor(top_otus_src,
 ```
 
 
-```{r plot source otu correlations, fig.width=10, fig.height=10}
+```{r plot source otu correlations, fig.width=10, fig.height=8}
 top_n_otus_src <- get_tax(row_list = names(head(top_features_src,12)))
 top_n_otus_src$cor_label <- paste0(top_n_otus_src$tax, '(OTU',
                            gsub('Otu0*', '', rownames(top_n_otus_src)),
-                           ';rho=', round(src_feat_cor_cfu[names(src_feat_cor_cfu) 
+                           ';rho= ', round(src_feat_cor_cfu[names(src_feat_cor_cfu) 
                                                        %in% rownames(top_n_otus_src)], 
                                           2), ')')
 top_n_otus_src$OTU <- rownames(top_n_otus_src)
@@ -237,17 +241,21 @@ top_n_otus_src$cor_label <- factor(top_n_otus_src$cor_label,
 subset(cfu_all_shared_df, select = 
        c("log_cfu_med", rownames(top_n_otus_src))) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
-  left_join(top_n_otus_src) %>% 
+  left_join(top_n_otus_src) %>%
+  mutate(abundance = abundance + 0.001) %>% 
   ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
-    ylim(5, 9) + scale_x_log10(breaks = c(0, 0.01, 0.1, 1, 10, 100)) +
+    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    geom_vline(xintercept = 0.0015, color = 'gray') + 
     theme(strip.background = element_rect(colour=NULL, fill='white'),
           panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
-          panel.grid.major.x = element_line(linetype = 1, size = .1, color = 'gray'),
-          panel.grid.minor.x = element_line(linetype = 1, size = .1, color = 'gray'))
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank())
 ```
 
 ***  
