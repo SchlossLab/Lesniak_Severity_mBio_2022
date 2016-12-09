@@ -37,7 +37,7 @@ source(tax_function)
 seed <- 1
 #n_trees <- 1001
 #n_otus <- 12
-#iters <- 100
+iters <- 100
 #cor_cutoff <- 0.75
 otu_presence_cutoff <- 0.1
 
@@ -402,3 +402,49 @@ subset(feature_df_src_numeric, select =
 ***
 
 #### OTUs predictive of CFU (One Mouse)
+
+```{r one mouse model}
+
+#One per cage
+one_mouse_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)))
+one_mouse_df$human_source <- factor(one_mouse_df$human_source)
+
+om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, contains('Otu'))))
+om_pred <- c()
+om_rsq <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
+                             importance = TRUE, keep.forest = T, ntree = n_trees)
+    om_pred <- rbind(om_pred,
+                     data.frame(select(test, mouse_id, cage_id, log_cfu_med),
+                          predicted=predict(rf_om, test)))
+    om_rsq <- rbind(om_rsq, c(paste(train$mouse_id, collapse = ' '), 
+                              tail(rf_om$rsq,1),
+                              1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names')
+    om_import_otus <- select(om_import_otus, -IncNodePurity)
+}
+om_rsq <- 1 - (sum((om_pred$log_cfu_med - om_pred$predicted)^2)/
+               sum((om_pred$log_cfu_med - mean(om_pred$log_cfu_med))^2))
+
+om_pred <- rename(om_pred, observed = log_cfu_med)
+
+om_import_otus <- data.frame(om_import_otus[ , -1], row.names = om_import_otus$otu)
+colnames(om_import_otus) <- seq(ncol(om_import_otus))
+om_otu_rank <- apply(om_import_otus, 2, function(x) rank(x, na.last = F))
+om_otu_rank <- om_otu_rank*as.numeric(om_rsq[,3])
+om_raw_rank <- sort(apply(om_otu_rank, 1, function(x) sum(x, na.rm = T)), decreasing = T)
+med_otu_importance_om <- data.frame(otu = names(om_raw_rank),
+                                 importance = om_raw_rank)
