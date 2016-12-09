@@ -148,7 +148,7 @@ data.frame(OTU = factor(top_otus,
   ggplot(aes(x = OTU, y = Importance)) + 
     geom_point() + coord_flip() + 
     labs(y = 'Importance (Relative MDA)', x = NULL) + 
-    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
@@ -173,13 +173,13 @@ subset(cfu_all_shared_df, select =
        c("log_cfu_med", rownames(top_n_otus))) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
   left_join(top_n_otus) %>% 
-  mutate(abundance = abundance + 0.001) %>% 
+  mutate(abundance = abundance + 0.01) %>% 
   ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
-    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
-                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
-    geom_vline(xintercept = 0.0015, color = 'gray') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
+    geom_vline(xintercept = 0.06, color = 'gray') + 
     theme(strip.background = element_rect(colour=NULL, fill='white'),
           panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.y = element_blank(),
@@ -239,7 +239,7 @@ data.frame(OTU = factor(top_otus_src,
   ggplot(aes(x = OTU, y = Importance)) + 
     geom_point() + coord_flip() + 
     labs(y = 'Importance (Relative MDA)', x = NULL) + 
-    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
@@ -266,13 +266,13 @@ subset(cfu_all_shared_df, select =
        c("log_cfu_med", rownames(top_n_otus_src))) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
   left_join(top_n_otus_src) %>%
-  mutate(abundance = abundance + 0.001) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+  mutate(abundance = abundance + 0.01) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + 
+    geom_vline(xintercept = 0.06, color = 'gray') + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
-    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
-                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
-    geom_vline(xintercept = 0.0015, color = 'gray') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
     theme(strip.background = element_rect(colour=NULL, fill='white'),
           panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.y = element_blank(),
@@ -357,7 +357,7 @@ data.frame(OTU = factor(top_otus_all_src,
   ggplot(aes(x = OTU, y = Importance)) + 
     geom_point() + coord_flip() + 
     labs(y = 'Importance (Relative MDA)', x = NULL) + 
-    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           axis.ticks = element_line(size = 2),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
@@ -383,13 +383,13 @@ subset(feature_df_src_numeric, select =
        c("log_cfu_med", rownames(top_n_otus_all_src))) %>% 
   gather(OTU, abundance, -log_cfu_med) %>%
   left_join(top_n_otus_all_src) %>% 
-  mutate(abundance = abundance + 0.001) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+  mutate(abundance = abundance + 0.01) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + 
+    geom_vline(xintercept = 0.06, color = 'gray') + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
-    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
-                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
-    geom_vline(xintercept = 0.0015, color = 'gray') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
     theme(strip.background = element_rect(colour=NULL, fill='white'),
           panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.y = element_blank(),
