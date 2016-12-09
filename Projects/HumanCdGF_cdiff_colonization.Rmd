@@ -117,6 +117,7 @@ feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
 
 #### Predictive OTUs  
 ##### OTUs predictive of _Colonization level_ (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
 
 ```{r prediction cfu plot, fig.width=6, fig.height=6}
 
@@ -225,6 +226,7 @@ src_feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
 ```
 
 ##### OTUs predictive of _Inocula Source_ (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
 
 ```{r source otu importance, fig.width=6, fig.height=6}
 confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
@@ -285,3 +287,118 @@ subset(cfu_all_shared_df, select =
 
 There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
 `r names(top_features)[names(top_features) %in% names(top_features_src)]`
+
+***
+
+##### OTUs predictive of _Colonization level_ with Source included (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+
+```{r predict median CFU with source, fig.width=10,fig.height=10}
+cfu_all_src_shared_df <- colonized_cfu %>% 
+    select(mouse_id, log_cfu_med, human_source) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_all_src_shared_df$human_source <- factor(cfu_all_src_shared_df$human_source)
+#output <- data.frame(ntree = NA, ntry = NA, rsq = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(cfu_all_rf$rsq, 1)))
+#  }
+#}
+#
+#ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
+#ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
+
+set.seed(seed)
+cfu_all_src_rf <- randomForest(cfu_all_src_shared_df[ , -1], cfu_all_src_shared_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features_src_cfu <- head(sort(importance(cfu_all_src_rf)[,1],decreasing = T), n_features)
+feature_df_src_numeric <- cfu_all_src_shared_df[ , c('log_cfu_med', names(top_features_src_cfu))]
+feature_df_src_numeric$human_source <- as.numeric(feature_df_src_numeric$human_source)
+feat_cor_cfu_src_all <- cor(feature_df_src_numeric, method = 'spearman')[-1,'log_cfu_med']
+```
+
+
+```{r prediction cfu plot with source, fig.width=6, fig.height=6}
+
+data.frame(Observed = cfu_all_src_shared_df$log_cfu_med, 
+           Predicted = cfu_all_src_rf$predicted) %>% 
+  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + 
+    annotate('text', label = paste0(round(tail(cfu_all_src_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = min(cfu_all_src_rf$predicted), y = max(cfu_all_src_shared_df$log_cfu_med)) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+```
+
+```{r colonization performance with source, fig.width=8, fig.height=6}
+top_otus_all_src <- get_tax(row_list = names(top_features_src_cfu)[-1])$tax_label
+top_otus_all_src <- c('Human Source', top_otus_all_src)
+```
+
+```{r colonization otu importance with source, fig.width=6, fig.height=6}
+data.frame(OTU = factor(top_otus_all_src, 
+                        levels = top_otus_all_src[order(top_features_src_cfu)]), 
+           Importance = top_features_src_cfu/max(top_features_src_cfu)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 2, fill = 'white', color = 'black'),
+          axis.ticks = element_line(size = 2),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-12),
+                                               rep('red', 12)), 
+                                     hjust = 0))
+```
+
+```{r plot colonization otu correlations with source, fig.width=10, fig.height=8}
+top_n_otus_all_src <- get_tax(row_list = names(head(top_features_src_cfu[-1],12)))
+top_n_otus_all_src$cor_label <- paste0(top_n_otus_all_src$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus_all_src)),
+                           ';rho= ', round(feat_cor_cfu_src_all[names(feat_cor_cfu_src_all) 
+                                                       %in% rownames(top_n_otus_all_src)], 
+                                          2), ')')
+top_n_otus_all_src$cor_label <- factor(top_n_otus_all_src$cor_label,
+                               levels = top_n_otus_all_src$cor_label[order(head(top_features,12),
+                                                                   decreasing = T)])
+top_n_otus_all_src$OTU <- rownames(top_n_otus_all_src)
+subset(feature_df_src_numeric, select = 
+       c("log_cfu_med", rownames(top_n_otus_all_src))) %>% 
+  gather(OTU, abundance, -log_cfu_med) %>%
+  left_join(top_n_otus_all_src) %>% 
+  mutate(abundance = abundance + 0.001) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    geom_vline(xintercept = 0.0015, color = 'gray') + 
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank())
+```
+
+***
+
+#### OTUs predictive of CFU (One Mouse)
