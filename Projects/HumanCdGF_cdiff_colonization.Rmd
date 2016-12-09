@@ -118,9 +118,29 @@ feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
 #### Predictive OTUs  
 ##### OTUs predictive of _Colonization level_ (Top 10%)  
 
-```{r colonization otu importance, fig.width=6, fig.height=6}
-top_otus <- get_tax(row_list = names(top_features))$tax_label
+```{r prediction cfu plot, fig.width=6, fig.height=6}
 
+data.frame(Observed = cfu_all_shared_df$log_cfu_med, 
+           Predicted = cfu_all_rf$predicted) %>% 
+  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + 
+    annotate('text', label = paste0(round(tail(cfu_all_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = min(cfu_all_rf$predicted), y = max(cfu_all_shared_df$log_cfu_med)) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+```
+
+```{r colonization performance, fig.width=8, fig.height=6}
+top_otus <- get_tax(row_list = names(top_features))$tax_label
+```
+
+```{r colonization otu importance, fig.width=6, fig.height=6}
 data.frame(OTU = factor(top_otus, 
                         levels = top_otus[order(top_features)]), 
            Importance = top_features/max(top_features)) %>% 
@@ -207,6 +227,8 @@ src_feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
 ##### OTUs predictive of _Inocula Source_ (Top 10%)  
 
 ```{r source otu importance, fig.width=6, fig.height=6}
+confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
+
 top_otus_src <- get_tax(row_list = names(top_features_src))$tax_label
 
 data.frame(OTU = factor(top_otus_src, 
