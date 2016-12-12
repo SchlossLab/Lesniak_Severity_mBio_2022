@@ -80,7 +80,7 @@ community_all_d0 <- merge(shared_list_days, rel_abund_shared_01,
                      select(-sample_id)
 ```
 
-### Predicting Colonization Level (Log10 CFU) with Day 0 Community
+### Predicting __Colonization Level__ (Log10 CFU) with Day 0 Community
 
 ```{r predict median CFU, fig.width=10,fig.height=10}
 cfu_all_shared_df <- colonized_cfu %>% 
@@ -115,8 +115,7 @@ feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
                     method = 'spearman')[-1,'log_cfu_med']
 ```
 
-#### Predictive OTUs  
-##### OTUs predictive of _Colonization level_ (Top 10%)  
+##### Modeling _Colonization level_ (Top 10%)  
 Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
 
 ```{r prediction cfu plot, fig.width=6, fig.height=6}
@@ -141,6 +140,10 @@ data.frame(Observed = cfu_all_shared_df$log_cfu_med,
 top_otus <- get_tax(row_list = names(top_features))$tax_label
 ```
 
+
+##### OTUs predictive of __Colonization level__ (Top 10%)  
+Red OTUs are top 12 which are plotted against CFU below
+
 ```{r colonization otu importance, fig.width=6, fig.height=6}
 data.frame(OTU = factor(top_otus, 
                         levels = top_otus[order(top_features)]), 
@@ -158,6 +161,9 @@ data.frame(OTU = factor(top_otus,
                                      hjust = 0))
 ```
 
+##### Correlation of OTU and CFU (top 12 OTUs predictive of __Colonization level__)  
+Points colored by human donor
+
 ```{r plot colonization otu correlations, fig.width=10, fig.height=8}
 top_n_otus <- get_tax(row_list = names(head(top_features,12)))
 top_n_otus$cor_label <- paste0(top_n_otus$tax, '(OTU',
@@ -171,10 +177,11 @@ top_n_otus$cor_label <- factor(top_n_otus$cor_label,
 top_n_otus$OTU <- rownames(top_n_otus)
 subset(cfu_all_shared_df, select = 
        c("log_cfu_med", rownames(top_n_otus))) %>% 
+  left_join(colonized_cfu[ , c('log_cfu_med', 'human_source')]) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
   left_join(top_n_otus) %>% 
   mutate(abundance = abundance + 0.01) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + geom_point() + 
+  ggplot(aes(x = abundance, y = log_cfu_med, color = human_source)) + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
     ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
@@ -186,10 +193,17 @@ subset(cfu_all_shared_df, select =
           panel.grid.minor.y = element_blank(),
           panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
                                element_blank(),    
-          panel.grid.minor.x = element_blank())
+          panel.grid.minor.x = element_blank(),
+          legend.position="none")
 ```
 
-***
+Are these OTUs identifying susceptiblility to _C. Difficile_ of only correlated to _C. difficile_ due to OTUs unique to the donor, i.e. is the OTU predicting the cage grouping?
+
+***  
+
+### Predicting __Human Donor__ with Day 0 Community  
+Is there overlap in OTUs predictive of CFU and Donor?
+
 
 ```{r predict inocula, fig.width=10,fig.height=10}
 source_all_shared_df <- colonized_cfu %>% 
@@ -225,12 +239,17 @@ src_feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med',
                         method = 'spearman')[-1,'log_cfu_med']
 ```
 
-##### OTUs predictive of _Inocula Source_ (Top 10%)  
-Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+##### Modeling of __Human Donor__ (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features  
+
+```{r source model, fig.width=6, fig.height=6}
+confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
+```
+
+##### OTUs predictive of __Human Donor__ (Top 10%)  
+Red OTUs are top 12 which are plotted against CFU below  
 
 ```{r source otu importance, fig.width=6, fig.height=6}
-confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
-
 top_otus_src <- get_tax(row_list = names(top_features_src))$tax_label
 
 data.frame(OTU = factor(top_otus_src, 
@@ -249,6 +268,8 @@ data.frame(OTU = factor(top_otus_src,
                                      hjust = 0))
 ```
 
+##### Correlation of OTU and CFU (top 12 OTUs predictive of __Human Donor__)  
+Points colored by human donor
 
 ```{r plot source otu correlations, fig.width=10, fig.height=8}
 top_n_otus_src <- get_tax(row_list = names(head(top_features_src,12)))
@@ -264,10 +285,11 @@ top_n_otus_src$cor_label <- factor(top_n_otus_src$cor_label,
 
 subset(cfu_all_shared_df, select = 
        c("log_cfu_med", rownames(top_n_otus_src))) %>% 
+  left_join(colonized_cfu[ , c('log_cfu_med', 'human_source')]) %>% 
   gather(OTU, abundance, contains('Otu')) %>%
   left_join(top_n_otus_src) %>%
   mutate(abundance = abundance + 0.01) %>% 
-  ggplot(aes(x = abundance, y = log_cfu_med)) + 
+  ggplot(aes(x = abundance, y = log_cfu_med, color = human_source)) + 
     geom_vline(xintercept = 0.06, color = 'gray') + geom_point() + 
     facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
     labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
@@ -279,18 +301,33 @@ subset(cfu_all_shared_df, select =
           panel.grid.minor.y = element_blank(),
           panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
                                element_blank(),    
-          panel.grid.minor.x = element_blank())
+          panel.grid.minor.x = element_blank(),
+          legend.position='none')
 ```
-
-***  
 
 
 There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
-`r names(top_features)[names(top_features) %in% names(top_features_src)]`
+`r names(top_features)[names(top_features) %in% names(top_features_src)]`  
+It is possible these OTUs are selected in predicting __Colonization__ because they are helping to seperate the groups of mice by cage. It is interesting though that the OTU 4 and OTU 14 were previously identified as being correlated (rho = 0.7586887) but only OTU 14 is predictive of Donor. Otu000004 is in the top `r print(paste0(round(which(names(sort(importance(source_all_rf)[,1],decreasing = T)) == 'Otu000004')/length(importance(source_all_rf)[,1]), 2)*100, '%'))` of OTUs predictive of Human Donor with a relative MDA of `r importance(source_all_rf)['Otu000004',1]/max(importance(source_all_rf)[,1])`.  
+```{r plot otu correlations_entero, fig.width=3,fig.height=3}
+ggplot(cfu_all_shared_df, aes(x=Otu000004, y=Otu000014))+geom_point(alpha = 0.5)
+```
+
+As for OTU 283 and 5, those are correlated (rho = 0.8235480) and they are also correlated to Otu000171 (0.7891608), Otu000196 (0.8190665), Otu000202 (0.8147822), Otu000255 (0.8230815), Otu000262 (0.8141814), Otu000283 (0.8268792), Otu000394 (0.8321597), Otu000403 (0.8258554), which are all in the top 10% of OTUs predictive of __Colonization__.
+```{r plot otu correlations, fig.width=9,fig.height=9}
+cfu_all_shared_df %>% 
+  select(Otu000005, Otu000171, Otu000196, Otu000202, Otu000255, Otu000262, 
+         Otu000283, Otu000394, Otu000403) %>% 
+  gather(OTU, Abundance, -Otu000283) %>% 
+  ggplot(aes(x=Otu000283, y=Abundance))+geom_point(alpha = 0.5) + facet_wrap(~OTU, nrow =3, scales = 'free_y')
+```
+
+Do correlated OTUs matter?
+
 
 ***
 
-##### OTUs predictive of _Colonization level_ with Source included (Top 10%)  
+##### Model __Colonization level__ with Human Donor included
 Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
 
 ```{r predict median CFU with source, fig.width=10,fig.height=10}
@@ -345,6 +382,9 @@ data.frame(Observed = cfu_all_src_shared_df$log_cfu_med,
 
 ```
 
+##### OTUs predictive of _Colonization level_ with Source included (Top 10%)  
+Top 12 OTUs in red are plotted against CFU below
+
 ```{r colonization performance with source, fig.width=8, fig.height=6}
 top_otus_all_src <- get_tax(row_list = names(top_features_src_cfu)[-1])$tax_label
 top_otus_all_src <- c('Human Source', top_otus_all_src)
@@ -363,8 +403,8 @@ data.frame(OTU = factor(top_otus_all_src,
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
           panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
-          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-12),
-                                               rep('red', 12)), 
+          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-13),
+                                               rep('red', 12), 'black'), 
                                      hjust = 0))
 ```
 
@@ -399,11 +439,20 @@ subset(feature_df_src_numeric, select =
           panel.grid.minor.x = element_blank())
 ```
 
+
+There are `r sum(names(top_features) %in% names(top_features_src_cfu))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features)[names(top_features) %in% names(top_features_src_cfu)]`  
+Including Human Source includes all the OTUs predictive of __Colonization__ as well as Human Source as the top predictor. Relative importances of some OTUs are shifted, which could be due to the randomness of the RF algorithm or due to the effect of adding Human source, which may imply part of their predictive power is attributed to the human donor dependency. OTU 357 is added, however it is just below the 10% cutoff for the model without human source. Thus there appears to be no significant difference in predictive OTUs in the presence/absence of human donor data.
+
+There are `r sum(names(top_features_src) %in% names(top_features_src_cfu))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features_src)[names(top_features_src) %in% names(top_features_src_cfu)]`  
+Comparing the OTUs predictive of __Colonization__ when including human source is similarlly different from the OTUs predictive of __Human Donor__. The same OTUs are shared, which is not suprising since both models predicting __Colonization__ use the same OTUs. Aside from those shared and even the correlated OTUs we still have a much different set of predictors, which seems to potentially reveal the ability of the microbiome to predict community members associated with _C. difficile_ colonization.
+
 ***
 
 #### OTUs predictive of CFU (One Mouse)
 
-```{r one mouse model}
+```{r one mouse model, eval=F}
 
 #One per cage
 one_mouse_df <- data.frame(colonized_cfu %>% 
