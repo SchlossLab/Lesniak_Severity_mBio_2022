@@ -101,6 +101,53 @@ legend(x="topright", legend, col = c("blue", "yellow2", "black"), pch=16, cex=0.
 #text(x=-0.3, y=0.7, 'B', cex=1.5, font=2)
 #will need to do that ADONIS here for stats
 
+#-----------------------------------------------------------------------------------------------------#
+#Figure 1C - NMDS of mice/cages on day 1 
+
+#prepare files and run on mothur
+#subset shared to be day 0 only 
+day0 <- rownames(meta_file)[meta_file$day==0]
+day0_shared <- full_shared[full_shared$sample_id %in% day0,]
+day0_shared <- cbind(label=0.03, day0_shared[1], numOtus=5671, day0_shared[2:ncol(day0_shared)])
+colnames(day0_shared)[2] <- 'Group'
+write.table(day0_shared, file='data/process/day0.shared', quote=F,sep='\t',row.names=F)
+
+#run in mothur
+#dist.shared(shared=day0.shared, calc=thetayc, subsample=2000)
+#nmds(phylip=day0.thetayc.0.03.lt.dist)
+#mothur NMDS output:
+#Number of dimensions:	2
+#Lowest stress :	0.35381
+#R-squared for configuration:	0.385726
+day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.nmds.axes', header = T)
+#merge with design files to get ready to plot 
+d0_donor <- read.table(file='data/raw/sample_donor.design', header = F)
+day0_donor_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
+d0_outcome <- read.table(file='data/raw/d0_only_outcome.design', header=F)
+day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+#day0_outcome_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+day0_donor_nmds <- merge(day0_donor_nmds, d0_outcome, by.x='group', by.y='V1')
+names(day0_donor_nmds)[4] <- "Donor"
+names(day0_donor_nmds)[5] <- "Outcome"
+
+#plot
+colors <- c("dodgerblue2","#E31A1C", # red
+            "green4",
+            "#6A3D9A", # purple
+            "#FF7F00", # orange
+            "black","gold1",
+            "skyblue2","#FB9A99", # lt pink
+            "palegreen2",
+            "#CAB2D6", # lt purple
+            "#FDBF6F", # lt orange
+            "gray70", "khaki2",
+            "maroon","orchid1")
+plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, xlab='NMDS Axis 1', ylab='NMDS Axis 2', col=colors[as.numeric(day0_donor_nmds$Donor)], pch=c(16,17)[as.numeric(day0_donor_nmds$Outcome)])
+
+par(mar=c(5,5,5,5), xpd=TRUE)
+#just make the legend mild and severe 
+legend <- c("Mild", "Severe")
+legend(x="topright", legend, pch=c(16,17), cex=0.8)
 
 
 #now sew together plots into one figure and save as pdf 
