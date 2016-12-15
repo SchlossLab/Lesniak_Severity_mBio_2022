@@ -560,21 +560,6 @@ om_rsq_pos_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[
            test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
            stringsAsFactors = F) %>% 
   gather(data_set, rsq, train, test)
-
-om_rsq_pos_overall <- 1 - (sum((om_pred_pos$log_cfu_med - om_pred_pos$predicted)^2)/
-               sum((om_pred_pos$log_cfu_med - mean(om_pred_pos$log_cfu_med))^2))
-
-om_pred_pos <- rename(om_pred_pos, observed = log_cfu_med)
-
-#all_otus_importance <- gather(om_import_pos_otus,OTU, import_val,-otu)[,-2]
-#all_otus_importance$votes <- ifelse(all_otus_importance$import_val > 0, 1, 0)
-#all_otus_importance <- data.frame(table(all_otus_importance[,-2]))
-#pos_otu <- all_otus_importance[(filter(all_otus_importance, votes == 1) %>% select(Freq) - 
-#                      filter(all_otus_importance, votes == 0) %>% select(Freq)) > 0, ]
-#pos_otu <- data.frame(predictor = pos_otu$otu[pos_otu$votes==1],
-#                      filter(pos_otu, votes == 1) %>% select(Freq) - 
-#                      filter(pos_otu, votes == 0) %>% select(Freq)) %>% 
-#              arrange(desc(Freq))
 ```
 
 One Mouse per Human Donor with OTUs > 0 give:
@@ -591,13 +576,18 @@ Looking at the % var explained values from each individual iteration, there appe
 
 
 ```{r om_bimodality, fig.width= = 4, fig.height=4}
-ggplot(om_rsq_pos_df, aes(rsq, color = data_set)) + 
-  geom_density()
+ggplot(om_rsq_pos_df, aes(rsq, fill = data_set)) + 
+  geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Human Donor')
 ```
 
-Using random forest to identify the mice best seperating the Rsq distribution  
+Is this bimodal distribution due to :
+  * Due to small n?  
+  * Due to incomplete source dependency?  
+  * Ratio of train to test?  
 
-```{r one_mouse_rsq_predictors}
+Using random forest to identify the mice driving bimodal Rsq distribution  
+
+```{r one_mouse_rsq_predictors fig.width=4, fig.height=8}
 
 predict_rsq <- om_rsq_pos_df %>% 
                  filter(data_set == 'test')
@@ -638,6 +628,155 @@ ggplot(aes(x=mouse, y=Importance)) +
 
 ```
 
-Due to small n?  
-Due to incomplete source dependency?  
-Ratio of train to test?
+Is it possible one of the cages of the same donor are not similar, and causing the poor performance?
+
+```{r one mouse model CAGE - with OTUs positive in All OTU one mouse model}
+
+#One per source - > 0
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, cage_id, log_cfu_med,
+           one_of(as.character(pos_otu$predictor)))
+one_mouse_pos_otus_df$cage_id <- factor(one_mouse_pos_otus_df$cage_id)
+
+om_import_pos_otus <- data.frame(otu = colnames(select(one_mouse_pos_otus_df, -mouse_id, -log_cfu_med)))
+om_pred_pos <- c()
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_tree, mtry = 10)
+    om_pred_pos <- rbind(om_pred_pos,
+                     data.frame(select(test, mouse_id, log_cfu_med),
+                          predicted=predict(rf_om, test),
+                          iter = i))
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_pos_otus <- merge(om_import_pos_otus, import_df, by.x = 'otu', by.y = 'row.names') %>% 
+      select(-IncNodePurity)
+}
+
+om_rsq_cage_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+```
+
+One Mouse per __Cage__ with OTUs > 0 give:
+  *  median training set rsq of `r median()`  
+  *  median testing set rsq of `r `
+  *  overall rsq of `r 
+
+Looking at the % var explained values from each individual iteration, there appears to be a bimodal distribution in the performance.  
+
+
+```{r om_cage_rsq_dist, fig.width= = 4, fig.height=4}
+ggplot(om_rsq_cage_df, aes(rsq, fill = data_set)) + 
+  geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Cage')
+```
+
+
+By cage:  
+`r summary(om_rsq_cage_df$rsq[om_rsq_cage_df$data_set=='test'])`  
+
+By donor:  
+`r summary(om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'])`  
+
+```{r one mouse model - with OTUs positive in All OTU one mouse model}
+
+#One per source - > 0
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, human_source, log_cfu_med, cage_id,
+           one_of(as.character(pos_otu$predictor))) %>% 
+    filter(!cage_id %in% c('A','D')) %>% 
+    select(-cage_id)
+one_mouse_pos_otus_df$human_source <- factor(one_mouse_pos_otus_df$human_source)
+
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_tree, mtry = 10)
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+}
+
+om_rsq_C_only_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, human_source, log_cfu_med, cage_id,
+           one_of(as.character(pos_otu$predictor))) %>% 
+    filter(!cage_id == 'A') %>% 
+    select(-cage_id)
+one_mouse_pos_otus_df$human_source <- factor(one_mouse_pos_otus_df$human_source)
+
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_tree, mtry = 10)
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+}
+
+om_rsq_AD_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+
+rbind(data.frame(rsq = om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'], data = 'all'),
+      rbind(data.frame(rsq = om_rsq_AD_df$rsq[om_rsq_AD_df$data_set=='test'], data = 'Two_only'),
+            data.frame(rsq = om_rsq_C_only_df$rsq[om_rsq_C_only_df$data_set=='test'], data = 'One_only'))) %>% 
+  ggplot(aes(rsq, color = data)) + 
+  geom_density() + ggtitle('Rsq Distribution when multiple cages from same Donor present')
+```
+
+
+It seemed possible the assumption all donors have the same community may be false. However, when running the analysis with only one cage from the donor with multiple cages it performs as we observe for the lower peak in the bimodal distribution and when a second cage from the same donor is added we observe Rsq at the higher peak in the bimodal distribution. Thus there appears to be a cage effect improving the performance and the bimodal distribution maybe due to a variation in the ability of these communities to be able to predict each other, ie some be more similar to each other but still as a group more different than the other cages.
