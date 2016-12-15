@@ -35,7 +35,7 @@ source(tax_function)
 
 # set parameters
 seed <- 1
-#n_trees <- 1001
+n_trees <- 1001
 #n_otus <- 12
 iters <- 100
 #cor_cutoff <- 0.75
@@ -538,7 +538,7 @@ for(i in 1:iters){
       filter(!mouse_id %in% train$mouse_id)
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
-                             importance = TRUE, ntree = n_tree, mtry = 10)
+                             importance = TRUE, ntree = n_trees, mtry = 10)
     om_pred_pos <- rbind(om_pred_pos,
                      data.frame(select(test, mouse_id, log_cfu_med),
                           predicted=predict(rf_om, test),
@@ -575,7 +575,7 @@ One Mouse per Human Donor with the top 10% predictive OTUs when using all mice
 Looking at the % var explained values from each individual iteration, there appears to be a bimodal distribution in the performance.  
 
 
-```{r om_bimodality, fig.width= = 4, fig.height=4}
+```{r om_bimodality, fig.width= 4, fig.height=4}
 ggplot(om_rsq_pos_df, aes(rsq, fill = data_set)) + 
   geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Human Donor')
 ```
@@ -587,7 +587,7 @@ Is this bimodal distribution due to :
 
 Using random forest to identify the mice driving bimodal Rsq distribution  
 
-```{r one_mouse_rsq_predictors fig.width=4, fig.height=8}
+```{r one_mouse_rsq_predictors, fig.width=4, fig.height=8}
 
 predict_rsq <- om_rsq_pos_df %>% 
                  filter(data_set == 'test')
@@ -604,7 +604,7 @@ predict_rsq_df <- cbind(rsq = predict_rsq$group_mean, mice_diff)
 predict_rsq_df$rsq <- as.factor(predict_rsq_df$rsq)
 set.seed(seed)
 rsq_grp_rf <- randomForest(predict_rsq_df[,-1],predict_rsq_df$rsq, importance = T)
-importance_rsq <- data.frame(mouse = dimnames(importance_rsq)[[1]],importance(rsq_grp_rf))
+importance_rsq <- data.frame(mouse = dimnames(importance(rsq_grp_rf))[[1]],importance(rsq_grp_rf))
 one_mouse_rsq_pred <- arrange(importance_rsq, desc(MeanDecreaseAccuracy)) %>% 
   select(mouse,MeanDecreaseAccuracy) %>% 
   mutate(Relative_MDA = MeanDecreaseAccuracy/max(MeanDecreaseAccuracy))
@@ -652,7 +652,7 @@ for(i in 1:iters){
       filter(!mouse_id %in% train$mouse_id)
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
-                             importance = TRUE, ntree = n_tree, mtry = 10)
+                             importance = TRUE, ntree = n_trees, mtry = 10)
     om_pred_pos <- rbind(om_pred_pos,
                      data.frame(select(test, mouse_id, log_cfu_med),
                           predicted=predict(rf_om, test),
@@ -676,15 +676,10 @@ om_rsq_cage_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[
   gather(data_set, rsq, train, test)
 ```
 
-One Mouse per __Cage__ with OTUs > 0 give:
-  *  median training set rsq of `r median()`  
-  *  median testing set rsq of `r `
-  *  overall rsq of `r 
-
 Looking at the % var explained values from each individual iteration, there appears to be a bimodal distribution in the performance.  
 
 
-```{r om_cage_rsq_dist, fig.width= = 4, fig.height=4}
+```{r om_cage_rsq_dist, fig.width= 4, fig.height=4}
 ggplot(om_rsq_cage_df, aes(rsq, fill = data_set)) + 
   geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Cage')
 ```
@@ -696,7 +691,7 @@ By cage:
 By donor:  
 `r summary(om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'])`  
 
-```{r one mouse model - with OTUs positive in All OTU one mouse model}
+```{r compare number of 581 donor cages, fig.height=5, fig.width=5}
 
 #One per source - > 0
 one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
@@ -718,7 +713,7 @@ for(i in 1:iters){
       filter(!mouse_id %in% train$mouse_id)
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
-                             importance = TRUE, ntree = n_tree, mtry = 10)
+                             importance = TRUE, ntree = n_trees, mtry = 10)
     om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
                               mice = paste(train$mouse_id, collapse = ' '), 
                               train_rsq = tail(rf_om$rsq,1),
@@ -754,7 +749,7 @@ for(i in 1:iters){
       filter(!mouse_id %in% train$mouse_id)
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
-                             importance = TRUE, ntree = n_tree, mtry = 10)
+                             importance = TRUE, ntree = n_trees, mtry = 10)
     om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
                               mice = paste(train$mouse_id, collapse = ' '), 
                               train_rsq = tail(rf_om$rsq,1),
