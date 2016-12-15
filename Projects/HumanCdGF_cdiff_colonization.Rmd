@@ -536,163 +536,108 @@ for(i in 1:iters){
       sample_n(1) %>% ungroup() 
     test <- one_mouse_pos_otus_df %>% 
       filter(!mouse_id %in% train$mouse_id)
-    for(m_try in 1:25){
-      for(n_tree in seq(200, 2000, 100)){
     set.seed(seed)
     rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
-                             importance = TRUE, ntree = n_tree, mtry = m_try)
+                             importance = TRUE, ntree = n_tree, mtry = 10)
     om_pred_pos <- rbind(om_pred_pos,
                      data.frame(select(test, mouse_id, log_cfu_med),
                           predicted=predict(rf_om, test),
-                          iter = i,
-                          rf_tree = n_tree,
-                          rf_try = m_try))
+                          iter = i))
     om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
-                                      try = m_try,
-                                      tree = n_tree,
-                              mice = paste0(paste(train$mouse_id, collapse = ' '), '_', m_try, '_', n_tree), 
+                              mice = paste(train$mouse_id, collapse = ' '), 
                               train_rsq = tail(rf_om$rsq,1),
                               test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
                                 sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
     import_df <- importance(rf_om)
-    colnames(import_df)[1] <- paste0(paste(train$mouse_id, collapse = ' '),'_', m_try, '_', n_tree)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
     om_import_pos_otus <- merge(om_import_pos_otus, import_df, by.x = 'otu', by.y = 'row.names') %>% 
       select(-IncNodePurity)
-    }}
 }
+
 om_rsq_pos_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
-                            try = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='try']),
-                            tree = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='tree']),
                             mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
-           train_rsq = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
-           test_rsq = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
-           stringsAsFactors = F)
-om_pf_df <- om_rsq_pos_df
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
 
 om_rsq_pos_overall <- 1 - (sum((om_pred_pos$log_cfu_med - om_pred_pos$predicted)^2)/
                sum((om_pred_pos$log_cfu_med - mean(om_pred_pos$log_cfu_med))^2))
 
 om_pred_pos <- rename(om_pred_pos, observed = log_cfu_med)
 
-all_otus_importance <- gather(om_import_pos_otus,OTU, import_val,-otu)[,-2]
-all_otus_importance$votes <- ifelse(all_otus_importance$import_val > 0, 1, 0)
-all_otus_importance <- data.frame(table(all_otus_importance[,-2]))
-pos_otu <- all_otus_importance[(filter(all_otus_importance, votes == 1) %>% select(Freq) - 
-                      filter(all_otus_importance, votes == 0) %>% select(Freq)) > 0, ]
-pos_otu <- data.frame(predictor = pos_otu$otu[pos_otu$votes==1],
-                      filter(pos_otu, votes == 1) %>% select(Freq) - 
-                      filter(pos_otu, votes == 0) %>% select(Freq)) %>% 
-              arrange(desc(Freq))
-
-ggplot(om_rsq_pos_df, aes(x = try, y = test_rsq)) + 
-  stat_summary(fun.y=median, geom="line", aes(group = iter)) + 
-  stat_summary(fun.data = 'median_hilow') +
-geom_line() + facet_wrap(~tree, nrow=4)
-
-ggplot(filter(om_rsq_pos_df, try ==6), aes(x = tree, y = test_rsq)) + 
-  stat_summary(fun.y=median, geom="line", aes(group = iter)) + 
-  stat_summary(fun.data = 'median_hilow')
+#all_otus_importance <- gather(om_import_pos_otus,OTU, import_val,-otu)[,-2]
+#all_otus_importance$votes <- ifelse(all_otus_importance$import_val > 0, 1, 0)
+#all_otus_importance <- data.frame(table(all_otus_importance[,-2]))
+#pos_otu <- all_otus_importance[(filter(all_otus_importance, votes == 1) %>% select(Freq) - 
+#                      filter(all_otus_importance, votes == 0) %>% select(Freq)) > 0, ]
+#pos_otu <- data.frame(predictor = pos_otu$otu[pos_otu$votes==1],
+#                      filter(pos_otu, votes == 1) %>% select(Freq) - 
+#                      filter(pos_otu, votes == 0) %>% select(Freq)) %>% 
+#              arrange(desc(Freq))
 ```
 
-`r median(om_rsq_pos_df$train_rsq)`
-`r median(om_rsq_pos_df$test_rsq)`
-`r om_rsq_pos_overall`
+One Mouse per Human Donor with OTUs > 0 give:
+  *  median training set rsq of 0.08652421  
+  *  median testing set rsq of 0.5331836  
+  *  overall rsq of 0.5534567  
 
-OM > 0
-> median(om_rsq_pos$train_rsq)
-[1] 0.08652421
-> median(om_rsq_pos$test_rsq)
-[1] 0.5331836
-> om_rsq_pos_overall
-[1] 0.5534567
+One Mouse per Human Donor with the top 10% predictive OTUs when using all mice  
+  *  median training set rsq of 0.07336261  
+  *  median testing set rsq of 0.6070359  
+  *  overall rsq of 0.633238  
 
-All mice top 10%
-> median(om_rsq_pos$train_rsq)
-[1] 0.07336261
-> median(om_rsq_pos$test_rsq)
-[1] 0.6070359
-> om_rsq_pos_overall
-[1] 0.633238
+Looking at the % var explained values from each individual iteration, there appears to be a bimodal distribution in the performance.  
 
 
-> median(om_rsq_pos_df$train_rsq)
-[1] 0.05986871
-> median(om_rsq_pos_df$test_rsq)
-[1] 0.5898076
-> `r om_rsq_pos_overall`
-> om_rsq_pos_overall
-[1] 0.6150207
+```{r om_bimodality, fig.width= = 4, fig.height=4}
+ggplot(om_rsq_pos_df, aes(rsq, color = data_set)) + 
+  geom_density()
+```
 
+Using random forest to identify the mice best seperating the Rsq distribution  
 
-one mouse - using top 10% of predictive features for all mice in the training set
-optimal at
-train 
-  try = 10, tree = 600
-test
-  try = 6, tree = 600
-but the test set has two groupings in performance. one around a Rsq 0.75, one at 0.5 and two iterations at 0.325
+```{r one_mouse_rsq_predictors}
 
+predict_rsq <- om_rsq_pos_df %>% 
+                 filter(data_set == 'test')
+predict_rsq$group_mean <- ifelse(predict_rsq$rsq > 0.62, T, F)
 
-       mouse         high       low          med MeanDecreaseAccuracy MeanDecreaseGini
-1      D_507 24.746833562  1.737270 20.102178345          24.73595607        8.4911043
-2      C_596 23.285539876  1.001002 20.447905674          24.43000483        7.6690227
-3      D_527 18.032458266  1.001002 15.500296401          18.71071088        4.9877513
-4      A_566 12.032722269  0.000000 12.067340706          13.81516364        3.0119082
-5      D_540 10.866644663  1.737270 12.253700494          13.61280464        2.2541893
-6      C_516 11.047770210  1.001002 10.744008798          12.43936737        2.2192996
-7      A_503 10.956589615  4.195038  6.774750778          10.79692514        2.2143605
-8      A_526  7.778933002  0.000000  6.659309475           8.50216395        1.1996857
-9    369_992 -0.875534077  3.932419  4.882427149           3.72993812        1.3625130
-10   369_942 -0.596862323  1.417051  3.309012343           2.37657639        0.7644884
-11  IN3_2318  1.043691934  2.664468  1.245180833           2.18825289        0.8340440
-12  MOUT_896  2.014382262 -2.247333  1.336156704           2.17645115        0.8413007
-13   430_920  1.549432277  0.000000  1.108030915           1.91835030        0.6586209
-14  MOUT_568  0.666044064 -1.417051  1.909190798           1.75633167        0.7946055
-15  IN3_2336 -0.217030290  0.000000  2.406333245           1.45691227        0.5817839
-16   NP2_979  1.078030444  0.000000  1.206469792           1.43939415        0.6973072
-17   OUTA_NT  0.697539079  1.417051  0.845326576           1.18172290        0.7653337
-18   NP2_983 -0.727654094  1.001002  1.931180990           1.05707031        0.8507964
-19 OUTA_2063  1.808105182 -1.417051 -0.047912339           0.89013348        0.7126412
-20   430_307  0.261169822 -2.464320  1.107393946           0.67386593        0.7143389
-21   430_964 -0.574499626  1.001002  1.123257626           0.56350353        0.4823411
-22   369_939 -0.619215217  0.000000  1.274820050           0.56227756        0.5328745
-23 OUT2_2510  0.009109248 -1.001002  0.721274725           0.37736881        0.6381838
-24   OUT2_NT -0.430535085  0.000000  0.460746344           0.14766696        0.6223585
-25  IN2_2613  0.000000000  0.000000  0.000000000           0.00000000        0.0000000
-26  IN2_2629  0.000000000  0.000000  0.000000000           0.00000000        0.0000000
-27  IN2_2673  0.000000000  0.000000  0.000000000           0.00000000        0.0000000
-28  NP2_2630  0.000000000  0.000000  0.000000000           0.00000000        0.0000000
-29   LINE_NT  1.730524126  0.000000 -1.610672526          -0.09130011        0.6774122
-30   430_304  0.153756741 -2.008048 -0.653527605          -0.51088419        0.6561920
-31 OUTA_2062 -0.244531023 -1.737270 -0.443149129          -0.70889274        0.7545123
-32  LINE_978 -1.613030982  1.001002 -0.003319811          -1.09823532        0.5058066
-33   369_331 -2.611303629  0.000000 -0.024601226          -1.37881023        0.6251534
-34  LINE_MNT -0.399645816 -1.737270 -1.503302377          -1.75744745        0.5979079
-35  LINE_188 -1.752110136 -1.001002 -1.104193541          -1.91010075        0.5634185
-36    IN3_NT -2.122086607  0.000000 -1.213308576          -2.28278894        0.7106271
-37 OUT2_2533 -1.443012131  0.000000 -2.212914984          -2.28741305        0.5829754
-
-```{r}
-om_tf_df$group_mean <- 'med'
-om_tf_df$group_mean[om_tf_df$test_rsq > 0.65] <- 'high'
-om_tf_df$group_mean[om_tf_df$test_rsq < 0.4] <- 'low'
-mice_group <- filter(om_tf_df, try == 5, tree == 500) %>% 
-  select(mice, group_mean)
-mice_group$mice <- gsub('_\\d*_\\d*$', '', mice_group$mice)
-
-mice_diff <- data.frame(matrix(rep(NA, nrow(mice_group)*length(unique(colonized_cfu$mouse_id))),
-                               nrow=nrow(mice_group)))
+mice_diff <- data.frame(matrix(rep(NA, nrow(predict_rsq)*length(unique(colonized_cfu$mouse_id))),
+                               nrow=nrow(predict_rsq)))
 colnames(mice_diff) <- unique(colonized_cfu$mouse_id)
 for(i in 1:nrow(mice_diff)){
-    mice_diff[i,] <- ifelse(colnames(mice_diff) %in% strsplit(mice_group$mice, ' ')[[i]], 0,1)
+    mice_diff[i,] <- ifelse(colnames(mice_diff) %in% strsplit(predict_rsq$mice, ' ')[[i]], 0,1)
 }
-predict_rsq <- cbind(mice_group, mice_diff) %>% 
-  select(-mice)
-predict_rsq$group_mean <- factor(predict_rsq$group_mean)
-rsq_grp_rf <- randomForest(predict_rsq[,-1],predict_rsq$group_mean, importance = T)
-importance_rsq <- data.frame(mouse = dimnames(importance_rsq)[[1]],importance(rsq_grp_rf))
-arrange(importance_rsq, desc(MeanDecreaseAccuracy))
-str(importance_rsq)
 
+predict_rsq_df <- cbind(rsq = predict_rsq$group_mean, mice_diff)
+predict_rsq_df$rsq <- as.factor(predict_rsq_df$rsq)
+set.seed(seed)
+rsq_grp_rf <- randomForest(predict_rsq_df[,-1],predict_rsq_df$rsq, importance = T)
+importance_rsq <- data.frame(mouse = dimnames(importance_rsq)[[1]],importance(rsq_grp_rf))
+one_mouse_rsq_pred <- arrange(importance_rsq, desc(MeanDecreaseAccuracy)) %>% 
+  select(mouse,MeanDecreaseAccuracy) %>% 
+  mutate(Relative_MDA = MeanDecreaseAccuracy/max(MeanDecreaseAccuracy))
+
+data.frame(mouse = factor(one_mouse_rsq_pred$mouse, 
+                        levels = one_mouse_rsq_pred$mouse[order(one_mouse_rsq_pred$Relative_MDA)]), 
+           Importance = one_mouse_rsq_pred$Relative_MDA) %>% 
+ggplot(aes(x=mouse, y=Importance)) + 
+   geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          axis.ticks = element_line(size = 2),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(one_mouse_rsq_pred$Relative_MDA)-
+                                                     sum(one_mouse_rsq_pred$MeanDecreaseAccuracy > 0)),
+                                               rep('red', sum(one_mouse_rsq_pred$MeanDecreaseAccuracy > 0))), 
+                                     hjust = 0))
 
 ```
+
+Due to small n?  
+Due to incomplete source dependency?  
+Ratio of train to test?
