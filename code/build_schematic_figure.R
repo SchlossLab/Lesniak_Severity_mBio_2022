@@ -30,13 +30,13 @@ write.table(inocula_shared, file='data/process/inocula.shared', quote=F,sep='\t'
 #run dist.shared with iters and subsamp in TYC form, nmds in mothur to get axes file
 #mothur commands
 #dist.shared(shared=inocula.shared, calc=thetayc, subsample=2000)
-#nmds(phylip=inocula.thetayc.0.03.lt.dist)
+#nmds(phylip=inocula.thetayc.0.03.lt.ave.dist)
 #mothur NMDS output:
-# Number of dimensions:	2
-# Lowest stress :	0.318153
-# R-squared for configuration:	0.458028
+#Number of dimensions:	2
+#Lowest stress :	0.3203
+#R-squared for configuration:	0.442409
 
-inoc_nmds <- read.table(file='data/process/inocula.thetayc.0.03.lt.nmds.axes', header = T)
+inoc_nmds <- read.table(file='data/process/inocula.thetayc.0.03.lt.ave.nmds.axes', header = T)
 #merge design and nmds files to prep for plotting 
 inocula_design <- read.table(file='data/raw/donor.design', header = F)
 inocula_meta_design <- read.table(file='data/raw/donor_meta.design', header = F)
@@ -55,12 +55,12 @@ write.table(day0_shared, file='data/process/day0.shared', quote=F,sep='\t',row.n
 
 #run in mothur
 #dist.shared(shared=day0.shared, calc=thetayc, subsample=2000)
-#nmds(phylip=day0.thetayc.0.03.lt.dist)
+#nmds(phylip=day0.thetayc.0.03.lt.ave.dist)
 #mothur NMDS output:
 #Number of dimensions:	2
-#Lowest stress :	0.35381
-#R-squared for configuration:	0.385726
-day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.nmds.axes', header = T)
+#Lowest stress :	0.349084
+#R-squared for configuration:	0.40841
+day0_nmds <- read.table(file='data/process/day0.thetayc.0.03.lt.ave.nmds.axes', header = T)
 #merge with design files to get ready to plot 
 d0_donor <- read.table(file='data/raw/sample_donor.design', header = F)
 day0_donor_nmds <- merge(day0_nmds, d0_donor, by.x='group', by.y='V1')
@@ -85,17 +85,18 @@ for (dep in deps){
 
 #-----------------------------------------------------------------------------------------------------------------------------------#
 # Set up multi-panel figure
-plot_file <- '~/Documents/Schloss_Lab/Schubert_humanCdGF_XXXX_2016/results/figures/figure_test.pdf'
-pdf(file=plot_file, width=7, height=9)
+plot_file <- '~/Documents/Schloss_Lab/Schubert_humanCdGF_XXXX_2016/results/figures/figure_1.pdf'
+pdf(file=plot_file, width=11, height=9)
 layout(matrix(c(1,
                 2,
+                3,
                 3), 
-              nrow=3, ncol=1, byrow = TRUE))
+              nrow=2, byrow = TRUE))
 
 # Figure 1A - experimental timeline code 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 #---------Option 1, text based timeline---------#
-par(las=1, mar=c(1,4,2,2), mgp=c(2.5,0.7,0))
+par(las=1, mar=c(1,2,2,1), mgp=c(2.5,0.7,0))
 plot(0, type='n', axes=F, xlab='', ylab='', xlim=c(-5,5), ylim=c(-2,2)) # Empty plot
 Arrows(x0=-4, y0=0, x1=3, y1=0, lwd=3, arr.type='triangle', arr.length=0.6, arr.width=0.3)
 segments(x0=c(-4,-0.5,2), y0=c(0.25,0.25,0.25), x1=c(-4,-0.5,2), y1=c(-0.25,-0.25,-0.25), lwd=3)
