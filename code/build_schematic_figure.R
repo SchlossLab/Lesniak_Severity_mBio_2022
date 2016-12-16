@@ -1,13 +1,7 @@
 # Builds figure 1
 # Experimental timeline code from Matt Jenior
 # Load dependencies
-deps <- c('shape', 'wesanderson');
-for (dep in deps){
-  if (dep %in% installed.packages()[,"Package"] == FALSE){
-    install.packages(as.character(dep), quiet=TRUE);
-  } 
-  library(dep, verbose=FALSE, character.only=TRUE)
-}
+
 #------------------------------------------------------------------------------------------------------------------------------------#
 # Import, analyze and clean data for figures before plotting
 
@@ -78,12 +72,21 @@ names(day0_donor_nmds)[4] <- "Donor"
 names(day0_donor_nmds)[5] <- "Outcome"
 
 
-
+#-----------------------------------------------------------------------------------------------------------------------------------#
+#Build and assemble figure 1
+#Load dependencies
+deps <- c('shape', 'wesanderson');
+for (dep in deps){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), quiet=TRUE);
+  } 
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
 
 #-----------------------------------------------------------------------------------------------------------------------------------#
 # Set up multi-panel figure
 plot_file <- '~/Documents/Schloss_Lab/Schubert_humanCdGF_XXXX_2016/results/figures/figure_test.pdf'
-pdf(file=plot_file, width=9, height=9)
+pdf(file=plot_file, width=7, height=9)
 layout(matrix(c(1,
                 2,
                 3), 
@@ -92,15 +95,16 @@ layout(matrix(c(1,
 # Figure 1A - experimental timeline code 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 #---------Option 1, text based timeline---------#
+par(las=1, mar=c(1,4,2,2), mgp=c(2.5,0.7,0))
 plot(0, type='n', axes=F, xlab='', ylab='', xlim=c(-5,5), ylim=c(-2,2)) # Empty plot
-Arrows(x0=-4, y0=0, x1=3, y1=0, lwd=4, arr.type='triangle', arr.length=0.6, arr.width=0.3)
-segments(x0=c(-4,-0.5,2), y0=c(0.5,0.5,0.5), x1=c(-4,-0.5,2), y1=c(-0.5,-0.5,-0.5), lwd=4)
-segments(x0=c(-3.5,-3,-2.5,-2,-1.5, -1), y0=c(0.25,0.25,0.25,0.25,0.25), x1=c(-3.5,-3,-2.5,-2,-1.5, -1), y1=c(-0.25,-0.25,-0.25,-0.25,-0.25), lwd=2)
-segments(x0=c(0,0.5,1,1.5), y0=c(0.25,0.25,0.25,0.25,0.25), x1=c(0,0.5,1,1.5), y1=c(-0.25,-0.25,-0.25,-0.25,-0.25), lwd=2)
+Arrows(x0=-4, y0=0, x1=3, y1=0, lwd=3, arr.type='triangle', arr.length=0.6, arr.width=0.3)
+segments(x0=c(-4,-0.5,2), y0=c(0.25,0.25,0.25), x1=c(-4,-0.5,2), y1=c(-0.25,-0.25,-0.25), lwd=3)
+segments(x0=c(-3.5,-3,-2.5,-2,-1.5, -1), y0=c(0.1,0.1,0.1,0.1,0.1), x1=c(-3.5,-3,-2.5,-2,-1.5, -1), y1=c(-0.1,-0.1,-0.1,-0.1,-0.1), lwd=1)
+segments(x0=c(0,0.5,1,1.5), y0=c(0.1,0.1,0.1,0.1,0.1), x1=c(0,0.5,1,1.5), y1=c(-0.1,-0.1,-0.1,-0.1,-0.1), lwd=1)
 text(x=c(-4,-0.5, 2), y=c(-0.8,-0.8, -0.8), c('Day -14', 'Day 0', 'Day 10'), cex=1)
 text(x=c(-3.35,-0.5, 2), y=c(0.7,0.7, 0.7), c('Gavage human stool', 'Gavage C. difficile', 'Euthanize'), cex=1)
-text(x=-4.5, y=0, 'A', cex=1.5, font=2)
-
+#text(x=-4.5, y=0, 'A', cex=1.5, font=2)
+mtext('A', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 #---------Option 2, text based timeline---------#
 
 
@@ -112,8 +116,7 @@ text(x=-4.5, y=0, 'A', cex=1.5, font=2)
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
 #Figure 1B - nmds of donor stool prior to inoculation 
-par(las=1, mar=c(0.7,4,0.7,1), mgp=c(2.5,0.7,0))
-
+par(las=1, mar=c(4,4,2,2), mgp=c(2.5,0.7,0))
 
 #build NMDS plot
 plot(inocula_meta_nmds$axis1, inocula_meta_nmds$axis2, xlab="NMDS Axis 1", ylab= "NMDS Axis 2")
@@ -121,20 +124,18 @@ no_d <- inocula_meta_nmds[grep('No_diarrhea', inocula_meta_nmds$Disease_status),
 diarrhea <- inocula_meta_nmds[grep('Diarrhea', inocula_meta_nmds$Disease_status), c(2,3)]
 cdiff <- inocula_meta_nmds[grep('C._difficile', inocula_meta_nmds$Disease_status), c(2,3)]
 
-points(no_d, pch=16, col = "blue")
-points(diarrhea, pch=16, col = "yellow2")
-points(cdiff, pch=16, col = "black")
+points(no_d, pch=21, col = 'black', bg='blue', lwd=0.5)
+points(diarrhea, pch=21, col = 'black', bg="yellow2", lwd=0.5)
+points(cdiff, pch=21, col = "black", bg='red', lwd=0.5)
 
 legend <- c("No diarrhea", "Diarrhea", "C. difficile")
-legend(x="topright", legend, col = c("blue", "yellow2", "black"), pch=16, cex=0.8)
-
-#put labels outside of plot
-#text(x=-0.3, y=0.7, 'B', cex=1.5, font=2)
+legend(x="topright", legend, col = c("blue", "yellow3", "red"), pch=16, cex=1)
+mtext('B', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 #will need to do that ADONIS here for stats
 
 #-----------------------------------------------------------------------------------------------------#
 #Figure 1C - NMDS of mice/cages on day 1 
-par(las=1, mar=c(0.7,4,0.7,1), mgp=c(2.5,0.7,0))
+par(las=1, mar=c(4,4,2,2), mgp=c(2.5,0.7,0))
 
 
 #plot
@@ -149,13 +150,13 @@ colors <- c("dodgerblue2","#E31A1C", # red
             "#FDBF6F", # lt orange
             "gray70", "khaki2",
             "maroon","orchid1")
-plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, xlab='NMDS Axis 1', ylab='NMDS Axis 2', col=wes_colors[as.numeric(day0_donor_nmds$Donor)], pch=c(1,2)[as.numeric(day0_donor_nmds$Outcome)], lwd = 3)
+plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, xlab='NMDS Axis 1', ylab='NMDS Axis 2', col='black', bg=colors[as.numeric(day0_donor_nmds$Donor)], pch=c(21,24)[as.numeric(day0_donor_nmds$Outcome)], lwd = 0.5)
 
 #par(mar=c(5,5,5,5), xpd=TRUE)
 #just make the legend mild and severe 
 legend <- c("Mild", "Severe")
-legend(x="topright", legend, pch=c(1,2), cex=1)
-
+legend(x="topright", legend, pch=c(21,24), cex=1)
+mtext('C', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
