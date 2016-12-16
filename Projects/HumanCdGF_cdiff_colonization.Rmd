@@ -557,6 +557,8 @@ Rsq of each iteration - `r LOcO_rsq`
 
 While this is removing 3 cages (8 mice) and decreasing the n, it is removing the smaller, lower grouping of points. So how well can the whole model predict CFU without the DA00581 samples?
 
+#### Model __Colonization level__ with Human Donor included (without Donor 581):  
+
 ```{r all without 581}
 cfu_wo581_df <- colonized_cfu %>% 
     select(mouse_id, human_source, log_cfu_med) %>% 
@@ -572,6 +574,35 @@ cfu_wo581_rf <- randomForest(cfu_wo581_df[ , -2], cfu_wo581_df$log_cfu_med,
                            mtry = 15,
                            importance = T)
 top_features_wo581 <- head(sort(importance(cfu_wo581_rf)[,1],decreasing = T), n_features)
+
+cfu_ACD_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, cage_id, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_ACD_df$human_source <- factor(cfu_ACD_df$human_source)
+
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('A','C')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_D_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('A','D')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_C_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('D','C')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_A_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
 ```
 
 
@@ -594,6 +625,11 @@ data.frame(Observed = cfu_wo581_df$log_cfu_med,
 top_otus_no581 <- get_tax(row_list = names(top_features_wo581)[-1])$tax_label
 top_otus_no581 <- c('Human Source', top_otus_no581)
 ```
+
+Including one Donor 581 cage increases performance:  
+w/Cage A: `r paste0(round(tail(cfu_A_rf$rsq, 1), 4)*100, '% Var Explained')`   
+w/Cage C: `r paste0(round(tail(cfu_C_rf$rsq, 1), 4)*100, '% Var Explained')`   
+w/Cage D: `r paste0(round(tail(cfu_D_rf$rsq, 1), 4)*100, '% Var Explained')`   
 
 ```{r colonization otu importance without 581, fig.width=6, fig.height=6}
 data.frame(OTU = factor(top_otus_no581, 
