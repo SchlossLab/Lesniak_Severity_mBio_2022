@@ -448,6 +448,177 @@ There are `r sum(names(top_features_src) %in% names(top_features_src_cfu))` OTUs
 `r names(top_features_src)[names(top_features_src) %in% names(top_features_src_cfu)]`  
 Comparing the OTUs predictive of __Colonization__ when including human source is similarlly different from the OTUs predictive of __Human Donor__. The same OTUs are shared, which is not suprising since both models predicting __Colonization__ use the same OTUs. Aside from those shared and even the correlated OTUs we still have a much different set of predictors, which seems to potentially reveal the ability of the microbiome to predict community members associated with _C. difficile_ colonization.
 
+
+***
+
+##### __Leave One Out__ - Model __Colonization level__ with Human Donor included
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+
+```{r LOCO}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    select(log_cfu_med, cage_id, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$cage_id)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$cage_id == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id, -cage_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+##### Leave one Cage out:  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(cage order =  `r source_list`)  
+
+```{r LOSO}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    select(log_cfu_med, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$human_source)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$human_source == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+#### Leave one Source out:  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(source order =  `r source_list`)  
+
+Removing the repeated cages of DA00581 (A and C) causes the model to perform poorly leaving one out.
+So is the performance of the whole model appears to be dependent on two grouping of points (one around ~5-6 log and one around ~8 log ). So how well can random forest model the data with out the DA00581 source?
+
+
+```{r LOCO with out 581}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+      filter(!human_source == 'DA00581') %>% 
+    select(log_cfu_med, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$human_source)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$human_source == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+#### Leaving one cage/source out (without Donor 581):  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(cage/source order =  `r source_list`)  
+
+While this is removing 3 cages (8 mice) and decreasing the n, it is removing the smaller, lower grouping of points. So how well can the whole model predict CFU without the DA00581 samples?
+
+```{r all without 581}
+cfu_wo581_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source == 'DA00581') %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_wo581_df$human_source <- factor(cfu_wo581_df$human_source)
+
+set.seed(seed)
+cfu_wo581_rf <- randomForest(cfu_wo581_df[ , -2], cfu_wo581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features_wo581 <- head(sort(importance(cfu_wo581_rf)[,1],decreasing = T), n_features)
+```
+
+
+```{r colonization performance without 581, fig.width=5, fig.height=4}
+data.frame(Observed = cfu_wo581_df$log_cfu_med, 
+           Predicted = cfu_wo581_rf$predicted) %>% 
+  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + 
+    annotate('text', label = paste0(round(tail(cfu_wo581_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = min(cfu_wo581_rf$predicted), y = max(cfu_wo581_df$log_cfu_med)) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+
+top_otus_no581 <- get_tax(row_list = names(top_features_wo581)[-1])$tax_label
+top_otus_no581 <- c('Human Source', top_otus_no581)
+```
+
+```{r colonization otu importance without 581, fig.width=6, fig.height=6}
+data.frame(OTU = factor(top_otus_no581, 
+                        levels = top_otus_no581[order(top_features_wo581)]), 
+           Importance = top_features_wo581/max(top_features_wo581)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-13),
+                                               rep('red', 12), 'black'), 
+                                     hjust = 0))
+```
+
+Without human donor, performance was slightly lower with similar top features  
+
+__This decrease in performance when removing Human Donor 581 suggests that with this data set, random forest is unable to predict CFU with a high degree of accuracy. This model seems to potentially be identifying the split between the high and low CFU groups, although this is difficult to say with any weight since we only have one source in the low grouping.__
+
+
+
+***
 ***
 
 #### Modeling CFU with One Mouse per Human Donor
@@ -580,7 +751,7 @@ ggplot(om_rsq_pos_df, aes(rsq, fill = data_set)) +
   geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Human Donor')
 ```
 
-Is this bimodal distribution due to :
+Is this bimodal distribution due to :  
   * Due to small n?  
   * Due to incomplete source dependency?  
   * Ratio of train to test?  
@@ -628,6 +799,8 @@ ggplot(aes(x=mouse, y=Importance)) +
 
 ```
 
+
+Cages A, C, and D all have the same donor.  
 Is it possible one of the cages of the same donor are not similar, and causing the poor performance?
 
 ```{r one mouse model CAGE - with OTUs positive in All OTU one mouse model}
@@ -686,9 +859,12 @@ ggplot(om_rsq_cage_df, aes(rsq, fill = data_set)) +
 
 
 By cage:  
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max.   
 `r summary(om_rsq_cage_df$rsq[om_rsq_cage_df$data_set=='test'])`  
 
 By donor:  
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max.   
+
 `r summary(om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'])`  
 
 ```{r compare number of 581 donor cages, fig.height=5, fig.width=5}
