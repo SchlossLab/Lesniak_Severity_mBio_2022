@@ -104,9 +104,23 @@ cfu_all_shared_df <- colonized_cfu %>%
 #ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
 #ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
 
+baseline_df <- c()
+baseline_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_all_shared_df$log_cfu_med, 
+                       length(cfu_all_shared_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  baseline_cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  baseline_df <- rbind(baseline_df, data.frame(Model = 'Baseline', Observed = random_cfu,
+                                               Predicted = baseline_cfu_all_rf$predicted))
+  baseline_rsq <- c(baseline_rsq, tail(baseline_cfu_all_rf$rsq,1))
+}
 set.seed(seed)
 cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
-                           ntree = 1001,
+                           ntree = 501,
                            mtry = 15,
                            importance = T)
 top_features <- head(sort(importance(cfu_all_rf)[,1],decreasing = T), n_features)
@@ -120,21 +134,27 @@ Model built using all OTUs present in >10% of samples, only displaying top 10% o
 
 ```{r prediction cfu plot, fig.width=6, fig.height=6}
 
-data.frame(Observed = cfu_all_shared_df$log_cfu_med, 
-           Predicted = cfu_all_rf$predicted) %>% 
-  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
-    xlim(5,9) + ylim(5,9) + 
+rbind(baseline_df,
+      data.frame(Model = 'Prediction', Observed = cfu_all_shared_df$log_cfu_med, 
+           Predicted = cfu_all_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color=Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
     annotate('text', label = paste0(round(tail(cfu_all_rf$rsq, 1), 4)*100, '% Var Explained'),
              x = min(cfu_all_rf$predicted), y = max(cfu_all_shared_df$log_cfu_med)) + 
     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(),
-          panel.grid.minor.y = element_blank()) +
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.9,0.1)) +
   labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
     
 
 ```
+
+The % Variation explained in the baseline model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(baseline_rsq)`  
 
 ```{r colonization performance, fig.width=8, fig.height=6}
 top_otus <- get_tax(row_list = names(top_features))$tax_label
@@ -227,6 +247,17 @@ source_all_shared_df$human_source <- as.factor(source_all_shared_df$human_source
 #ggplot(output, aes(x=ntry, y=err, group = ntree, color = as.factor(ntree))) + geom_line()
 #ggplot(output[output$ntry == 15,], aes(x=ntree, y=err)) + geom_line()
 
+baseline_source_df <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_src <- sample(source_all_shared_df$human_source, 
+                       length(source_all_shared_df$human_source), replace = F)
+  set.seed(seed)
+  baseline_src_all_rf <- randomForest(source_all_shared_df[ , -1], random_src,
+                           ntree = 501,
+                           mtry = 15)
+  baseline_source_df <- c(baseline_source_df, tail(baseline_src_all_rf$err.rate[,'OOB'],1))
+}
 set.seed(seed)
 source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$human_source,
                            ntree = 501,
@@ -245,6 +276,10 @@ Model built using all OTUs present in >10% of samples, only displaying top 10% o
 ```{r source model, fig.width=6, fig.height=6}
 confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
 ```
+
+Models predicting randomized donor perform with a high error rate:   
+Mean Error Rate = `r summary(baseline_source_df)[4]` with an IQR of `r summary(baseline_source_df)[2]` - `r summary(baseline_source_df)[5]`.  
+
 
 ##### OTUs predictive of __Human Donor__ (Top 10%)  
 Red OTUs are top 12 which are plotted against CFU below  
@@ -352,6 +387,22 @@ cfu_all_src_shared_df$human_source <- factor(cfu_all_src_shared_df$human_source)
 #ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
 #ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
 
+baseline_cfu_src_df <- c()
+baseline_src_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_all_src_shared_df$log_cfu_med, 
+                       length(cfu_all_src_shared_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  baseline_cfu_src_rf <- randomForest(cfu_all_src_shared_df[ , -1], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  baseline_cfu_src_df <- rbind(baseline_cfu_src_df, 
+                               data.frame(Model = 'Baseline', Observed = random_cfu,
+                                          Predicted = baseline_cfu_src_rf$predicted))
+  baseline_src_rsq <- c(baseline_src_rsq, tail(baseline_cfu_src_rf$rsq,1))
+
+}
 set.seed(seed)
 cfu_all_src_rf <- randomForest(cfu_all_src_shared_df[ , -1], cfu_all_src_shared_df$log_cfu_med,
                            ntree = 1001,
@@ -366,21 +417,30 @@ feat_cor_cfu_src_all <- cor(feature_df_src_numeric, method = 'spearman')[-1,'log
 
 ```{r prediction cfu plot with source, fig.width=6, fig.height=6}
 
-data.frame(Observed = cfu_all_src_shared_df$log_cfu_med, 
-           Predicted = cfu_all_src_rf$predicted) %>% 
-  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
-    xlim(5,9) + ylim(5,9) + 
+rbind(baseline_cfu_src_df,
+      data.frame(Model = 'Prediction',
+                 Observed = cfu_all_src_shared_df$log_cfu_med, 
+                 Predicted = cfu_all_src_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
     annotate('text', label = paste0(round(tail(cfu_all_src_rf$rsq, 1), 4)*100, '% Var Explained'),
              x = min(cfu_all_src_rf$predicted), y = max(cfu_all_src_shared_df$log_cfu_med)) + 
     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(),
-          panel.grid.minor.y = element_blank()) +
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.9,0.1)) +
   labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
     
 
 ```
+
+The % Variation explained in the baseline model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(baseline_src_rsq)`  
+
+
 
 ##### OTUs predictive of _Colonization level_ with Source included (Top 10%)  
 Top 12 OTUs in red are plotted against CFU below
@@ -908,6 +968,21 @@ cfu_wo581_df <- colonized_cfu %>%
     filter(!is.na(log_cfu_med))
 cfu_wo581_df$human_source <- factor(cfu_wo581_df$human_source)
 
+baseline_wo581 <- c()
+base_wo581_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_wo581_df$log_cfu_med, 
+                       length(cfu_wo581_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  baseline_wo581_rf <- randomForest(cfu_wo581_df[ , -1], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  baseline_wo581 <- rbind(baseline_wo581, 
+                               data.frame(Model = 'Baseline', Observed = random_cfu,
+                                          Predicted = baseline_wo581_rf$predicted))
+  base_wo581_rsq <- c(base_wo581_rsq, tail(baseline_wo581_rf$rsq,1))
+}
 set.seed(seed)
 cfu_wo581_rf <- randomForest(cfu_wo581_df[ , -2], cfu_wo581_df$log_cfu_med,
                            ntree = 1001,
@@ -947,17 +1022,19 @@ cfu_A_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
 
 
 ```{r colonization performance without 581, fig.width=5, fig.height=4}
-data.frame(Observed = cfu_wo581_df$log_cfu_med, 
-           Predicted = cfu_wo581_rf$predicted) %>% 
-  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
-    xlim(5,9) + ylim(5,9) + 
+rbind(baseline_wo581,
+      data.frame(Model = 'Prediction', Observed = cfu_wo581_df$log_cfu_med, 
+           Predicted = cfu_wo581_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
     annotate('text', label = paste0(round(tail(cfu_wo581_rf$rsq, 1), 4)*100, '% Var Explained'),
              x = 6, y = 8.9) + 
     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(),
-          panel.grid.minor.y = element_blank()) +
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.8,0.2)) +
   labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
     
 
@@ -965,6 +1042,11 @@ data.frame(Observed = cfu_wo581_df$log_cfu_med,
 top_otus_no581 <- get_tax(row_list = names(top_features_wo581)[-1])$tax_label
 top_otus_no581 <- c('Human Source', top_otus_no581)
 ```
+
+The % Variation explained in the baseline model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(base_wo581_rsq)`   
+
 
 Including one Donor 581 cage increases performance:  
 w/Cage A: `r paste0(round(tail(cfu_A_rf$rsq, 1), 4)*100, '% Var Explained')`   
@@ -995,7 +1077,7 @@ __This decrease in performance when removing Human Donor 581 suggests that with 
 
 #### Remove High and Low CFU sources
 
-```{r all without 581 or 1134/1146}
+```{r all without 581 or 1134/1146, fig.width=5, fig.height=4}
 cfu_wo_hilo_df <- colonized_cfu %>% 
     select(mouse_id, human_source, log_cfu_med) %>% 
     right_join(community_all_d0) %>% 
@@ -1004,6 +1086,21 @@ cfu_wo_hilo_df <- colonized_cfu %>%
     filter(!is.na(log_cfu_med))
 cfu_wo_hilo_df$human_source <- factor(cfu_wo_hilo_df$human_source)
 
+baseline_wo_hilo <- c()
+base_wo_hilo_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_wo_hilo_df$log_cfu_med, 
+                       length(cfu_wo_hilo_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  baseline_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -1], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  baseline_wo_hilo <- rbind(baseline_wo_hilo, 
+                               data.frame(Model = 'Baseline', Observed = random_cfu,
+                                          Predicted = baseline_wo_hilo_rf$predicted))
+  base_wo_hilo_rsq <- c(base_wo_hilo_rsq, tail(baseline_wo_hilo_rf$rsq,1))
+}
 set.seed(seed)
 cfu_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -2], cfu_wo_hilo_df$log_cfu_med,
                            ntree = 1001,
@@ -1011,17 +1108,22 @@ cfu_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -2], cfu_wo_hilo_df$log_cfu_med
                            importance = T)
 top_features_wo_hilo <- head(sort(importance(cfu_wo_hilo_rf)[,1],decreasing = T), n_features)
 
-data.frame(Observed = cfu_wo_hilo_df$log_cfu_med, 
-           Predicted = cfu_wo_hilo_rf$predicted) %>% 
-  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
-    xlim(5,9) + ylim(5,9) + 
+rbind(baseline_wo_hilo,
+      data.frame(Model = 'Prediction', Observed = cfu_wo_hilo_df$log_cfu_med, 
+           Predicted = cfu_wo_hilo_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
     annotate('text', label = paste0(round(tail(cfu_wo_hilo_rf$rsq, 1), 4)*100, '% Var Explained'),
-             x = 5.5, y = 8.9) + 
+             x = 6, y = 8.9) + 
     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(),
-          panel.grid.minor.y = element_blank()) +
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.8,0.2)) +
   labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
 ```
 
+The % Variation explained in the baseline model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(base_wo_hilo_rsq)`  
