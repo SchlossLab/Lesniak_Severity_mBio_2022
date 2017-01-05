@@ -993,4 +993,35 @@ Without human donor, performance was slightly lower with similar top features
 __This decrease in performance when removing Human Donor 581 suggests that with this data set, random forest is unable to predict CFU with a high degree of accuracy. This model seems to potentially be identifying the split between the high and low CFU groups, although this is difficult to say with any weight since we only have one source in the low grouping.__
 
 
+#### Remove High and Low CFU sources
+
+```{r all without 581 or 1134/1146}
+cfu_wo_hilo_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source %in% c('DA00581', 'DA01134','DA01146')) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_wo_hilo_df$human_source <- factor(cfu_wo_hilo_df$human_source)
+
+set.seed(seed)
+cfu_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -2], cfu_wo_hilo_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features_wo_hilo <- head(sort(importance(cfu_wo_hilo_rf)[,1],decreasing = T), n_features)
+
+data.frame(Observed = cfu_wo_hilo_df$log_cfu_med, 
+           Predicted = cfu_wo_hilo_rf$predicted) %>% 
+  ggplot(aes(x = Predicted, y = Observed)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + 
+    annotate('text', label = paste0(round(tail(cfu_wo_hilo_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = 5.5, y = 8.9) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+```
 
