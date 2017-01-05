@@ -45,12 +45,12 @@ otu_presence_cutoff <- 0.1
 meta_data <- 
   meta_data %>% 
   filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
-  select(mouse_id, sample_id, cage_id, human_source, day, log_cfu)
+  select(mouse_id, sample_id, cage_id, human_source, day, log_cfu) %>% 
+  filter(!is.na(log_cfu))
 shared_list_days <- meta_data %>% 
   filter(day == 0) %>% 
   select(-day, -log_cfu, -cage_id, -human_source)
 shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
-meta_data <- filter(meta_data, !is.na(log_cfu))
 
 # create shared with relative abundances over 1%
 mean_otu_counts <- unique(apply(shared_file, 1, sum))
@@ -79,16 +79,6 @@ community_all_d0 <- merge(shared_list_days, rel_abund_shared_01,
                           by.x = 'sample_id', by.y = 'row.names') %>% 
                      select(-sample_id)
 ```
-
-*** 
-***
-I did notice that the way I was selecting samples (Day == 0) was removing a cage, since there was no CFU recorded for Day 0. This cage is higher in CFU and does have an effect on CFU however without any CFU data for day 0 it is not completely clear there was no CDI present at day 0. 
-
-***
-***
-
-
-
 
 ### Predicting __Colonization Level__ (Log10 CFU) with Day 0 Community
 
