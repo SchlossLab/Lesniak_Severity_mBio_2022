@@ -44,7 +44,7 @@ wt_ls_plot <- meta_file %>%
   labs(x = 'Day', y = ' Percent Relative to Day 0', title = 'Weight Loss') +
   theme(legend.justification=c(1,0), legend.position=c(1,0.1), 
         legend.title=element_blank()) +
-  stat_summary(fun.y= "median", geom = "point")
+  stat_summary(fun.data= "median_hilow")
 
 
 cfu_plot <- meta_file %>% 
@@ -110,6 +110,9 @@ ggdraw() +
 
 ggdraw() +
   draw_plot(cfu_mouse_plot)
+
+#plot Figure 2
+
 
 
 #5 day plots only
