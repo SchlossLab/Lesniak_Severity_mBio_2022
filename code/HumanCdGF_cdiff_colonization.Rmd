@@ -1127,3 +1127,115 @@ rbind(randomized_wo_hilo,
 The % Variation explained in the randomized model is:  
 Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
 `r summary(base_wo_hilo_rsq)`  
+
+***  
+***  
+
+### Regression cannot be used to predict colonization levels in this dataset  
+
+Since the % Variation explained by the RF model decreases to ~0% when removing the extreme values, the suggests that we do not have the data to make accurate predictions of the colonization level due to the low number of samples at the extremes. However we do seem to have a separation between the high and low but we cannot model the middle levels with linear regression. So another way we could look at this would to classify the groups.  
+
+##### NMDS of colonization level  
+
+```{r NMDS, eval = F}
+#export shared file to generate theta-yc distances in mothur
+#read in full shared file
+full_shared_file <- 'data/process/full_shared.shared'
+full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
+
+nmds_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(shared_day_0) %>% 
+    filter(!is.na(log_cfu_med))
+nmds_df <- data.frame(colonization_level= ifelse(nmds_df$log_cfu_med >= 8.25, 'hi',
+                                     ifelse(nmds_df$log_cfu_med <= 6.5, 'lo', 'mid')),
+                       select(nmds_df, -log_cfu_med))
+nmds_shared <- full_shared_file[full_shared_file$Group %in% 
+                                  paste0(gsub('_','-',nmds_df$mouse_id),'-D0'),]
+write.table(nmds_shared, file= '~/Desktop/day_0_communities.shared', sep = '\t', 
+            row.names = F, quote = F)
+nmds_CL_design <- data.frame(paste0(gsub('_','-',nmds_df$mouse_id),'-D0'), nmds_df$colonization_level)
+write.table(nmds_CL_design, file= '~/Desktop/day_0_communities.CL.design', sep = '\t', 
+      col.names = F, row.names = F, quote = F)
+nmds_src_design <- data.frame(paste0(gsub('_','-',nmds_df$mouse_id),'-D0'), nmds_df$human_source)
+write.table(nmds_src_design, file= '~/Desktop/day_0_communities.SRC.design', sep = '\t', 
+      col.names = F, row.names = F, quote = F)
+#min(apply(nmds_shared[,-c(1:3)],1,sum)) # 2423
+#run dist command in mothur
+#dist.shared(shared=~/Desktop/day_0_communities.shared, calc=thetayc, subsample=2400)
+#nmds(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist)
+Number of dimensions:	2
+Lowest stress :	0.297773
+R-squared for configuration:	0.55791
+#nmds(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, mindim=3, maxdim=3)
+Number of dimensions:	3
+Lowest stress :	0.191484
+R-squared for configuration:	0.71623
+#amova(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, design=~/Desktop/day_0_communities.CL.design)
+hi-lo-mid	Among	Within	Total
+SS	4.48543	8.08716	12.5726
+df	2	30	32
+MS	2.24272	0.269572
+
+Fs:	8.31955
+p-value: <0.001*
+
+hi-lo	Among	Within	Total
+SS	2.4372	0.676826	3.11403
+df	1	10	11
+MS	2.4372	0.0676826
+
+Fs:	36.0093
+p-value: <0.001*
+
+hi-mid	Among	Within	Total
+SS	2.08215	7.41077	9.49293
+df	1	23	24
+MS	2.08215	0.322207
+
+Fs:	6.46215
+p-value: <0.001*
+
+lo-mid	Among	Within	Total
+SS	2.30066	8.08673	10.3874
+df	1	27	28
+MS	2.30066	0.299508
+
+Fs:	7.68145
+p-value: <0.001*
+#significantly different centroids
+  
+#homova(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, design=~/Desktop/day_0_communities.CL.design)
+HOMOVA	BValue	P-value	SSwithin/(Ni-1)_values
+hi-lo-mid	21.6225	<0.001*	0.000145266	0.0966271	0.370517
+hi-lo	14.1638	<0.001*	0.000145266	0.0966271
+hi-mid	18.2515	<0.001*	0.000145266	0.370517
+lo-mid	3.48295	<0.001*	0.0966271	0.370517
+# all groups have significantly different variation (hi = 0.0001, mid = 0.37, lo = 0.097)
+
+dist_cl <- vegdist(nmds_df[,-c(1,2)])
+nmds <- metaMDS(nmds_df[,-c(1:2)])
+stressplot(nmds, dist_cl)
+plot(nmds, type = 'n')
+points(nmds, display = 'sites', pch = 21, bg = as.numeric(as.factor(nmds_df$human_source)))
+#text(nmds, display = 'species', cex = 0.5)
+envfit(nmds ~ )
+```
+
+#### Classification of Colonization Level   
+
+```{r classify colonization level}
+
+```
+
+
+#### Features driving classification   
+
+```{r features of col level}
+
+```
+
+
+
+
+While these features seem to drive the grouping, it still needs to be further validated/investigated to see if these results repeat in similar microbiomes since the high and low are largely homogenous communities and the middle group is made of heterogenous commnunities.
