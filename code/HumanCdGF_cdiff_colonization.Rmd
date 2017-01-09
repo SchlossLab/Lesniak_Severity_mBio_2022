@@ -1212,14 +1212,40 @@ hi-lo	14.1638	<0.001*	0.000145266	0.0966271
 hi-mid	18.2515	<0.001*	0.000145266	0.370517
 lo-mid	3.48295	<0.001*	0.0966271	0.370517
 # all groups have significantly different variation (hi = 0.0001, mid = 0.37, lo = 0.097)
+```
 
-dist_cl <- vegdist(nmds_df[,-c(1,2)])
-nmds <- metaMDS(nmds_df[,-c(1:2)])
-stressplot(nmds, dist_cl)
+```{r NMDS of Colonization Level}
+
+full_shared_file <- 'data/process/full_shared.shared'
+full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
+
+dist_file <- 'data/process/nmds_colonization_level/day_0_communities.thetayc.0.03.lt.ave.dist'
+dist_day_0_comm <- scan(dist_file, what = 'character') # load dist file as vector
+n_samples_dist <- as.numeric(dist_day_0_comm[1]) # save sample number and remove from dist vector
+dist_day_0_comm <- dist_day_0_comm[-1]
+dist_matrix <- data.frame(matrix(NA, nrow = n_samples_dist, ncol = n_samples_dist)) # matrix size of samples
+diag_value <- 0
+diag(dist_matrix) <- diag_value # fills in diagonal
+c <- 1 # c keep track of position in dist vector
+for(i in 1:n_samples_dist){
+  sample <- dist_day_0_comm[c]
+  colnames(dist_matrix)[i] <- sample
+  rownames(dist_matrix)[i] <- sample
+  if(i > 1){
+    dist_matrix[i,1:(i-1)] <- dist_day_0_comm[(c+1):(c+i-1)] # fill in matrix
+  }
+  c <- c+i # maintain position in dist vector
+}
+dist_matrix[upper.tri(dist_matrix)] <- t(dist_matrix)[upper.tri(dist_matrix)] #fill in upper triangle
+
+
+nmds <- metaMDS(dist_matrix)
+stressplot(nmds)
 plot(nmds, type = 'n')
-points(nmds, display = 'sites', pch = 21, bg = as.numeric(as.factor(nmds_df$human_source)))
+
+#points(nmds, display = 'sites', pch = 21, bg = as.numeric(as.factor(nmds_df$human_source)))
 #text(nmds, display = 'species', cex = 0.5)
-envfit(nmds ~ )
+#envfit(nmds ~ )
 ```
 
 #### Classification of Colonization Level   
