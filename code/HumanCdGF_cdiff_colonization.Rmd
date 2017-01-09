@@ -394,7 +394,7 @@ for(i in 1:100){
   random_cfu <- sample(cfu_all_src_shared_df$log_cfu_med, 
                        length(cfu_all_src_shared_df$log_cfu_med), replace = F)
   set.seed(seed)
-  randomized_cfu_src_rf <- randomForest(cfu_all_src_shared_df[ , -1], random_cfu,
+  randomized_cfu_src_rf <- randomForest(cfu_all_src_shared_df[ , -c(1,2)], random_cfu,
                            ntree = 501,
                            mtry = 15)
   randomized_cfu_src_df <- rbind(randomized_cfu_src_df, 
@@ -975,7 +975,7 @@ for(i in 1:100){
   random_cfu <- sample(cfu_wo581_df$log_cfu_med, 
                        length(cfu_wo581_df$log_cfu_med), replace = F)
   set.seed(seed)
-  randomized_wo581_rf <- randomForest(cfu_wo581_df[ , -1], random_cfu,
+  randomized_wo581_rf <- randomForest(cfu_wo581_df[ , -c(1,2)], random_cfu,
                            ntree = 501,
                            mtry = 15)
   randomized_wo581 <- rbind(randomized_wo581, 
@@ -1093,7 +1093,7 @@ for(i in 1:100){
   random_cfu <- sample(cfu_wo_hilo_df$log_cfu_med, 
                        length(cfu_wo_hilo_df$log_cfu_med), replace = F)
   set.seed(seed)
-  randomized_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -1], random_cfu,
+  randomized_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -c(1,2)], random_cfu,
                            ntree = 501,
                            mtry = 15)
   randomized_wo_hilo <- rbind(randomized_wo_hilo, 
