@@ -12,7 +12,7 @@ No.	mouse_ID	cage_ID	human_source	outcome	Tissue	edema_tissue	inflammation_tissu
 86	2742	CON3	DA00430	Mild	Cecum	1	1	0	neutrophils	2
 81	NT	CON3	DA00430	Mild	Cecum	1	2	1	neutrophils	4
 1	2955	CONA	DA00431	Severe	Cecum	4	3	2	neutrophils	9
-24	12953	CONA	DA00431	Severe	Cecum	4	3	3	neutrophils	10
+24	2953	CONA	DA00431	Severe	Cecum	4	3	3	neutrophils	10
 62	984	578	DA00578	Severe	Cecum	4	3	2	neutrophils	9
 34	382	578	DA00578	Severe	Cecum	4	3	3	neutrophils	10
 26	2030	CON	DA00578	Severe	Cecum	3	3	3	neutrophils	9

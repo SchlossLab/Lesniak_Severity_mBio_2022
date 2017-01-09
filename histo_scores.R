@@ -6,12 +6,17 @@
 #
 #
 # Output: 
-
+library('tidyr')
+library('ggplot2')
 # load files and trim
 meta_file   <- 'data/process/human_CdGF_metadata.txt'
 meta_file   <- read.table(meta_file, sep = '\t', header = T, row.names = 'sample_id')
 histo_file <- 'data/process/histology_scores_txt.txt'
 histo_file <- read.table(histo_file, sep = '\t', header = T)
+
+#make mouse_id column to make easier for merging later
+histo_file <- unite_(histo_file, "mouse_id", c("cage_ID", "mouse_ID"), sep="_", remove=FALSE)
+histo_full <- merge(meta_file, histo_file, by ="mouse_id")
 
 #plot of summary score by donor
 ggplot(histo_file, aes(human_source, summary_score)) + geom_point(aes(fill=outcome, color=outcome), size=2) +ggtitle("histology summary score")
