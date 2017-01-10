@@ -21,15 +21,26 @@ histo_full <- merge(meta_file, histo_file, by.x="row.names", by.y="mouse_id_day"
 
 #plot weightloss and summary score to see if they're correlated
 line <- lm(histo_full$percent_weightLoss~ histo_full$summary_score)
-plot(histo_full$percent_weightLoss~ histo_full$summary_score)
+plot(histo_full$percent_weightLoss~ histo_full$summary_score, ylab= "% weight loss", xlab="histology summary score")
 abline(line)
 #Adjusted R-squared:  0.1448
 
 cor(histo_full$percent_weightLoss, histo_full$summary_score)
 # output: -0.4015095
 
+#plot mild and severe separately 
+severe <- subset(histo_full, outcome == "Severe")
+mild <- subset(histo_full, outcome == "Mild")
 
+severe_line <- lm(severe$percent_weightLoss~ severe$summary_score)
+plot(severe$percent_weightLoss~ severe$summary_score, ylab= "% weight loss", xlab="histology summary score")
+abline(severe_line)
+#Adjusted R-squared:  0.009939 
 
+mild_line <- lm(mild$percent_weightLoss~ mild$summary_score)
+plot(mild$percent_weightLoss~ mild$summary_score, ylab= "% weight loss", xlab="histology summary score")
+abline(mild_line)
+#Adjusted R-squared:  0.05345 
 
 #plot of summary score by donor
 ggplot(histo_file, aes(human_source, summary_score)) + geom_point(aes(fill=outcome, color=outcome), size=2) +ggtitle("histology summary score")
