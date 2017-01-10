@@ -14,9 +14,22 @@ meta_file   <- read.table(meta_file, sep = '\t', header = T, row.names = 'sample
 histo_file <- 'data/process/histology_scores_txt.txt'
 histo_file <- read.table(histo_file, sep = '\t', header = T)
 
-#make mouse_id column to make easier for merging later
-histo_file <- unite_(histo_file, "mouse_id", c("cage_ID", "mouse_ID"), sep="_", remove=FALSE)
-histo_full <- merge(meta_file, histo_file, by ="mouse_id")
+#make mouse_id column and merge
+histo_file <- unite_(histo_file, "mouse_id", c("cage_ID", "mouse_ID"), sep="-", remove=FALSE)
+histo_file<- unite_(histo_file, "mouse_id_day", c("mouse_id", "day"), sep="-D", remove=FALSE)
+histo_full <- merge(meta_file, histo_file, by.x="row.names", by.y="mouse_id_day")
+
+#plot weightloss and summary score to see if they're correlated
+line <- lm(histo_full$percent_weightLoss~ histo_full$summary_score)
+plot(histo_full$percent_weightLoss~ histo_full$summary_score)
+abline(line)
+#Adjusted R-squared:  0.1448
+
+cor(histo_full$percent_weightLoss, histo_full$summary_score)
+# output: -0.4015095
+
+
+
 
 #plot of summary score by donor
 ggplot(histo_file, aes(human_source, summary_score)) + geom_point(aes(fill=outcome, color=outcome), size=2) +ggtitle("histology summary score")
