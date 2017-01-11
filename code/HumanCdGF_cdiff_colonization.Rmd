@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7,
 ```
 
 ```{r setup environment}
-pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret')
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret', 'vegan')
 for (dep in pack_used){
   if (dep %in% installed.packages()[,"Package"] == FALSE){
     install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
@@ -73,6 +73,14 @@ colonized_cfu <- meta_data %>%
   filter(day %in% c(4:10)) %>% 
   group_by(mouse_id, cage_id, human_source) %>% 
   summarise(log_cfu_med = median(log_cfu)) %>% 
+  ungroup()
+
+colonized_cfu_range <- meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  summarise(log_cfu_med = median(log_cfu),
+            low_iqr = quantile(log_cfu)['25%'],
+            high_iqr = quantile(log_cfu)['75%']) %>% 
   ungroup()
 
 community_all_d0 <- merge(shared_list_days, rel_abund_shared_01, 
@@ -1093,20 +1101,19 @@ for(i in 1:100){
   random_cfu <- sample(cfu_wo_hilo_df$log_cfu_med, 
                        length(cfu_wo_hilo_df$log_cfu_med), replace = F)
   set.seed(seed)
-  randomized_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -c(1,2)], random_cfu,
-                           ntree = 501,
-                           mtry = 15)
-  randomized_wo_hilo <- rbind(randomized_wo_hilo, 
+  randomized_wo_hilo_rf <- randomForest(select(cfu_wo_hilo_df, contains('Otu')), 
+                                        random_cfu, ntree = 501, mtry = 15)
+  randomized_wo_hilo <-   rbind(randomized_wo_hilo, 
                                data.frame(Model = 'Randomized', Observed = random_cfu,
                                           Predicted = randomized_wo_hilo_rf$predicted))
   base_wo_hilo_rsq <- c(base_wo_hilo_rsq, tail(randomized_wo_hilo_rf$rsq,1))
 }
 set.seed(seed)
-cfu_wo_hilo_rf <- randomForest(cfu_wo_hilo_df[ , -2], cfu_wo_hilo_df$log_cfu_med,
-                           ntree = 1001,
-                           mtry = 15,
-                           importance = T)
+cfu_wo_hilo_rf <- randomForest(select(cfu_wo_hilo_df, contains('Otu')), 
+                               cfu_wo_hilo_df$log_cfu_med, ntree = 1001,
+                               mtry = 15, importance = T)
 top_features_wo_hilo <- head(sort(importance(cfu_wo_hilo_rf)[,1],decreasing = T), n_features)
+
 
 rbind(randomized_wo_hilo,
       data.frame(Model = 'Actual', Observed = cfu_wo_hilo_df$log_cfu_med, 
@@ -1121,7 +1128,7 @@ rbind(randomized_wo_hilo,
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
           legend.position = c(0.8,0.2)) +
-  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
 ```
 
 The % Variation explained in the randomized model is:  
@@ -1133,7 +1140,31 @@ Min.  1st Qu.   Median     Mean  3rd Qu.     Max.
 
 ### Regression cannot be used to predict colonization levels in this dataset  
 
-Since the % Variation explained by the RF model decreases to ~0% when removing the extreme values, the suggests that we do not have the data to make accurate predictions of the colonization level due to the low number of samples at the extremes. However we do seem to have a separation between the high and low but we cannot model the middle levels with linear regression. So another way we could look at this would to classify the groups.  
+Since the % Variation explained by the RF model decreases to ~0% when removing the extreme values, the suggests that we do not have the data to make accurate predictions of the colonization level due to the low number of samples at the extremes. However we do seem to have a separation between the high and low but we cannot model the middle levels with linear regression. So another way we could look at this would to classify the groups.   
+   
+Furthermore, the variation in the steady state CFU seems to have a high degree of overlap in this middle grouping of colonization level, thus it does not appear possible to precisely define a CFU level to predict relative to the others.
+
+```{r IQR of CFU in middle range, fig.height=4, fig.width=5}
+meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  merge(data.frame(colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source %in% c('DA00581', 'DA01134','DA01146')) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+      select(mouse_id), 
+                   predicted = cfu_wo_hilo_rf$predicted)) %>% 
+  ggplot(aes(x=predicted, y=log_cfu, group=mouse_id))+
+     stat_summary(fun.data = 'median_hilow', fun.args=(conf.int=0.5)) + 
+     xlim(7,8) + ylim(5,9) +
+     labs(x= "Predicted CFU (log10)", y='Observed CFU (log10)\nMedian with IQR of CFU from day 4-10') +
+     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank())
+```
 
 ##### NMDS of colonization level  
 
@@ -1214,8 +1245,8 @@ lo-mid	3.48295	<0.001*	0.0966271	0.370517
 # all groups have significantly different variation (hi = 0.0001, mid = 0.37, lo = 0.097)
 ```
 
-```{r NMDS of Colonization Level}
-
+```{r NMDS of Colonization Level, eval=F}
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
 full_shared_file <- 'data/process/full_shared.shared'
 full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
 
