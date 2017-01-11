@@ -1245,7 +1245,7 @@ lo-mid	3.48295	<0.001*	0.0966271	0.370517
 # all groups have significantly different variation (hi = 0.0001, mid = 0.37, lo = 0.097)
 ```
 
-```{r NMDS of Colonization Level, eval=F}
+```{r NMDS of Colonization Level, fig.height=6, fig.width=6}
 setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
 full_shared_file <- 'data/process/full_shared.shared'
 full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
@@ -1269,15 +1269,71 @@ for(i in 1:n_samples_dist){
 }
 dist_matrix[upper.tri(dist_matrix)] <- t(dist_matrix)[upper.tri(dist_matrix)] #fill in upper triangle
 
+nmds_group <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    mutate(colonization_level= ifelse(log_cfu_med >= 8.25, 'hi',
+                                     ifelse(log_cfu_med <= 6.5, 'lo', 'mid'))) %>% 
+    select(colonization_level, mouse_id)
+
+rownames(dist_matrix) <- gsub('_D0','',rownames(dist_matrix))
+colnames(dist_matrix) <- gsub('_D0','',colnames(dist_matrix))
 
 nmds <- metaMDS(dist_matrix)
-stressplot(nmds)
-plot(nmds, type = 'n')
+#stressplot(nmds)
+colors <- c('red','green','orange')
 
-#points(nmds, display = 'sites', pch = 21, bg = as.numeric(as.factor(nmds_df$human_source)))
-#text(nmds, display = 'species', cex = 0.5)
-#envfit(nmds ~ )
+plot(nmds, type = 'n')
+points(nmds, display = 'sites', pch = 21, bg = colors[as.numeric(factor(nmds_group$colonization_level))])
+legend('topright', c('High (> 8.25 Log10 CFU)','Middle (8.25-6.5 Log10 CFU)','Low (< 6.5 Log10 CFU)'), 
+       pch =21, pt.bg=c('red','orange','green'), inset=0.09, box.lty = 0)
+#adonis(dist_matrix~colonization_level, data = nmds_group)
 ```
+
+Stress = `r nmds$stress`  
+
+##### AMOVA
+hi-lo-mid	Among	  Within	Total
+SS	      4.48543	8.08716	12.5726
+df	      2	      30	    32
+MS	      2.24272	0.269572
+
+Fs:	8.31955
+p-value: <0.001*
+
+hi-lo	Among	  Within	  Total
+SS	  2.4372	0.676826	3.11403
+df	  1	      10	      11
+MS	  2.4372	0.0676826
+
+Fs:	36.0093
+p-value: <0.001*
+
+hi-mid	Among	  Within	Total
+SS	    2.08215 7.41077	9.49293
+df	    1	      23	    24
+MS	    2.08215	0.322207
+
+Fs:	6.46215
+p-value: <0.001*
+
+lo-mid	Among	    Within	Total
+SS	    2.30066	  8.08673	10.3874
+df	    1	        27	    28
+MS	    2.30066	  0.299508
+
+Fs:	7.68145
+p-value: <0.001*
+###### significantly different centroids
+  
+#### HOMOVA
+HOMOVA	  BValue  	P-value	  SSwithin/(Ni-1)_values
+hi-lo-mid	21.6225	  <0.001*	  0.000145266	0.0966271	0.370517
+hi-lo	    14.1638	  <0.001*	  0.000145266	0.0966271
+hi-mid	  18.2515 	<0.001*	  0.000145266	0.370517
+lo-mid	  3.48295 	<0.001*	  0.0966271	0.370517
+
 
 #### Classification of Colonization Level   
 
