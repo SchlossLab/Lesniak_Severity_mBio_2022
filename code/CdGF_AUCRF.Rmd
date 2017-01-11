@@ -87,33 +87,32 @@ rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
 
 otu_euth_probs <- predict(rf_early_aucrf$RFopt, type = 'prob')
 
-xyplot(calibration(Predict_early_euth_df$Euth_Early~otu_euth_probs[,1]))
+all_mice_probs <- data.frame(obs = Predict_early_euth_df$Euth_Early,
+                             pred = otu_euth_probs[,2])
 
-cal_plots <- function(observed_col, prediction_df){
-  histo_plot <- ggplot(data.frame(prediction_df), aes(x=X1)) + 
+calibration_plots <- function(prediction_df){
+  # prediction_df must have obs in col 1 and predict in col 2
+  histo_plot <- ggplot(data.frame(prediction_df), aes(x=pred)) + 
     stat_bin(bins = 20, aes(y = ..count../sum(..count..))) +
     scale_x_continuous(breaks=c(seq(0,1,0.2))) +
     labs(x = 'Predicted Value', y = 'Fraction of Samples') + 
     theme_bw()
-  cal_plot <- data.frame(observed = observed_col, 
-                         predicted = prediction_df[,2],
+  cal_plot <- data.frame(prediction_df,
                          bin = cut(prediction_df[,2], 
                                    breaks =c(-Inf,seq(0.1,0.9,0.1), Inf),
                                    labels = seq(0.05,0.95,0.1))) %>% 
     group_by(bin) %>% 
-    summarise(positive_portion = sum(observed==1)/length(observed)) %>% 
+    summarise(positive_portion = sum(obs==1)/length(obs)) %>% 
     mutate(bin = as.numeric(as.character(bin))) %>% 
     ggplot(aes(x=bin, y=positive_portion)) + geom_point() +
       labs(x='Predicted Value', y='Fraction of Positives') +
       geom_abline(color='gray', intercept = 0, slope = 1) + 
       scale_x_continuous(breaks=c(seq(0,1,0.2)), limits=c(0,1)) +
-      scale_y_continuous(breaks=c(seq(0,1,0.2))) +
+      scale_y_continuous(breaks=c(seq(0,1,0.2)), limits=c(0,1)) +
       theme_bw()
   return(list(histo_plot, cal_plot))
 }
-test <- cal_plots(observed_col = Predict_early_euth_df$Euth_Early,
-          prediction_df = otu_euth_probs)
-test[[2]]
+all_mice_cal <- calibration_plots(all_mice_probs)
 
 otu_euth_roc <- roc(Predict_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
 euth_otu_feat <- rf_early_aucrf$Xopt
@@ -182,6 +181,7 @@ for(j in 1:iters){
   om_all <- rbind(om_all, om_probs)
   om_aucs[j] <- om_roc$auc
 }
+om_cal <- calibration_plots(om_probs)
 om_roc <- roc(om_all$obs~om_all$pred)
 
 raw_importance <- data.frame(om_import_otus[ , -c(1)], row.names = om_import_otus$otu)
@@ -191,44 +191,44 @@ importance_otus <- importance_otus[importance_otus > mean(importance_otus)]
 om_import_otus <- names(sort(importance_otus, decreasing = T))
 
 #### leave-one-source-out
-LOcO_df <- Predict_df %>% 
+LOsO_df <- Predict_df %>% 
                 select(Euth_Early, human_source, one_of(om_import_otus))
-source_list <- as.character(unique(LOcO_df$human_source))
+source_list <- as.character(unique(LOsO_df$human_source))
 
-LOcO_probs <- c()
-LOcO_rf <- c()
+LOsO_probs <- c()
+LOsO_rf <- c()
 for(i in 1:length(source_list)){
-  source <- LOcO_df$human_source == source_list[i]
-  LOcO_predict <- select(LOcO_df, -human_source)
-  train <- LOcO_predict[!source,]
-  test <- LOcO_predict[source,]
+  source <- LOsO_df$human_source == source_list[i]
+  LOsO_predict <- select(LOsO_df, -human_source)
+  train <- LOsO_predict[!source,]
+  test <- LOsO_predict[source,]
   set.seed(seed)
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOcO_rf[[i]] <- temp_model$RFopt
-  LOcO_probs[LOcO_df$human_source == source_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
+  LOsO_rf[[i]] <- temp_model$RFopt
+  LOsO_probs[LOsO_df$human_source == source_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
-LOcO_roc <- roc(LOcO_df$Euth_Early~LOcO_probs)
+LOsO_roc <- roc(LOsO_df$Euth_Early~LOsO_probs)
 
 #### leave-2-out
-LOdO_df <- Predict_df %>% 
+LTsO_df <- Predict_df %>% 
                 select(Euth_Early, human_source, one_of(om_import_otus))
-donor_list <- as.character(unique(LOdO_df$human_source))
+donor_list <- as.character(unique(LTsO_df$human_source))
 
-LOdO_probs <- c()
-LOdO_rf <- c()
+LTsO_probs <- c()
+LTsO_rf <- c()
 for(i in seq(1,length(donor_list),2)){
   set.seed(seed)
   donors <- sample(donor_list)
-  by_donor <- LOdO_df$human_source %in% donors[i:(i+1)]
-  LOdO_predict <- select(LOdO_df, -human_source)
-  train <- LOdO_predict[!by_donor,]
-  test <- LOdO_predict[by_donor,]
+  by_donor <- LTsO_df$human_source %in% donors[i:(i+1)]
+  LTsO_predict <- select(LTsO_df, -human_source)
+  train <- LTsO_predict[!by_donor,]
+  test <- LTsO_predict[by_donor,]
   set.seed(seed)
   temp_model <- AUCRF(Euth_Early~., data=train, pdel=0.99, ntree=500)
-  LOdO_rf[[i]] <- temp_model$RFopt
-  LOdO_probs[LOdO_df$human_source %in% donors[i:(i+1)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
+  LTsO_rf[[i]] <- temp_model$RFopt
+  LTsO_probs[LTsO_df$human_source %in% donors[i:(i+1)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
-LOdO_roc <- roc(LOdO_df$Euth_Early~LOdO_probs)
+LTsO_roc <- roc(LTsO_df$Euth_Early~LTsO_probs)
 
 #### One_mouse-Leave one out model 
 om_loo_df <- select(Predict_df,  
@@ -304,14 +304,14 @@ legend('bottomright', legend=c(sprintf('Out-Of-Bag (AUC: %.3g)',otu_euth_roc$auc
 par(mar=c(4,4,1,1))
 plot(c(1,0),c(0,1), type='l', lty=3, xlim=c(1.01,0), ylim=c(-0.01,1.01), xaxs='i', yaxs='i', ylab='', xlab='')
 plot(om_roc, col='black', lwd=2, add=T, lty=1)
-plot(LOcO_roc, col='purple', lwd=2, add=T, lty=3)
-plot(LOdO_roc, col='red', lwd=2, add=T, lty=3)
+plot(LOsO_roc, col='purple', lwd=2, add=T, lty=3)
+plot(LTsO_roc, col='red', lwd=2, add=T, lty=3)
 plot(om_loo_roc, col='blue', lwd=2, add=T, lty=2)
 mtext(side=2, text="Sensitivity", line=2.5)
 mtext(side=1, text="Specificity", line=2.5)
 legend('bottomright', legend=c(sprintf('One-mouse (AUC: %.3g)',om_roc$auc),
-                           sprintf('Leave-1 source-out (AUC: %.3g)',LOcO_roc$auc),
-                           sprintf('Leave-2 sources-out (AUC: %.3g)',LOdO_roc$auc),
+                           sprintf('Leave-1 source-out (AUC: %.3g)',LOsO_roc$auc),
+                           sprintf('Leave-2 sources-out (AUC: %.3g)',LTsO_roc$auc),
                            sprintf('One-mouse-Leave-1 source-out (AUC: %.3g)',om_loo_roc$auc)),
        lty=c(1,3,3,2), lwd=2, col=c('black','purple','red','blue'), bty='n')
 ```
