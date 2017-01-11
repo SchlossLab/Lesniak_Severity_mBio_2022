@@ -1,7 +1,7 @@
 ---
 title: "CdGF_aucrf"
 author: "Nicholas Lesniak"
-date: "September 15, 2016"
+date: "January 10, 2016"
 output: html_document
 ---
 
@@ -86,6 +86,35 @@ rf_early_aucrf <- AUCRF(Euth_Early ~ ., data = Predict_early_euth_df,
                               ntree = n_trees, pdel = 0.05, ranking = 'MDA')
 
 otu_euth_probs <- predict(rf_early_aucrf$RFopt, type = 'prob')
+
+xyplot(calibration(Predict_early_euth_df$Euth_Early~otu_euth_probs[,1]))
+
+cal_plots <- function(observed_col, prediction_df){
+  histo_plot <- ggplot(data.frame(prediction_df), aes(x=X1)) + 
+    stat_bin(bins = 20, aes(y = ..count../sum(..count..))) +
+    scale_x_continuous(breaks=c(seq(0,1,0.2))) +
+    labs(x = 'Predicted Value', y = 'Fraction of Samples') + 
+    theme_bw()
+  cal_plot <- data.frame(observed = observed_col, 
+                         predicted = prediction_df[,2],
+                         bin = cut(prediction_df[,2], 
+                                   breaks =c(-Inf,seq(0.1,0.9,0.1), Inf),
+                                   labels = seq(0.05,0.95,0.1))) %>% 
+    group_by(bin) %>% 
+    summarise(positive_portion = sum(observed==1)/length(observed)) %>% 
+    mutate(bin = as.numeric(as.character(bin))) %>% 
+    ggplot(aes(x=bin, y=positive_portion)) + geom_point() +
+      labs(x='Predicted Value', y='Fraction of Positives') +
+      geom_abline(color='gray', intercept = 0, slope = 1) + 
+      scale_x_continuous(breaks=c(seq(0,1,0.2)), limits=c(0,1)) +
+      scale_y_continuous(breaks=c(seq(0,1,0.2))) +
+      theme_bw()
+  return(list(histo_plot, cal_plot))
+}
+test <- cal_plots(observed_col = Predict_early_euth_df$Euth_Early,
+          prediction_df = otu_euth_probs)
+test[[2]]
+
 otu_euth_roc <- roc(Predict_early_euth_df$Euth_Early ~ otu_euth_probs[ , 2])
 euth_otu_feat <- rf_early_aucrf$Xopt
 
