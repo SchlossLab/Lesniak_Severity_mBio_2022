@@ -208,7 +208,8 @@ for(i in 1:length(source_list)){
   LOsO_probs[LOsO_df$human_source == source_list[i]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
 LOsO_roc <- roc(LOsO_df$Euth_Early~LOsO_probs)
-
+LOsO_cal <- calibration_plots(data.frame(obs=LOsO_df$Euth_Early,
+                                         pred=LOsO_probs))
 #### leave-2-out
 LTsO_df <- Predict_df %>% 
                 select(Euth_Early, human_source, one_of(om_import_otus))
@@ -229,6 +230,8 @@ for(i in seq(1,length(donor_list),2)){
   LTsO_probs[LTsO_df$human_source %in% donors[i:(i+1)]] <- predict(temp_model$RFopt, test, type='prob')[,2]
 }
 LTsO_roc <- roc(LTsO_df$Euth_Early~LTsO_probs)
+LTsO_cal <- calibration_plots(data.frame(obs=LTsO_df$Euth_Early,
+                                         pred=LTsO_probs))
 
 #### One_mouse-Leave one out model 
 om_loo_df <- select(Predict_df,  
@@ -269,6 +272,8 @@ for(j in 1:iters){
   om_loo_aucs[j] <- om_loo_roc$auc 
 } 
 om_loo_roc <- roc(om_loo_all$obs~om_loo_all$pred) 
+om_loo_cal <- calibration_plots(om_loo_all)
+
  
 raw_importance <- data.frame(om_source_import[ , -c(1,2)], row.names = om_source_import$otu) 
  
