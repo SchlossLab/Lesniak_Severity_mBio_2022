@@ -135,8 +135,13 @@ mtext('B', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 #will need to do that ADONIS here for stats
 
 #-----------------------------------------------------------------------------------------------------#
-#Figure 1C - NMDS of mice/cages on day 1 
+#Figure 1C - NMDS of mice/cages on day 0 
 par(las=1, mar=c(4,4,2,2), mgp=c(2.5,0.7,0))
+
+#testing coloring by severity score
+#will need to add histo_full code to this, or maybe i should just save it as a design file... should do that later 
+day0_threebins <- merge(day0_donor_nmds, three_bins, by.x="group", by.y="sample_d0")
+ggplot(day0_threebins, aes(axis1, axis2)) +geom_point(aes(fill=summary_score, col=summary_score)) + ggtitle("NMDS Day 0")
 
 
 #plot
