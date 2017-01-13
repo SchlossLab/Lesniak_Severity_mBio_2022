@@ -139,29 +139,29 @@ mtext('B', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 par(las=1, mar=c(4,4,2,2), mgp=c(2.5,0.7,0))
 
 #testing coloring by severity score
-#will need to add histo_full code to this, or maybe i should just save it as a design file... should do that later 
-day0_threebins <- merge(day0_donor_nmds, three_bins, by.x="group", by.y="sample_d0")
-ggplot(day0_threebins, aes(axis1, axis2)) +geom_point(aes(fill=summary_score, col=summary_score)) + ggtitle("NMDS Day 0")
+bins <- read.table(file='data/process/severity_bins.design', sep = '\t', header=T)
+day0_bins <- merge(day0_donor_nmds, bins, by.x="group", by.y="sample_d0")
+ggplot(day0_bins, aes(axis1, axis2)) +geom_point(aes(fill=severity, col=severity)) +theme_bw() + ylab("NMDS Axis 2") + xlab("NMDS Axis 1")
 
 
-#plot
-colors <- c("dodgerblue2","#E31A1C", # red
-            "green4",
-            "#6A3D9A", # purple
-            "#FF7F00", # orange
-            "black","gold1",
-            "skyblue2","#FB9A99", # lt pink
-            "palegreen2",
-            "#CAB2D6", # lt purple
-            "#FDBF6F", # lt orange
-            "gray70", "khaki2",
-            "maroon","orchid1")
-plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, xlab='NMDS Axis 1', ylab='NMDS Axis 2', col='black', bg=colors[as.numeric(day0_donor_nmds$Donor)], pch=c(21,24)[as.numeric(day0_donor_nmds$Outcome)], lwd = 0.5)
+#colors for old cage plot 
+#colors <- c("dodgerblue2","#E31A1C", # red
+            #"green4",
+            #"#6A3D9A", # purple
+            #"#FF7F00", # orange
+            #"black","gold1",
+            #"skyblue2","#FB9A99", # lt pink
+            #"palegreen2",
+            #"#CAB2D6", # lt purple
+            #"#FDBF6F", # lt orange
+            #"gray70", "khaki2",
+            #"maroon","orchid1")
+#plot(day0_donor_nmds$axis1, day0_donor_nmds$axis2, xlab='NMDS Axis 1', ylab='NMDS Axis 2', col='black', bg=colors[as.numeric(day0_donor_nmds$Donor)], pch=c(21,24)[as.numeric(day0_donor_nmds$Outcome)], lwd = 0.5)
 
 #par(mar=c(5,5,5,5), xpd=TRUE)
 #just make the legend mild and severe 
-legend <- c("Mild", "Severe")
-legend(x="topright", legend, pch=c(21,24), cex=1)
+#legend <- c("Mild", "Severe")
+#legend(x="topright", legend, pch=c(21,24), cex=1)
 mtext('C', side=2, line=2, las=2, adj=1.7, padj=-10.5, cex=1.1, font=2)
 
 #-------------------------------------------------------------------------------------------------------------------------------------#

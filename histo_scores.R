@@ -27,7 +27,7 @@ for (i in 1:nrow(histo_full)){
   if (test <= 3) {
     histo_full$severity[i] <- "mild"
   }
-  else if (test > 6) {
+  else if (test > 7) {
     histo_full$severity[i] <- "severe"
   }
   else 
@@ -43,6 +43,7 @@ histo_full <- unite_(histo_full, "sample_d0", c("mouse_id.y", "day 0 test"), sep
 three_bins <- subset(histo_full, select=c("sample_d0", "summary_score", "severity"))
 
 #save this file we just made as basically a design file to use elsewhere
+write.table(three_bins, file='data/process/severity_bins.design', quote=F,sep='\t',row.names=F)
 
 
 #plot weightloss and summary score to see if they're correlated
@@ -90,7 +91,7 @@ ggplot(histo_file, aes(human_source, epithelial_damage)) + geom_jitter(aes(fill=
 ggplot(histo_file, aes(human_source, epithelial_damage)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ggtitle("epithelial damage")
 
 #results plotted by outcome 
-sum_out_plot <- ggplot(histo_file, aes(outcome, summary_score)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ylab("Disease severity") + theme_bw() +theme(axis.title.x=element_blank(), legend.position="none")
+sum_out_plot <- ggplot(histo_file, aes(outcome, summary_score)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ylab("histology summary score") + theme_bw() +theme(axis.title.x=element_blank(), legend.position="none")
 edema_out_plot <-ggplot(histo_file, aes(outcome, edema_tissue)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ylab("Edema") + theme_bw() + theme(axis.title.x=element_blank(), legend.position="none")
 inflam_out_plot <- ggplot(histo_file, aes(outcome, inflammation_tissue)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ylab("Inflammation") + theme_bw() + theme(axis.title.x=element_blank(), legend.position="none")
 damage_out_plot <- ggplot(histo_file, aes(outcome, epithelial_damage)) + geom_jitter(aes(fill=outcome, color=outcome), size=2) + ylab("Epithelial damage") + theme_bw() + theme(axis.title.x=element_blank(), legend.position="none")
