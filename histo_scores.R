@@ -36,15 +36,20 @@ for (i in 1:nrow(histo_full)){
 
 colnames(histo_full)[1] <- "sample_ID"
 
-#testing this to try to get just day 0 names
+#testing this to try to get just day 0 names for NMDS plot
 histo_full[ncol(histo_full)+1] <- 0
 colnames(histo_full)[36] <- "day 0 test"
 histo_full <- unite_(histo_full, "sample_d0", c("mouse_id.y", "day 0 test"), sep = "-D", remove=FALSE)
 three_bins <- subset(histo_full, select=c("sample_d0", "mouse_id.x", "summary_score", "severity"))
 
+#this will give design file that is all names for plotting toxin
+sampleID_bins <- subset(histo_full, select=c("sample_ID", "summary_score", "severity"))
+#remove random duplicate
+sampleID_bins <- sampleID_bins[-34,]
+
 #save this file we just made as basically a design file to use elsewhere
 write.table(three_bins, file='data/process/severity_bins.design', quote=F,sep='\t',row.names=F)
-
+write.table(sampleID_bins, file='data/process/sampleID_bins.design', quote=F, sep='\t', row.names=F)
 
 #plot weightloss and summary score to see if they're correlated
 line <- lm(histo_full$percent_weightLoss~ histo_full$summary_score)

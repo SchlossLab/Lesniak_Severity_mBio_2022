@@ -327,14 +327,3 @@ N-535-D7	7	stool	1
 OUT-2096C-D3	3	cecalcon	2.301029996
 N-534-D7	7	stool	1
 N-540-D7	7	stool	1
-VPI10463	late stationary phase (~27hrs)	in vitro (growth in BHI)	5.574031268
-VPI10463	late stationary phase (~27hrs)	in vitro (growth in BHI)	5.795880017
-DA00431	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.698970004
-DA00431	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.477121255
-DA00299	late stationary phase (~27hrs)	in vitro (growth in BHI)	2.301029996
-DA00299	late stationary phase (~27hrs)	in vitro (growth in BHI)	2.301029996
-DA00395	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.698970004
-DA00395	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.698970004
-DA00458	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.698970004
-DA00458	late stationary phase (~27hrs)	in vitro (growth in BHI)	3.698970004
-toxinA 	1ugPERul	diluted_1to100	3
