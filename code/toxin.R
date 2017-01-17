@@ -25,3 +25,5 @@ ggplot(mouse_toxin, aes(severity, Log_repiricoal_dilution)) + geom_jitter()
 ggplot(mouse_toxin, aes(summary_score.y, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) +theme_bw() + ggtitle("toxin amounts by severity score")
 
 ggplot(mouse_toxin, aes(human_source, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts by human source")
+
+ggplot(mouse_toxin, aes(as.numeric(day.x), Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts by day")
