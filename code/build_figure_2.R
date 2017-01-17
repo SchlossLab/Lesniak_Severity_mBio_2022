@@ -79,6 +79,51 @@ cfu_plot <- meta_file %>%
         legend.title=element_blank()) +
   stat_summary(fun.data = 'median_hilow')
 
+# weight loss plots colored by histo score group/bins
+
+#first need to make a table with summary scores in meta
+bintest <- merge(meta_file, three_bins, by.x="mouse_id", by.y="mouse_id.x")
+
+bins_wt_plot <- bintest %>% 
+  filter(day %in% c(0:10), !is.na(percent_weightLoss) ) %>%
+  filter(!cage_id == 'NP1') %>% 
+  select(mouse_id, day, Early_Euth, percent_weightLoss, cage_id, severity) %>% 
+  ggplot(aes(x = factor(day), y = percent_weightLoss, color = factor(severity))) + 
+  geom_jitter(width = 0.5, alpha = 0.5)  +
+  stat_summary(fun.y=median, geom="line", aes(group = severity)) +
+  labs(x = 'Day', y = '% weight change from day 0') +
+  theme(legend.justification=c(1,0), legend.position=c(1,0.1), 
+        legend.title=element_blank()) +
+  stat_summary(fun.data = 'median_hilow') + theme_bw()
+
+#just severe group, weight loss by mouse and cage 
+severebin <- bintest %>% 
+  filter(day %in% c(0:10), !is.na(percent_weightLoss) ) %>%
+  filter(!cage_id == 'NP1') %>% 
+  filter(severity == 'severe') %>%
+  select(mouse_id, day, Early_Euth, percent_weightLoss, cage_id) %>%
+  ggplot(aes(x=factor(day), y = percent_weightLoss, color=mouse_id)) +geom_point()
+
+# just severe group, weight loss by cage
+ggplot(severebin, aes(factor(day), percent_weightLoss))+ geom_point(aes(color=cage_id))
+
+#cfu bins
+cfu_plot <- bintest %>% 
+  filter(day %in% c(0:10), !is.na(log_cfu) ) %>%
+  filter(!cage_id == 'NP1') %>% 
+  select(mouse_id, day, Early_Euth, log_cfu, cage_id, severity) %>% 
+  ggplot(aes(x = factor(day), y = log_cfu, color = factor(severity))) + 
+  geom_jitter(width = 0.5, alpha = 0.2) +
+  stat_summary(fun.y=median, geom="line", aes(group = severity)) +
+  labs(x = 'Day', y = ' CFU (log10)') +
+  theme(legend.justification=c(1,0), legend.position=c(1,0.2), 
+        legend.title=element_blank()) +
+  stat_summary(fun.data = 'median_hilow')
+
+
+
+
+
 #build and save plot 
 
 plot_file <- '~/Documents/Schloss_Lab/Schubert_humanCdGF_XXXX_2016/results/figures/figure_2.pdf'
