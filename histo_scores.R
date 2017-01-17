@@ -40,7 +40,7 @@ colnames(histo_full)[1] <- "sample_ID"
 histo_full[ncol(histo_full)+1] <- 0
 colnames(histo_full)[36] <- "day 0 test"
 histo_full <- unite_(histo_full, "sample_d0", c("mouse_id.y", "day 0 test"), sep = "-D", remove=FALSE)
-three_bins <- subset(histo_full, select=c("sample_d0", "summary_score", "severity"))
+three_bins <- subset(histo_full, select=c("sample_d0", "mouse_id.x", "summary_score", "severity"))
 
 #save this file we just made as basically a design file to use elsewhere
 write.table(three_bins, file='data/process/severity_bins.design', quote=F,sep='\t',row.names=F)
