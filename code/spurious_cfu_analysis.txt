@@ -1,0 +1,61 @@
+#Analysis pipeline for figuring out if the mice actually had cdiff or not
+# Kaitlin 1/18/17
+
+#The problem: we have several mice that have low or no histopathology, low or no toxin, but high CFU
+#We need to figure out if these are actually infected with cdiff (persistant/asymptomatic) or if there was a plating error
+#A secondary problem is that there are several "severe" or moderate histo mice that also have low or no toxin and high CFU
+#A tertiary problem is that we did not observe any colonization resistance in any of these mice, which might be expected
+
+#-------------------------------------------------------------------------------------#
+#to first look at "mild" mice:
+#First approach was to look at the Clostridium_X1 OTUs and look at specific sequences
+#To do this, ran the following mothur commands on the gf_all dataset as it still contained Clos.11
+
+bin.seqs(list=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.list, count=gf_all.final.count_table, fasta=gf_all.final.fasta, label=0.03)
+
+classify.seqs(fasta=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.fasta, reference=trainset9_032012.pds.fasta, taxonomy=trainset9_032012.pds.tax, processors=8)
+
+get.lineage(taxonomy=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.pds.wang.taxonomy, taxon=Bacteria(100);Firmicutes(100);Clostridia(100);Clostridiales(100);Peptostreptococcaceae(100);Clostridium_XI(100);, fasta=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.0.03.fasta)
+
+#(did nick pick this sequence from the counts file? and how did he know which taxon to pick?
+# M04695_12_000000000-ARPWD_1_1101_8481_6864)
+# did he pick it from the counts file?
+
+#Then I looked for the mild cages in the fastas... and blasted 
+
+#the most commonly found C11 OTU sequence was this: 
+#BLASTed main sequence we IDed as cdiff M04695_12_000000000-ARPWD_1_1101_8481_6864
+#BLASTs with 100% identity to cdiff, so does 14654 and 14658 sequence
+
+#BLASTs of sequences found in mild cages: (need to make sure mild cages arent also in 100% bin)
+#LINE- mild- one sample-  DA001146- BLASTed and got 97% identity to cdiff
+
+#NP2- mild- DA001134- BLASTed and 
+
+#I mean so they're all 97% similar to each other. but that's because we set that as our cut off
+#so does that really tell us much? besides we can do the negative, look for all cages that are mild and if no cages have this OTU, false
+#or should we be looking for the 100% similar ones? 
+
+#cage by cage analysis. mild cages: 430: infected, 23858 is 96%, has NP1 and 430, 23853 has pretty much every sample, inlcuding NP2, OUT2 (only one NP2, OUT2 is in) 96% ID
+#so maybe that OTU is a background OTU. it is in all of the mice, not 100% ID to cdiff and could also look like it on a plate i suppose
+
+#the 96% ID sequence is 99% ID to Terrisporobacter petrolearius. so almost definitely a contaminant then. hmm. 
+# in that case we should check that severe mice dont have a bloom of this.
+
+
+#------------------------------------------------------------------------------------#
+#so for moderate mice, they're mostly split on toxin/histopath
+#may be consistent with what Anna sometimes sees in relapse model, this is after 10days
+
+#for severe mice, they have the most toxin, at the earliest time points. except for 578
+#so maybe i need to go and look cage by cage to confirm colonization for all 0 toxin points
+
+
+
+#------------------------------------------------------------------------------------#
+
+
+
+#Anna's data and advice
+
+#Jhansi's data and advice 

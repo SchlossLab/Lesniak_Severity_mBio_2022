@@ -25,3 +25,27 @@ ggplot(mouse_toxin, aes(severity, Log_repiricoal_dilution)) + geom_jitter()
 ggplot(mouse_toxin, aes(summary_score.y, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) +theme_bw() + ggtitle("toxin amounts by severity score")
 
 ggplot(mouse_toxin, aes(human_source, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts by human source")
+
+ggplot(mouse_toxin, aes(as.numeric(day.x), Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts by day")
+
+#select out only the toxin data that is for the last day of euth to get only one reading per mouse
+
+meta_toxin <- merge(mouse_toxin, meta_file, by.x='mouse_id_day', by.y="row.names", remove=T)
+
+meta_toxin <- merge(mouse_toxin, meta_file, by=c("Experiment_day", "last_day_by_mouse"))
+
+enddaytox <- meta_toxin[meta_toxin$Experiment_day == meta_toxin$last_day_by_mouse,]
+
+#plot of toxin amounts on day of histopath
+ggplot(enddaytox, aes(summary_score.x, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts on day of histopath")
+
+ggplot(enddaytox, aes(human_source.x, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts on day of histopath")
+
+ggplot(enddaytox, aes(cage_id, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts on day of histopath")
+
+
+
+
+
+
+
