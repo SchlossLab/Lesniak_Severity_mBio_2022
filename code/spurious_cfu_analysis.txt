@@ -36,6 +36,12 @@ get.lineage(taxonomy=gf_all.trim.contigs.good.unique.good.filter.unique.preclust
 #so does that really tell us much? besides we can do the negative, look for all cages that are mild and if no cages have this OTU, false
 #or should we be looking for the 100% similar ones? 
 
+#cage by cage analysis. mild cages: 430: infected, 23858 is 96%, has NP1 and 430, 23853 has pretty much every sample, inlcuding NP2, OUT2 (only one NP2, OUT2 is in) 96% ID
+#so maybe that OTU is a background OTU. it is in all of the mice, not 100% ID to cdiff and could also look like it on a plate i suppose
+
+#the 96% ID sequence is 99% ID to Terrisporobacter petrolearius. so almost definitely a contaminant then. hmm. 
+# in that case we should check that severe mice dont have a bloom of this.
+
 
 #------------------------------------------------------------------------------------#
 #so for moderate mice, they're mostly split on toxin/histopath
