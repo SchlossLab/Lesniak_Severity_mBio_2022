@@ -1,0 +1,11 @@
+#Analysis pipeline for figuring out if the mice actually had cdiff or not
+# Kaitlin 1/18/17
+
+#The problem: we have several mice that have low or no histopathology, low or no toxin, but high CFU
+#We need to figure out if these are actually infected with cdiff (persistant/asymptomatic) or if there was a plating error
+#A secondary problem is that there are several "severe" or moderate histo mice that also have low or no toxin and high CFU
+#A tertiary problem is that we did not observe any colonization resistance in any of these mice, which might be expected
+
+#First approach was to look at the Clostridium_X1 OTUs and look at specific sequences
+#To do this, ran the following mothur commands on the gf_all dataset as it still contained Clos.11
+
