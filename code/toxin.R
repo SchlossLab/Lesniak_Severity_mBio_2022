@@ -43,7 +43,7 @@ ggplot(enddaytox, aes(human_source.x, Log_repiricoal_dilution)) + geom_jitter(ae
 
 ggplot(enddaytox, aes(cage_id, Log_repiricoal_dilution)) + geom_jitter(aes(color=severity)) + theme_bw() + ggtitle("toxin amounts on day of histopath")
 
-
+#toxin over time faacet by severity 
 
 
 
