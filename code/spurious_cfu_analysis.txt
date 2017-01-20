@@ -36,12 +36,17 @@ get.lineage(taxonomy=gf_all.trim.contigs.good.unique.good.filter.unique.preclust
 #so does that really tell us much? besides we can do the negative, look for all cages that are mild and if no cages have this OTU, false
 #or should we be looking for the 100% similar ones? 
 
-#cage by cage analysis. mild cages: 430: infected, 23858 is 96%, has NP1 and 430, 23853 has pretty much every sample, inlcuding NP2, OUT2 (only one NP2, OUT2 is in) 96% ID
+#cage by cage analysis. mild cages: 430: infected, 23858 is 96% (99% terrisporobacter), has NP1 and 430, 23853 has pretty much every sample, inlcuding NP2, OUT2 (only one NP2, OUT2 is in) 96% ID
 #so maybe that OTU is a background OTU. it is in all of the mice, not 100% ID to cdiff and could also look like it on a plate i suppose
+
+#23858 and 6864 are highest in NumRep for whole table. So either they are different species or we dont have cdiff removed for the modeling 
+
+
 
 #the 96% ID sequence is 99% ID to Terrisporobacter petrolearius. so almost definitely a contaminant then. hmm. 
 # in that case we should check that severe mice dont have a bloom of this.
 
+#Also lots of the mice have the 100% OTU present on day 0??
 
 #------------------------------------------------------------------------------------#
 #so for moderate mice, they're mostly split on toxin/histopath
@@ -50,12 +55,36 @@ get.lineage(taxonomy=gf_all.trim.contigs.good.unique.good.filter.unique.preclust
 #for severe mice, they have the most toxin, at the earliest time points. except for 578
 #so maybe i need to go and look cage by cage to confirm colonization for all 0 toxin points
 
-
+#there are severe cages that only have 23853!!! Like IN1. so now I am convinced that this may be a disease OTU (weight loss) and not just contamination? in which case we need to remove it from our model
 
 #------------------------------------------------------------------------------------#
 
+Meeting with Anna and her advice, 1/19:
 
+-Can't use D1 or D2 histopath and compare it to day 10, literally a week later, possible recovery
+- what about comparing the D10 to each other? range in severity, OTUs
+- Sort of reckless what strain she chose, hasn't been characterized in mouse model so we don't know really what is normal, what is unusual
+- high CFU but low pathology- by day 10 could have recovered. don't be so suspicious
+- Toxin assay doesnt measure binary toxin. Thats what this strain has. so some argument could be made about there being that and us not measuring it
+- the cdiff OTUs are different OTU numbers
+-day 0 they have cdiff?!?!?! but not donors?! by 16S. but we might not be able to trust Day 0 CFU, cant find anywhere alyx counted for it
 
-#Anna's data and advice
+So what CAN we answer:
+-D1/D2, AUC , wt loss- predict D1/D2 from D0
+- compare D0 to donor
+-Descriptive stuff
+- cant predict enddate histopath, or at least not 1 and 10 together
 
-#Jhansi's data and advice 
+Possible structure:
+1) Description of outcome, toxin and CFU, with caveats 
+2) some mice died- these had severe histopath
+3) Diversity on day 0, day 10, day of euth
+4) only take day10 histo, regroup mild/med/severe can we predict outcome then? can you predict D10 histo from D10 OTUS?
+5) wt loss is out, toxin doesnt correlate, so we can have a new definiton of persistent/severe, cite precedent in literature
+6) plot microbiome of D10, diversity of D10, model of D10
+7) Did D10 predictive OTUs match D0 predictive OTUs? Maybe? 
+
+Concentrate on this study now as a disease model 
+
+Search for Cdiff OTUs in donor and water controls 
+Lots of caveats. organize these thoughts later. 
