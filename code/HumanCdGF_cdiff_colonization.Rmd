@@ -1,0 +1,1354 @@
+---
+title: "Model_CFU"
+author: "Nicholas Lesniak"
+date: "December 5, 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE, fig.width=7, fig.height=8)
+```
+
+```{r setup environment}
+pack_used <- c('randomForest','tidyr','ggplot2','plyr', 'dplyr', 'caret', 'vegan')
+for (dep in pack_used){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), repos = 'http://cran.us.r-project.org', 
+                     quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+```
+
+```{r setup data}
+# read in files
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
+meta_data   <- 'data/process/human_CdGF_metadata.txt'
+shared_file <- 'data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
+tax_file <- 'data/process/gf_new.an.taxonomy'
+tax_function <- 'code/tax_level.R'
+
+# read in files
+meta_data   <- read.table(meta_data, sep = '\t', header = T, stringsAsFactors = F)
+shared_file <- read.table(shared_file, sep = '\t', header = T, row.names = 'sample_id')
+tax_file <- read.table(tax_file, sep = '\t', header = T, row.names = 'OTU')
+source(tax_function)
+
+# set parameters
+seed <- 1
+n_trees <- 1001
+#n_otus <- 12
+iters <- 100
+#cor_cutoff <- 0.75
+otu_presence_cutoff <- 0.1
+
+# remove samples not used or with other cdiff strains
+meta_data <- 
+  meta_data %>% 
+  filter(Early_Euth == FALSE, cdiff_strain == 431, !cage_id == 'NP1') %>% 
+  select(mouse_id, sample_id, cage_id, human_source, day, log_cfu) %>% 
+  filter(!is.na(log_cfu))
+shared_list_days <- meta_data %>% 
+  filter(day == 0) %>% 
+  select(-day, -log_cfu, -cage_id, -human_source)
+shared_file <- shared_file[rownames(shared_file) %in% shared_list_days$sample_id, ]
+
+# create shared with relative abundances over 1%
+mean_otu_counts <- unique(apply(shared_file, 1, sum))
+otu_presence <- ifelse(shared_file > 0, T, F) 
+rel_abund_shared <- shared_file[ , apply(otu_presence, 2, sum) > round(otu_presence_cutoff*nrow(shared_file))]
+rel_abund_shared_01 <- 100*rel_abund_shared/mean_otu_counts
+
+n_features <- round(0.1*ncol(rel_abund_shared))
+
+## remove correlative otus
+#rel_abund_cor <- cor(rel_abund_shared_01, method = 'spearman')
+#rownames(rel_abund_cor) <- colnames(rel_abund_shared_01) # add row names to identify otus correlated with features
+#cor_otus <- findCorrelation(rel_abund_cor, cutoff = cor_cutoff)
+#rel_abund_01_filtr <- rel_abund_shared_01[,-cor_otus]
+#community_d0.df <- merge(shared_list_days, rel_abund_01_filtr, 
+#                         by.x = 'sample_id', by.y = 'row.names') %>% 
+#                    select(-sample_id)
+
+colonized_cfu <- meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  summarise(log_cfu_med = median(log_cfu)) %>% 
+  ungroup()
+
+colonized_cfu_range <- meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  summarise(log_cfu_med = median(log_cfu),
+            low_iqr = quantile(log_cfu)['25%'],
+            high_iqr = quantile(log_cfu)['75%']) %>% 
+  ungroup()
+
+community_all_d0 <- merge(shared_list_days, rel_abund_shared_01, 
+                          by.x = 'sample_id', by.y = 'row.names') %>% 
+                     select(-sample_id)
+```
+
+### Predicting __Colonization Level__ (Log10 CFU) with Day 0 Community
+
+```{r predict median CFU, fig.width=10,fig.height=10}
+cfu_all_shared_df <- colonized_cfu %>% 
+    select(mouse_id, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+
+#output <- data.frame(ntree = NA, ntry = NA, rsq = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(cfu_all_rf$rsq, 1)))
+#  }
+#}
+#
+#ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
+#ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
+
+randomized_df <- c()
+randomized_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_all_shared_df$log_cfu_med, 
+                       length(cfu_all_shared_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  randomized_cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  randomized_df <- rbind(randomized_df, data.frame(Model = 'Randomized', Observed = random_cfu,
+                                               Predicted = randomized_cfu_all_rf$predicted))
+  randomized_rsq <- c(randomized_rsq, tail(randomized_cfu_all_rf$rsq,1))
+}
+set.seed(seed)
+cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+                           ntree = 501,
+                           mtry = 15,
+                           importance = T)
+top_features <- head(sort(importance(cfu_all_rf)[,1],decreasing = T), n_features)
+feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                           names(top_features))],
+                    method = 'spearman')[-1,'log_cfu_med']
+```
+
+##### Modeling _Colonization level_ (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+
+```{r prediction cfu plot, fig.width=6, fig.height=6}
+
+rbind(randomized_df,
+      data.frame(Model = 'Actual', Observed = cfu_all_shared_df$log_cfu_med, 
+           Predicted = cfu_all_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color=Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
+    annotate('text', label = paste0(round(tail(cfu_all_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = min(cfu_all_rf$predicted), y = max(cfu_all_shared_df$log_cfu_med)) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.9,0.1)) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+```
+
+The % Variation explained in the randomized model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(randomized_rsq)`  
+
+```{r colonization performance, fig.width=8, fig.height=6}
+top_otus <- get_tax(row_list = names(top_features))$tax_label
+```
+
+
+##### OTUs predictive of __Colonization level__ (Top 10%)  
+Red OTUs are top 12 which are plotted against CFU below
+
+```{r colonization otu importance, fig.width=6, fig.height=6}
+data.frame(OTU = factor(top_otus, 
+                        levels = top_otus[order(top_features)]), 
+           Importance = top_features/max(top_features)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features)-12),
+                                               rep('red', 12)), 
+                                     hjust = 0))
+```
+
+##### Correlation of OTU and CFU (top 12 OTUs predictive of __Colonization level__)  
+Points colored by human donor
+
+```{r plot colonization otu correlations, fig.width=10, fig.height=8}
+top_n_otus <- get_tax(row_list = names(head(top_features,12)))
+top_n_otus$cor_label <- paste0(top_n_otus$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus)),
+                           ';rho= ', round(feat_cor_cfu[names(feat_cor_cfu) 
+                                                       %in% rownames(top_n_otus)], 
+                                          2), ')')
+top_n_otus$cor_label <- factor(top_n_otus$cor_label,
+                               levels = top_n_otus$cor_label[order(head(top_features,12),
+                                                                   decreasing = T)])
+top_n_otus$OTU <- rownames(top_n_otus)
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", rownames(top_n_otus))) %>% 
+  left_join(colonized_cfu[ , c('log_cfu_med', 'human_source')]) %>% 
+  gather(OTU, abundance, contains('Otu')) %>%
+  left_join(top_n_otus) %>% 
+  mutate(abundance = abundance + 0.01) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med, color = human_source)) + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
+    geom_vline(xintercept = 0.06, color = 'gray') + 
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank(),
+          legend.position="none")
+```
+
+Are these OTUs identifying susceptiblility to _C. Difficile_ of only correlated to _C. difficile_ due to OTUs unique to the donor, i.e. is the OTU predicting the cage grouping?
+
+***  
+
+### Predicting __Human Donor__ with Day 0 Community  
+Is there overlap in OTUs predictive of CFU and Donor?
+
+
+```{r predict inocula, fig.width=10,fig.height=10}
+source_all_shared_df <- colonized_cfu %>% 
+    select(mouse_id, human_source) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id)
+source_all_shared_df$human_source <- as.factor(source_all_shared_df$human_source)
+
+#output <- data.frame(ntree = NA, ntry = NA, err = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$human_source,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(source_all_rf$err.rate[,'OOB'], 1)))
+#  }
+#}
+#
+#ggplot(output, aes(x=ntry, y=err, group = ntree, color = as.factor(ntree))) + geom_line()
+#ggplot(output[output$ntry == 15,], aes(x=ntree, y=err)) + geom_line()
+
+randomized_source_df <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_src <- sample(source_all_shared_df$human_source, 
+                       length(source_all_shared_df$human_source), replace = F)
+  set.seed(seed)
+  randomized_src_all_rf <- randomForest(source_all_shared_df[ , -1], random_src,
+                           ntree = 501,
+                           mtry = 15)
+  randomized_source_df <- c(randomized_source_df, tail(randomized_src_all_rf$err.rate[,'OOB'],1))
+}
+set.seed(seed)
+source_all_rf <- randomForest(source_all_shared_df[ , -1], source_all_shared_df$human_source,
+                           ntree = 501,
+                           mtry = 15,
+                           importance = T)
+top_features_src <- head(sort(importance(source_all_rf)[,1],decreasing = T), n_features)
+#any(names(top_features) %in% names(top_features_src))
+src_feat_cor_cfu <- cor(cfu_all_shared_df[ , c('log_cfu_med', 
+                                               names(top_features_src))], 
+                        method = 'spearman')[-1,'log_cfu_med']
+```
+
+##### Modeling of __Human Donor__ (Top 10%)  
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features  
+
+```{r source model, fig.width=6, fig.height=6}
+confusionMatrix(source_all_rf$predicted, source_all_shared_df$human_source)$table
+```
+
+Models predicting randomized donor perform with a high error rate:   
+Mean Error Rate = `r summary(randomized_source_df)[4]` with an IQR of `r summary(randomized_source_df)[2]` - `r summary(randomized_source_df)[5]`.  
+
+
+##### OTUs predictive of __Human Donor__ (Top 10%)  
+Red OTUs are top 12 which are plotted against CFU below  
+
+```{r source otu importance, fig.width=6, fig.height=6}
+top_otus_src <- get_tax(row_list = names(top_features_src))$tax_label
+
+data.frame(OTU = factor(top_otus_src, 
+                        levels = top_otus_src[order(top_features_src)]), 
+           Importance = top_features_src/max(top_features_src)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features)-12),
+                                               rep('red', 12)), 
+                                     hjust = 0))
+```
+
+##### Correlation of OTU and CFU (top 12 OTUs predictive of __Human Donor__)  
+Points colored by human donor
+
+```{r plot source otu correlations, fig.width=10, fig.height=8}
+top_n_otus_src <- get_tax(row_list = names(head(top_features_src,12)))
+top_n_otus_src$cor_label <- paste0(top_n_otus_src$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus_src)),
+                           ';rho= ', round(src_feat_cor_cfu[names(src_feat_cor_cfu) 
+                                                       %in% rownames(top_n_otus_src)], 
+                                          2), ')')
+top_n_otus_src$OTU <- rownames(top_n_otus_src)
+top_n_otus_src$cor_label <- factor(top_n_otus_src$cor_label,
+                               levels = top_n_otus_src$cor_label[order(head(top_features_src,12),
+                                                                   decreasing = T)])
+
+subset(cfu_all_shared_df, select = 
+       c("log_cfu_med", rownames(top_n_otus_src))) %>% 
+  left_join(colonized_cfu[ , c('log_cfu_med', 'human_source')]) %>% 
+  gather(OTU, abundance, contains('Otu')) %>%
+  left_join(top_n_otus_src) %>%
+  mutate(abundance = abundance + 0.01) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med, color = human_source)) + 
+    geom_vline(xintercept = 0.06, color = 'gray') + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank(),
+          legend.position='none')
+```
+
+
+There are `r sum(names(top_features) %in% names(top_features_src))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features)[names(top_features) %in% names(top_features_src)]`  
+It is possible these OTUs are selected in predicting __Colonization__ because they are helping to seperate the groups of mice by cage. It is interesting though that the OTU 4 and OTU 14 were previously identified as being correlated (rho = 0.7586887) but only OTU 14 is predictive of Donor. Otu000004 is in the top `r print(paste0(round(which(names(sort(importance(source_all_rf)[,1],decreasing = T)) == 'Otu000004')/length(importance(source_all_rf)[,1]), 2)*100, '%'))` of OTUs predictive of Human Donor with a relative MDA of `r importance(source_all_rf)['Otu000004',1]/max(importance(source_all_rf)[,1])`.  
+```{r plot otu correlations_entero, fig.width=3,fig.height=3}
+ggplot(cfu_all_shared_df, aes(x=Otu000004, y=Otu000014))+geom_point(alpha = 0.5)
+```
+
+As for OTU 283 and 5, those are correlated (rho = 0.8235480) and they are also correlated to Otu000171 (0.7891608), Otu000196 (0.8190665), Otu000202 (0.8147822), Otu000255 (0.8230815), Otu000262 (0.8141814), Otu000283 (0.8268792), Otu000394 (0.8321597), Otu000403 (0.8258554), which are all in the top 10% of OTUs predictive of __Colonization__.
+```{r plot otu correlations, fig.width=9,fig.height=9}
+cfu_all_shared_df %>% 
+  select(Otu000005, Otu000171, Otu000196, Otu000202, Otu000255, Otu000262, 
+         Otu000283, Otu000394, Otu000403) %>% 
+  gather(OTU, Abundance, -Otu000283) %>% 
+  ggplot(aes(x=Otu000283, y=Abundance))+geom_point(alpha = 0.5) + facet_wrap(~OTU, nrow =3, scales = 'free_y')
+```
+
+Do correlated OTUs matter?
+
+
+***
+
+##### Model __Colonization level__ with Human Donor included
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+
+```{r predict median CFU with source, fig.width=10,fig.height=10}
+cfu_all_src_shared_df <- colonized_cfu %>% 
+    select(mouse_id, log_cfu_med, human_source) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_all_src_shared_df$human_source <- factor(cfu_all_src_shared_df$human_source)
+#output <- data.frame(ntree = NA, ntry = NA, rsq = NA)
+#for(tree in seq(1, 1500, 100)){
+#  for(try in 1:30){
+#    set.seed(seed)
+#    cfu_all_rf <- randomForest(cfu_all_shared_df[ , -1], cfu_all_shared_df$log_cfu_med,
+#                           ntree = tree,
+#                           mtry = try,
+#                           importance = T)
+#    output <- rbind(output, c(tree, try, tail(cfu_all_rf$rsq, 1)))
+#  }
+#}
+#
+#ggplot(output[output$ntree !=1,], aes(x=ntree, y=rsq, group = ntry, color = as.factor(ntry))) + geom_line()
+#ggplot(output[output$ntree == 1001,], aes(x=ntry, y=rsq)) + geom_line()
+
+randomized_cfu_src_df <- c()
+randomized_src_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_all_src_shared_df$log_cfu_med, 
+                       length(cfu_all_src_shared_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  randomized_cfu_src_rf <- randomForest(cfu_all_src_shared_df[ , -c(1,2)], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  randomized_cfu_src_df <- rbind(randomized_cfu_src_df, 
+                               data.frame(Model = 'Randomized', Observed = random_cfu,
+                                          Predicted = randomized_cfu_src_rf$predicted))
+  randomized_src_rsq <- c(randomized_src_rsq, tail(randomized_cfu_src_rf$rsq,1))
+
+}
+set.seed(seed)
+cfu_all_src_rf <- randomForest(cfu_all_src_shared_df[ , -1], cfu_all_src_shared_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features_src_cfu <- head(sort(importance(cfu_all_src_rf)[,1],decreasing = T), n_features)
+feature_df_src_numeric <- cfu_all_src_shared_df[ , c('log_cfu_med', names(top_features_src_cfu))]
+feature_df_src_numeric$human_source <- as.numeric(feature_df_src_numeric$human_source)
+feat_cor_cfu_src_all <- cor(feature_df_src_numeric, method = 'spearman')[-1,'log_cfu_med']
+```
+
+
+```{r prediction cfu plot with source, fig.width=6, fig.height=6}
+
+rbind(randomized_cfu_src_df,
+      data.frame(Model = 'Actual',
+                 Observed = cfu_all_src_shared_df$log_cfu_med, 
+                 Predicted = cfu_all_src_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
+    annotate('text', label = paste0(round(tail(cfu_all_src_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = min(cfu_all_src_rf$predicted), y = max(cfu_all_src_shared_df$log_cfu_med)) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.9,0.1)) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+```
+
+The % Variation explained in the randomized model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(randomized_src_rsq)`  
+
+
+
+##### OTUs predictive of _Colonization level_ with Source included (Top 10%)  
+Top 12 OTUs in red are plotted against CFU below
+
+```{r colonization performance with source, fig.width=8, fig.height=6}
+top_otus_all_src <- get_tax(row_list = names(top_features_src_cfu)[-1])$tax_label
+top_otus_all_src <- c('Human Source', top_otus_all_src)
+```
+
+```{r colonization otu importance with source, fig.width=6, fig.height=6}
+data.frame(OTU = factor(top_otus_all_src, 
+                        levels = top_otus_all_src[order(top_features_src_cfu)]), 
+           Importance = top_features_src_cfu/max(top_features_src_cfu)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          axis.ticks = element_line(size = 2),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-13),
+                                               rep('red', 12), 'black'), 
+                                     hjust = 0))
+```
+
+```{r plot colonization otu correlations with source, fig.width=10, fig.height=8}
+top_n_otus_all_src <- get_tax(row_list = names(head(top_features_src_cfu[-1],12)))
+top_n_otus_all_src$cor_label <- paste0(top_n_otus_all_src$tax, '(OTU',
+                           gsub('Otu0*', '', rownames(top_n_otus_all_src)),
+                           ';rho= ', round(feat_cor_cfu_src_all[names(feat_cor_cfu_src_all) 
+                                                       %in% rownames(top_n_otus_all_src)], 
+                                          2), ')')
+top_n_otus_all_src$cor_label <- factor(top_n_otus_all_src$cor_label,
+                               levels = top_n_otus_all_src$cor_label[order(head(top_features,12),
+                                                                   decreasing = T)])
+top_n_otus_all_src$OTU <- rownames(top_n_otus_all_src)
+subset(feature_df_src_numeric, select = 
+       c("log_cfu_med", rownames(top_n_otus_all_src))) %>% 
+  gather(OTU, abundance, -log_cfu_med) %>%
+  left_join(top_n_otus_all_src) %>% 
+  mutate(abundance = abundance + 0.01) %>% 
+  ggplot(aes(x = abundance, y = log_cfu_med)) + 
+    geom_vline(xintercept = 0.06, color = 'gray') + geom_point() + 
+    facet_wrap(~cor_label, ncol = 4, scales = 'free_x') +  
+    labs(x= 'Relative Abundance - Day 0 (log %)', y = 'Observed Colonization (log CFU)') + 
+    ylim(5, 9) + scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                               labels = c(0, 0.1, 1, 10, 100)) +
+    theme(strip.background = element_rect(colour=NULL, fill='white'),
+          panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = #element_line(linetype = 1, size = .1, color = 'gray'),
+                               element_blank(),    
+          panel.grid.minor.x = element_blank())
+```
+
+
+There are `r sum(names(top_features) %in% names(top_features_src_cfu))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features)[names(top_features) %in% names(top_features_src_cfu)]`  
+Including Human Source includes all the OTUs predictive of __Colonization__ as well as Human Source as the top predictor. Relative importances of some OTUs are shifted, which could be due to the randomness of the RF algorithm or due to the effect of adding Human source, which may imply part of their predictive power is attributed to the human donor dependency. OTU 357 is added, however it is just below the 10% cutoff for the model without human source. Thus there appears to be no significant difference in predictive OTUs in the presence/absence of human donor data.  
+
+There are `r sum(names(top_features_src) %in% names(top_features_src_cfu))` OTUs that overlap between predicting Colonization and Source:  
+`r names(top_features_src)[names(top_features_src) %in% names(top_features_src_cfu)]`  
+Comparing the OTUs predictive of __Colonization__ when including human source is similarlly different from the OTUs predictive of __Human Donor__. The same OTUs are shared, which is not suprising since both models predicting __Colonization__ use the same OTUs. Aside from those shared and even the correlated OTUs we still have a much different set of predictors, which seems to potentially reveal the ability of the microbiome to predict community members associated with _C. difficile_ colonization.
+
+
+***
+***
+
+
+#### Modeling CFU with One Mouse per Human Donor
+In an effort to remove any potential donor community dependency, the model is trained on a single mouse per human donor source, and then tested on all the remaining mice
+
+##### With all OTUs
+```{r one mouse model}
+
+#One per source
+one_mouse_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)))
+one_mouse_df$human_source <- factor(one_mouse_df$human_source)
+
+om_import_otus <- data.frame(otu = colnames(select(one_mouse_df, -mouse_id, -cage_id, -log_cfu_med)))
+om_pred <- c()
+om_rsq <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id, -cage_id),
+                             importance = TRUE, keep.forest = T, ntree = n_trees)
+    om_pred <- rbind(om_pred,
+                     data.frame(select(test, mouse_id, cage_id, log_cfu_med),
+                          predicted=predict(rf_om, test),
+                          iter = i))
+    om_rsq <- rbind(om_rsq, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_otus <- merge(om_import_otus, import_df, by.x = 'otu', by.y = 'row.names') %>% 
+      select(-IncNodePurity)
+}
+om_rsq <- data.frame(iter = as.numeric(om_rsq[,1]),
+           mice = om_rsq[,2],
+           train_rsq = as.numeric(om_rsq[,3]),
+           test_rsq = as.numeric(om_rsq[,4]),
+           stringsAsFactors = F)
+om_rsq_overall <- 1 - (sum((om_pred$log_cfu_med - om_pred$predicted)^2)/
+               sum((om_pred$log_cfu_med - mean(om_pred$log_cfu_med))^2))
+
+om_pred <- rename(om_pred, observed = log_cfu_med)
+
+all_otus_importance <- gather(om_import_otus,OTU, import_val,-otu)[,-2]
+all_otus_importance$votes <- ifelse(all_otus_importance$import_val > 0, 1, 0)
+all_otus_importance <- data.frame(table(all_otus_importance[,-2]))
+pos_otu <- all_otus_importance[(filter(all_otus_importance, votes == 1) %>% select(Freq) - 
+                      filter(all_otus_importance, votes == 0) %>% select(Freq)) > 0, ]
+pos_otu <- data.frame(predictor = pos_otu$otu[pos_otu$votes==1],
+                      filter(pos_otu, votes == 1) %>% select(Freq) - 
+                      filter(pos_otu, votes == 0) %>% select(Freq)) %>% 
+              arrange(desc(Freq))
+```
+
+When using all OTUs the model preforms poorly. The median Rsq of the trainset was `r median(om_rsq$train_rsq)`, this is likely do to the features. This is a summary of the importance scores for all predictors:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's   
+`r summary(unlist(select(om_import_otus, -otu)))`  
+`r round(100*sum(om_import_otus[,-1]<=0, na.rm = T)/length(om_import_otus[,-1]<=0),2)`% of OTUs have an importance of 0 or less. The median Rsq of the test set was `r median(om_rsq$test_rsq)` and the Rsq of all predicted values was `r om_rsq_overall`.  
+
+This one mouse per source model is improved through reducing the amount of negative features, either utilizing the feature set via the top X % of predictors from the model of all mice or take only the features that are more often have an importance > 0 (OTUs : `r as.character(pos_otu$predictor)`).
+
+```{r one mouse model - with OTUs positive in All OTU one mouse model}
+
+#One per source - > 0
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, human_source, log_cfu_med,
+           one_of(as.character(pos_otu$predictor)))
+one_mouse_pos_otus_df$human_source <- factor(one_mouse_pos_otus_df$human_source)
+
+om_import_pos_otus <- data.frame(otu = colnames(select(one_mouse_pos_otus_df, -mouse_id, -log_cfu_med)))
+om_pred_pos <- c()
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_trees, mtry = 10)
+    om_pred_pos <- rbind(om_pred_pos,
+                     data.frame(select(test, mouse_id, log_cfu_med),
+                          predicted=predict(rf_om, test),
+                          iter = i))
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_pos_otus <- merge(om_import_pos_otus, import_df, by.x = 'otu', by.y = 'row.names') %>% 
+      select(-IncNodePurity)
+}
+
+om_rsq_pos_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+```
+
+One Mouse per Human Donor with OTUs > 0 give:  
+  *  median training set rsq of 0.08652421   
+  *  median testing set rsq of 0.5331836   
+  *  overall rsq of 0.5534567  
+
+One Mouse per Human Donor with the top 10% predictive OTUs when using all mice  
+  *  median training set rsq of 0.07336261  
+  *  median testing set rsq of 0.6070359  
+  *  overall rsq of 0.633238  
+
+The % var explained values from each individual iteration appears to have a bimodal distribution.  
+
+
+```{r om_bimodality, fig.width= 4, fig.height=4}
+ggplot(om_rsq_pos_df, aes(rsq, fill = data_set)) + 
+  geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Human Donor')
+```
+
+Is this bimodal distribution due to :  
+  * Due to small n?  
+  * Due to incomplete source dependency?  
+  * Ratio of train to test?  
+
+Using random forest to identify the mice driving bimodal Rsq distribution  
+
+```{r one_mouse_rsq_predictors, fig.width=4, fig.height=8}
+
+predict_rsq <- om_rsq_pos_df %>% 
+                 filter(data_set == 'test')
+predict_rsq$group_mean <- ifelse(predict_rsq$rsq > 0.62, T, F)
+
+mice_diff <- data.frame(matrix(rep(NA, nrow(predict_rsq)*length(unique(colonized_cfu$mouse_id))),
+                               nrow=nrow(predict_rsq)))
+colnames(mice_diff) <- unique(colonized_cfu$mouse_id)
+for(i in 1:nrow(mice_diff)){
+    mice_diff[i,] <- ifelse(colnames(mice_diff) %in% strsplit(predict_rsq$mice, ' ')[[i]], 0,1)
+}
+
+predict_rsq_df <- cbind(rsq = predict_rsq$group_mean, mice_diff)
+predict_rsq_df$rsq <- as.factor(predict_rsq_df$rsq)
+set.seed(seed)
+rsq_grp_rf <- randomForest(predict_rsq_df[,-1],predict_rsq_df$rsq, importance = T)
+importance_rsq <- data.frame(mouse = dimnames(importance(rsq_grp_rf))[[1]],importance(rsq_grp_rf))
+one_mouse_rsq_pred <- arrange(importance_rsq, desc(MeanDecreaseAccuracy)) %>% 
+  select(mouse,MeanDecreaseAccuracy) %>% 
+  mutate(Relative_MDA = MeanDecreaseAccuracy/max(MeanDecreaseAccuracy))
+
+data.frame(mouse = factor(one_mouse_rsq_pred$mouse, 
+                        levels = one_mouse_rsq_pred$mouse[order(one_mouse_rsq_pred$Relative_MDA)]), 
+           Importance = one_mouse_rsq_pred$Relative_MDA) %>% 
+ggplot(aes(x=mouse, y=Importance)) + 
+   geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          axis.ticks = element_line(size = 2),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(one_mouse_rsq_pred$Relative_MDA)-
+                                                     sum(one_mouse_rsq_pred$MeanDecreaseAccuracy > 0)),
+                                               rep('red', sum(one_mouse_rsq_pred$MeanDecreaseAccuracy > 0))), 
+                                     hjust = 0))
+
+```
+
+
+Cages A, C, and D all have the same donor.  
+Is it possible one of the cages of the same donor are not similar, and causing the poor performance?
+
+```{r one mouse model CAGE - with OTUs positive in All OTU one mouse model}
+
+#One per source - > 0
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, cage_id, log_cfu_med,
+           one_of(as.character(pos_otu$predictor)))
+one_mouse_pos_otus_df$cage_id <- factor(one_mouse_pos_otus_df$cage_id)
+
+om_import_pos_otus <- data.frame(otu = colnames(select(one_mouse_pos_otus_df, -mouse_id, -log_cfu_med)))
+om_pred_pos <- c()
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(cage_id) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_trees, mtry = 10)
+    om_pred_pos <- rbind(om_pred_pos,
+                     data.frame(select(test, mouse_id, log_cfu_med),
+                          predicted=predict(rf_om, test),
+                          iter = i))
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+    om_import_pos_otus <- merge(om_import_pos_otus, import_df, by.x = 'otu', by.y = 'row.names') %>% 
+      select(-IncNodePurity)
+}
+
+om_rsq_cage_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+```
+
+
+
+```{r om_cage_rsq_dist, fig.width= 4, fig.height=4}
+ggplot(om_rsq_cage_df, aes(rsq, fill = data_set)) + 
+  geom_density(alpha = 0.25) + ggtitle('Rsq Distribution for One Mouse per Cage')
+```
+
+The distribution of Rsq values when modeling by cage appears to be improved in comparison of by human donor  
+
+By cage:  
+Min., 1st Qu.,  Median,    Mean, 3rd Qu.,    Max.,   
+`r summary(om_rsq_cage_df$rsq[om_rsq_cage_df$data_set=='test'])`  
+
+By donor:  
+Min., 1st Qu.,  Median,    Mean, 3rd Qu.,    Max.,   
+`r summary(om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'])`  
+
+```{r compare number of 581 donor cages, fig.height=5, fig.width=6}
+
+#One per source - > 0
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, human_source, log_cfu_med, cage_id,
+           one_of(as.character(pos_otu$predictor))) %>% 
+    filter(!cage_id %in% c('A','D')) %>% 
+    select(-cage_id)
+one_mouse_pos_otus_df$human_source <- factor(one_mouse_pos_otus_df$human_source)
+
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_trees, mtry = 10)
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+}
+
+om_rsq_C_only_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+
+one_mouse_pos_otus_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med))) %>% 
+    select(mouse_id, human_source, log_cfu_med, cage_id,
+           one_of(as.character(pos_otu$predictor))) %>% 
+    filter(!cage_id == 'A') %>% 
+    select(-cage_id)
+one_mouse_pos_otus_df$human_source <- factor(one_mouse_pos_otus_df$human_source)
+
+om_rsq_pos <- c()
+for(i in 1:iters){
+    set.seed(i)
+    train <- one_mouse_pos_otus_df %>% 
+      group_by(human_source) %>% 
+      sample_n(1) %>% ungroup() 
+    test <- one_mouse_pos_otus_df %>% 
+      filter(!mouse_id %in% train$mouse_id)
+    set.seed(seed)
+    rf_om <- randomForest(log_cfu_med ~ ., data = select(train, -mouse_id),
+                             importance = TRUE, ntree = n_trees, mtry = 10)
+    om_rsq_pos <- rbind(om_rsq_pos, c(iter = i,
+                              mice = paste(train$mouse_id, collapse = ' '), 
+                              train_rsq = tail(rf_om$rsq,1),
+                              test_rsq = 1 - (sum((test$log_cfu_med - predict(rf_om, test))^2)/
+                                sum((test$log_cfu_med - mean(test$log_cfu_med))^2))))
+    import_df <- importance(rf_om)
+    colnames(import_df)[1] <- paste(train$mouse_id, collapse = ' ')
+}
+
+om_rsq_AD_df <- data.frame(iter = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='iter']),
+                            mice = om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='mice'],
+           train = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='train_rsq']),
+           test = as.numeric(om_rsq_pos[,dimnames(om_rsq_pos)[[2]]=='test_rsq']),
+           stringsAsFactors = F) %>% 
+  gather(data_set, rsq, train, test)
+
+rbind(data.frame(rsq = om_rsq_pos_df$rsq[om_rsq_pos_df$data_set=='test'], data = '3'),
+      rbind(data.frame(rsq = om_rsq_AD_df$rsq[om_rsq_AD_df$data_set=='test'], data = '2'),
+            data.frame(rsq = om_rsq_C_only_df$rsq[om_rsq_C_only_df$data_set=='test'], data = '1'))) %>% 
+  ggplot(aes(rsq, color = data)) + 
+  geom_density() + ggtitle('Rsq Distribution varying number of Donor 581 cages')
+```
+
+
+It seems the assumption all donors have the same community may be false because the bimodal distribution appears to be attributed to which mice from that group are used. However, when running the analysis with only one cage from the donor with multiple cages (581) it performs as we observe for the lower peak in the bimodal distribution and when a second cage from the same donor is added we observe Rsq values at the higher peak in the bimodal distribution. Thus there appears to be a cage effect improving the performance and the bimodal distribution maybe due to a variation in the ability of these communities to be able to predict each other, ie some may be more similar to each other but still as a group more different than the other cages.
+
+***
+***
+
+## So how does this cage/donor affect the overall CFU prediction?   
+
+
+##### __Leave One Out__ - Model __Colonization level__ with Human Donor included
+Model built using all OTUs present in >10% of samples, only displaying top 10% of predictive features
+
+```{r LOCO}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    select(log_cfu_med, cage_id, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$cage_id)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$cage_id == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id, -cage_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+##### Leave one Cage out:  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(cage order =  `r source_list`)  
+
+```{r LOSO}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    select(log_cfu_med, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$human_source)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$human_source == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+#### Leave one Source out:  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(source order =  `r source_list`)  
+
+Removing the repeated cages of DA00581 (A and C) causes the model to perform poorly leaving one out.  
+The performance of the whole model appears to be dependent on two grouping of points (one around ~5-6 log (all Donor 581) and one around ~8 log ).  
+__How well can random forest model the data with out the DA00581 source?__
+
+
+```{r LOCO with out 581}
+cfu_all_src_shared_loo_df <- data.frame(colonized_cfu %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+      filter(!human_source == 'DA00581') %>% 
+    select(log_cfu_med, mouse_id, one_of(names(top_features_src_cfu))))
+source_list <- unique(cfu_all_src_shared_loo_df$human_source)
+cfu_all_src_shared_loo_df$human_source <- factor(cfu_all_src_shared_loo_df$human_source)
+
+LOcO_probs <- c()
+LOcO_rsq <- c()
+for(i in 1:length(source_list)){
+  by_source <- cfu_all_src_shared_loo_df$human_source == source_list[i]
+  LOcO_predict <- select(cfu_all_src_shared_loo_df, -mouse_id)
+  train <- LOcO_predict[!by_source,]
+  test <- LOcO_predict[by_source,]
+  set.seed(seed)
+  temp_model <- randomForest(log_cfu_med~., data=train, ntree=1001)
+  LOcO_rsq[i] <- round(tail(temp_model$rsq, 1), 2)
+  LOcO_probs <- rbind(LOcO_probs, data.frame(observed=test$log_cfu_med, 
+                                             predicted=predict(temp_model, test),
+                                             mouse_id=cfu_all_src_shared_loo_df$mouse_id[by_source],
+                                             human_source=rep(source_list[i], nrow(test))))
+}
+LOcO_rsq_overall <- 1 - (sum((LOcO_probs$observed - LOcO_probs$predicted)^2)/
+                   sum((LOcO_probs$observed - mean(LOcO_probs$observed))^2))
+```
+
+#### Leaving one cage/source out (without Donor 581):  
+Rsq of all predictions - `r LOcO_rsq_overall`  
+Rsq of each iteration - `r LOcO_rsq`  
+(cage/source order =  `r source_list`)  
+
+While this is removing 3 cages (8 mice) and decreasing the n, it is removing the smaller, lower grouping of points. So how well can the whole model predict CFU without the DA00581 samples?
+
+#### Model __Colonization level__ with Human Donor included (without Donor 581):  
+
+```{r all without 581}
+cfu_wo581_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source == 'DA00581') %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_wo581_df$human_source <- factor(cfu_wo581_df$human_source)
+
+randomized_wo581 <- c()
+base_wo581_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_wo581_df$log_cfu_med, 
+                       length(cfu_wo581_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  randomized_wo581_rf <- randomForest(cfu_wo581_df[ , -c(1,2)], random_cfu,
+                           ntree = 501,
+                           mtry = 15)
+  randomized_wo581 <- rbind(randomized_wo581, 
+                               data.frame(Model = 'Randomized', Observed = random_cfu,
+                                          Predicted = randomized_wo581_rf$predicted))
+  base_wo581_rsq <- c(base_wo581_rsq, tail(randomized_wo581_rf$rsq,1))
+}
+set.seed(seed)
+cfu_wo581_rf <- randomForest(cfu_wo581_df[ , -2], cfu_wo581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+top_features_wo581 <- head(sort(importance(cfu_wo581_rf)[,1],decreasing = T), n_features)
+
+cfu_ACD_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, cage_id, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_ACD_df$human_source <- factor(cfu_ACD_df$human_source)
+
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('A','C')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_D_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('A','D')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_C_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+cfu_single581_df <- filter(cfu_ACD_df, !cage_id %in% c('D','C')) %>% 
+                      select(-cage_id)
+set.seed(seed)
+cfu_A_rf <- randomForest(cfu_single581_df[ , -2], cfu_single581_df$log_cfu_med,
+                           ntree = 1001,
+                           mtry = 15,
+                           importance = T)
+```
+
+
+```{r colonization performance without 581, fig.width=5, fig.height=4}
+rbind(randomized_wo581,
+      data.frame(Model = 'Actual', Observed = cfu_wo581_df$log_cfu_med, 
+           Predicted = cfu_wo581_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
+    annotate('text', label = paste0(round(tail(cfu_wo581_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = 6, y = 8.9) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.8,0.2)) +
+  labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+    
+
+
+top_otus_no581 <- get_tax(row_list = names(top_features_wo581)[-1])$tax_label
+top_otus_no581 <- c('Human Source', top_otus_no581)
+```
+
+The % Variation explained in the randomized model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(base_wo581_rsq)`   
+
+
+Including one Donor 581 cage increases performance:  
+w/Cage A: `r paste0(round(tail(cfu_A_rf$rsq, 1), 4)*100, '% Var Explained')`   
+w/Cage C: `r paste0(round(tail(cfu_C_rf$rsq, 1), 4)*100, '% Var Explained')`   
+w/Cage D: `r paste0(round(tail(cfu_D_rf$rsq, 1), 4)*100, '% Var Explained')`   
+
+```{r colonization otu importance without 581, fig.width=6, fig.height=6}
+data.frame(OTU = factor(top_otus_no581, 
+                        levels = top_otus_no581[order(top_features_wo581)]), 
+           Importance = top_features_wo581/max(top_features_wo581)) %>% 
+  ggplot(aes(x = OTU, y = Importance)) + 
+    geom_point() + coord_flip() + 
+    labs(y = 'Importance (Relative MDA)', x = NULL) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "gray", linetype = "dotted"),
+          panel.grid.minor.y = element_line(colour = "gray", linetype = "dotted"),
+          axis.text.y = element_text(color = c(rep('black', length(top_features_src_cfu)-13),
+                                               rep('red', 12), 'black'), 
+                                     hjust = 0))
+```
+
+Without human donor, performance was slightly lower with similar top features  
+
+__This decrease in performance when removing Human Donor 581 suggests that with this data set, random forest is unable to predict CFU with a high degree of accuracy. This model seems to potentially be identifying the split between the high and low CFU groups, although this is difficult to say with any weight since we only have one source in the low grouping.__
+
+
+#### Remove High and Low CFU sources
+
+```{r all without 581 or 1134/1146, fig.width=5, fig.height=4}
+cfu_wo_hilo_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source %in% c('DA00581', 'DA01134','DA01146')) %>% 
+    select(-mouse_id) %>% 
+    filter(!is.na(log_cfu_med))
+cfu_wo_hilo_df$human_source <- factor(cfu_wo_hilo_df$human_source)
+
+randomized_wo_hilo <- c()
+base_wo_hilo_rsq <- c()
+for(i in 1:100){
+  set.seed(i)
+  random_cfu <- sample(cfu_wo_hilo_df$log_cfu_med, 
+                       length(cfu_wo_hilo_df$log_cfu_med), replace = F)
+  set.seed(seed)
+  randomized_wo_hilo_rf <- randomForest(select(cfu_wo_hilo_df, contains('Otu')), 
+                                        random_cfu, ntree = 501, mtry = 15)
+  randomized_wo_hilo <-   rbind(randomized_wo_hilo, 
+                               data.frame(Model = 'Randomized', Observed = random_cfu,
+                                          Predicted = randomized_wo_hilo_rf$predicted))
+  base_wo_hilo_rsq <- c(base_wo_hilo_rsq, tail(randomized_wo_hilo_rf$rsq,1))
+}
+set.seed(seed)
+cfu_wo_hilo_rf <- randomForest(select(cfu_wo_hilo_df, contains('Otu')), 
+                               cfu_wo_hilo_df$log_cfu_med, ntree = 1001,
+                               mtry = 15, importance = T)
+top_features_wo_hilo <- head(sort(importance(cfu_wo_hilo_rf)[,1],decreasing = T), n_features)
+
+
+rbind(randomized_wo_hilo,
+      data.frame(Model = 'Actual', Observed = cfu_wo_hilo_df$log_cfu_med, 
+           Predicted = cfu_wo_hilo_rf$predicted)) %>% 
+  ggplot(aes(x = Predicted, y = Observed, color = Model)) + geom_point() +
+    xlim(5,9) + ylim(5,9) + scale_colour_manual(values = c('#CCCCCC','#000000')) +
+    annotate('text', label = paste0(round(tail(cfu_wo_hilo_rf$rsq, 1), 4)*100, '% Var Explained'),
+             x = 6, y = 8.9) + 
+    theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          legend.position = c(0.8,0.2)) +
+    labs(x = 'Predicted Colonization (log CFU)', y = 'Observed Colonization (log CFU)')
+```
+
+The % Variation explained in the randomized model is:  
+Min.  1st Qu.   Median     Mean  3rd Qu.     Max.   
+`r summary(base_wo_hilo_rsq)`  
+
+***  
+***  
+
+### Regression cannot be used to predict colonization levels in this dataset  
+
+Since the % Variation explained by the RF model decreases to ~0% when removing the extreme values, the suggests that we do not have the data to make accurate predictions of the colonization level due to the low number of samples at the extremes. However we do seem to have a separation between the high and low but we cannot model the middle levels with linear regression. So another way we could look at this would to classify the groups.   
+   
+Furthermore, the variation in the steady state CFU seems to have a high degree of overlap in this middle grouping of colonization level, thus it does not appear possible to precisely define a CFU level to predict relative to the others.
+
+```{r IQR of CFU in middle range, fig.height=4, fig.width=5}
+meta_data %>% 
+  filter(day %in% c(4:10)) %>% 
+  group_by(mouse_id, cage_id, human_source) %>% 
+  merge(data.frame(colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!human_source %in% c('DA00581', 'DA01134','DA01146')) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+      select(mouse_id), 
+                   predicted = cfu_wo_hilo_rf$predicted)) %>% 
+  ggplot(aes(x=predicted, y=log_cfu, group=mouse_id))+
+     stat_summary(fun.data = 'median_hilow', fun.args=(conf.int=0.5)) + 
+     xlim(7,8) + ylim(5,9) +
+     labs(x= "Predicted CFU (log10)", y='Observed CFU (log10)\nMedian with IQR of CFU from day 4-10') +
+     theme(panel.background = element_rect(linetype = 1, size = 1, fill = 'white', color = 'black'),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank())
+```
+
+##### NMDS of colonization level  
+
+```{r NMDS, eval = F}
+#export shared file to generate theta-yc distances in mothur
+#read in full shared file
+full_shared_file <- 'data/process/full_shared.shared'
+full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
+
+nmds_df <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(shared_day_0) %>% 
+    filter(!is.na(log_cfu_med))
+nmds_df <- data.frame(colonization_level= ifelse(nmds_df$log_cfu_med >= 8.25, 'hi',
+                                     ifelse(nmds_df$log_cfu_med <= 6.5, 'lo', 'mid')),
+                       select(nmds_df, -log_cfu_med))
+nmds_shared <- full_shared_file[full_shared_file$Group %in% 
+                                  paste0(gsub('_','-',nmds_df$mouse_id),'-D0'),]
+write.table(nmds_shared, file= '~/Desktop/day_0_communities.shared', sep = '\t', 
+            row.names = F, quote = F)
+nmds_CL_design <- data.frame(paste0(gsub('_','-',nmds_df$mouse_id),'-D0'), nmds_df$colonization_level)
+write.table(nmds_CL_design, file= '~/Desktop/day_0_communities.CL.design', sep = '\t', 
+      col.names = F, row.names = F, quote = F)
+nmds_src_design <- data.frame(paste0(gsub('_','-',nmds_df$mouse_id),'-D0'), nmds_df$human_source)
+write.table(nmds_src_design, file= '~/Desktop/day_0_communities.SRC.design', sep = '\t', 
+      col.names = F, row.names = F, quote = F)
+#min(apply(nmds_shared[,-c(1:3)],1,sum)) # 2423
+#run dist command in mothur
+#dist.shared(shared=~/Desktop/day_0_communities.shared, calc=thetayc, subsample=2400)
+#nmds(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist)
+Number of dimensions:	2
+Lowest stress :	0.297773
+R-squared for configuration:	0.55791
+#nmds(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, mindim=3, maxdim=3)
+Number of dimensions:	3
+Lowest stress :	0.191484
+R-squared for configuration:	0.71623
+#amova(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, design=~/Desktop/day_0_communities.CL.design)
+hi-lo-mid	Among	Within	Total
+SS	4.48543	8.08716	12.5726
+df	2	30	32
+MS	2.24272	0.269572
+
+Fs:	8.31955
+p-value: <0.001*
+
+hi-lo	Among	Within	Total
+SS	2.4372	0.676826	3.11403
+df	1	10	11
+MS	2.4372	0.0676826
+
+Fs:	36.0093
+p-value: <0.001*
+
+hi-mid	Among	Within	Total
+SS	2.08215	7.41077	9.49293
+df	1	23	24
+MS	2.08215	0.322207
+
+Fs:	6.46215
+p-value: <0.001*
+
+lo-mid	Among	Within	Total
+SS	2.30066	8.08673	10.3874
+df	1	27	28
+MS	2.30066	0.299508
+
+Fs:	7.68145
+p-value: <0.001*
+#significantly different centroids
+  
+#homova(phylip=~/Desktop/day_0_communities.thetayc.0.03.lt.ave.dist, design=~/Desktop/day_0_communities.CL.design)
+HOMOVA	BValue	P-value	SSwithin/(Ni-1)_values
+hi-lo-mid	21.6225	<0.001*	0.000145266	0.0966271	0.370517
+hi-lo	14.1638	<0.001*	0.000145266	0.0966271
+hi-mid	18.2515	<0.001*	0.000145266	0.370517
+lo-mid	3.48295	<0.001*	0.0966271	0.370517
+# all groups have significantly different variation (hi = 0.0001, mid = 0.37, lo = 0.097)
+```
+
+```{r NMDS of Colonization Level, fig.height=6, fig.width=6}
+setwd('~/Documents/Github/Schubert_humanCdGF_XXXX_2016/')
+full_shared_file <- 'data/process/full_shared.shared'
+full_shared_file <- read.table(full_shared_file, sep = '\t', header = T)
+
+dist_file <- 'data/process/nmds_colonization_level/day_0_communities.thetayc.0.03.lt.ave.dist'
+dist_day_0_comm <- scan(dist_file, what = 'character') # load dist file as vector
+n_samples_dist <- as.numeric(dist_day_0_comm[1]) # save sample number and remove from dist vector
+dist_day_0_comm <- dist_day_0_comm[-1]
+dist_matrix <- data.frame(matrix(NA, nrow = n_samples_dist, ncol = n_samples_dist)) # matrix size of samples
+diag_value <- 0
+diag(dist_matrix) <- diag_value # fills in diagonal
+c <- 1 # c keep track of position in dist vector
+for(i in 1:n_samples_dist){
+  sample <- dist_day_0_comm[c]
+  colnames(dist_matrix)[i] <- sample
+  rownames(dist_matrix)[i] <- sample
+  if(i > 1){
+    dist_matrix[i,1:(i-1)] <- dist_day_0_comm[(c+1):(c+i-1)] # fill in matrix
+  }
+  c <- c+i # maintain position in dist vector
+}
+dist_matrix[upper.tri(dist_matrix)] <- t(dist_matrix)[upper.tri(dist_matrix)] #fill in upper triangle
+
+nmds_group <- colonized_cfu %>% 
+    select(mouse_id, human_source, log_cfu_med) %>% 
+    right_join(community_all_d0) %>% 
+    filter(!is.na(log_cfu_med)) %>% 
+    mutate(colonization_level= ifelse(log_cfu_med >= 8.25, 'hi',
+                                     ifelse(log_cfu_med <= 6.5, 'lo', 'mid'))) %>% 
+    select(colonization_level, mouse_id)
+
+rownames(dist_matrix) <- gsub('_D0','',rownames(dist_matrix))
+colnames(dist_matrix) <- gsub('_D0','',colnames(dist_matrix))
+
+nmds <- metaMDS(dist_matrix)
+#stressplot(nmds)
+colors <- c('red','green','orange')
+
+plot(nmds, type = 'n')
+points(nmds, display = 'sites', pch = 21, bg = colors[as.numeric(factor(nmds_group$colonization_level))])
+legend('topright', c('High (> 8.25 Log10 CFU)','Middle (8.25-6.5 Log10 CFU)','Low (< 6.5 Log10 CFU)'), 
+       pch =21, pt.bg=c('red','orange','green'), inset=0.09, box.lty = 0)
+#adonis(dist_matrix~colonization_level, data = nmds_group)
+```
+
+Stress = `r nmds$stress`  
+
+##### AMOVA
+hi-lo-mid	Among	  Within	Total
+SS	      4.48543	8.08716	12.5726
+df	      2	      30	    32
+MS	      2.24272	0.269572
+
+Fs:	8.31955
+p-value: <0.001*
+
+hi-lo	Among	  Within	  Total
+SS	  2.4372	0.676826	3.11403
+df	  1	      10	      11
+MS	  2.4372	0.0676826
+
+Fs:	36.0093
+p-value: <0.001*
+
+hi-mid	Among	  Within	Total
+SS	    2.08215 7.41077	9.49293
+df	    1	      23	    24
+MS	    2.08215	0.322207
+
+Fs:	6.46215
+p-value: <0.001*
+
+lo-mid	Among	    Within	Total
+SS	    2.30066	  8.08673	10.3874
+df	    1	        27	    28
+MS	    2.30066	  0.299508
+
+Fs:	7.68145
+p-value: <0.001*
+###### significantly different centroids
+  
+#### HOMOVA
+HOMOVA	  BValue  	P-value	  SSwithin/(Ni-1)_values
+hi-lo-mid	21.6225	  <0.001*	  0.000145266	0.0966271	0.370517
+hi-lo	    14.1638	  <0.001*	  0.000145266	0.0966271
+hi-mid	  18.2515 	<0.001*	  0.000145266	0.370517
+lo-mid	  3.48295 	<0.001*	  0.0966271	0.370517
+
+
+#### Classification of Colonization Level   
+
+```{r classify colonization level}
+
+```
+
+
+#### Features driving classification   
+
+```{r features of col level}
+
+```
+
+
+
+
+While these features seem to drive the grouping, it still needs to be further validated/investigated to see if these results repeat in similar microbiomes since the high and low are largely homogenous communities and the middle group is made of heterogenous commnunities.
