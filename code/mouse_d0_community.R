@@ -81,10 +81,10 @@ colnames(rel_d0)[ncol(rel_d0)] <- "cage"
 #add a column of donors to the df
 donors <- meta_file$human_source[meta_file$day==0]
 donors <- na.omit(donors)
-rel_d0[83] <- donors
-colnames(rel_d0)[83] <- "donor"
+rel_d0[72] <- donors
+colnames(rel_d0)[72] <- "donor"
  
-d0_med <- aggregate(rel_d0[, 1:81], list(rel_d0$cage), median)
+d0_med <- aggregate(rel_d0[, 1:72], list(rel_d0$cage), median)
 d0_med_phy <- sum_OTU_by_tax_level(5, d0_med, tax_file)
 #removes inoculum cage
 cage_only <- cage_IDs[-15]

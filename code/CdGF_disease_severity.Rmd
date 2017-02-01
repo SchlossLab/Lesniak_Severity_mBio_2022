@@ -1,7 +1,7 @@
 ---
 title: "humanCdGF_disease_severity"
 author: "Nicholas Lesniak"
-date: "October 27, 2016"
+date: "January 11, 2017"
 output: html_document
 ---
 
@@ -20,10 +20,10 @@ for (dep in pack_used){
 }
 ```
 
-```{r setup, include=FALSE}
+```{r process data, include=FALSE}
 meta_file   <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF_metadata.txt'
 shared_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/human_CdGF.an.unique_list.0.03.subsample.shared'
-tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/mothur/gf_all.an.cons.taxonomy'
+tax_file <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/data/process/gf_new.an.taxonomy'
 tax_function <- '~/Documents/Github/Schubert_humanCdGF_XXXX_2016/code/tax_level.R'
 
 # read in files
@@ -58,14 +58,16 @@ meta_file %>%
   filter(!cage_id == 'NP1') %>% 
   select(mouse_id, day, Early_Euth, percent_weightLoss, cage_id) %>% 
   ggplot(aes(x = factor(day), y = percent_weightLoss, color = factor(Early_Euth))) + 
-        geom_jitter(width = 0.5, alpha = 0.1) + 
+        geom_jitter(width = 0.3, alpha = 0.1) + 
         scale_color_manual(values = c('black', 'red'), breaks=c("FALSE", "TRUE"),
                            labels=c("Persistent", "Severe")) +
         stat_summary(fun.y=median, geom="line", aes(group = Early_Euth)) +
         labs(x = 'Day', y = ' Percent Relative to Day 0', title = 'Weight Loss') +
+          stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+        theme_bw() +
         theme(legend.justification=c(1,0), legend.position=c(1,0.1), 
-                  legend.title=element_blank()) +
-          stat_summary(fun.data = 'median_hilow')
+              legend.title=element_blank())
+
 
 # C. Diff CFU
 meta_file %>% 
@@ -73,12 +75,20 @@ meta_file %>%
   filter(!cage_id == 'NP1') %>% 
   select(mouse_id, day, Early_Euth, log_cfu, cage_id) %>% 
   ggplot(aes(x = factor(day), y = log_cfu, color = factor(Early_Euth))) + 
-        geom_jitter(width = 0.5, alpha = 0.2) + 
+        geom_jitter(width = 0.3, alpha = 0.2) + 
         scale_color_manual(values = c('black', 'red'), breaks=c("FALSE", "TRUE"),
                            labels=c("Persistent", "Severe")) +
         stat_summary(fun.y=median, geom="line", aes(group = Early_Euth)) +
         labs(x = 'Day', y = ' CFU (log10)', title = 'C. Difficile Colonization') +
         theme(legend.justification=c(1,0), legend.position=c(1,0.2), 
                   legend.title=element_blank()) +
-        stat_summary(fun.data = 'median_hilow')
+        stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) + 
+        theme_bw() +
+        theme(legend.justification=c(1,0), legend.position=c(1,0.2), 
+              legend.title=element_blank())
+
+
 ```
+
+
+Points are median of Disease Severity Group and lines are IQR
