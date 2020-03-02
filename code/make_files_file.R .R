@@ -6,7 +6,7 @@ library(readxl)
 
 input_mouse <- 'data/raw/humanGF_ids.xlsx'
 human_GF_mouse <- read_excel(input_mouse, sheet = 'complete metadata') # load metadata
-fastq_list <- list.files(path = 'data/mothur/', pattern = 'fastq') # read in the names of all fastq available from project
+fastq_list <- list.files(path = 'data/raw/', pattern = 'fastq') # read in the names of all fastq available from project
 
 # create vector with all cage names used in experiment
 cages <- human_GF_mouse$cage_id%>%unique%>%as.character
