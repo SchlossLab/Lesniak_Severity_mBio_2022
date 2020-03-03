@@ -36,4 +36,4 @@ echo 'Starting'
 ######################
 
 bash code/get_references.batch
-bash code/get_good_seqs.batch
+/nfs/turbo/schloss-lab/bin/mothur code/get_good_seqs.batch
