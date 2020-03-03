@@ -23,14 +23,14 @@ mv data/scratch/silva.seed_v123.pick.pcr.align data/references/silva.v4.align
 echo PROGRESS: Preparing Ribosomal Database Project taxonomy files.
 
 # Downloading the prepared RDP database from the mothur website
-# For more information see http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/
-wget -N -P data/scratch/ http://mothur.org/w/images/8/88/Trainset16_022016.pds.tgz
+# For more information see http://blog.mothur.org/2017/03/15/RDP-v16-reference_files/
+wget -N -P data/scratch/ https://mothur.org/w/images/c/c3/Trainset16_022016.pds.tgz
 
 # Decompressing the database
 tar xvzf data/scratch/Trainset16_022016.pds.tgz -C data/scratch/
 
 # Move the taxonomy files out of the tmp dir
-mv data/scratch/trainset16_062016.pds/trainset16_022016* data/references
+mv data/scratch/trainset16_022016.pds/trainset16_022016* data/references
 
 
 echo PROGRESS: Preparing v4 mock sequence files for mothur. 

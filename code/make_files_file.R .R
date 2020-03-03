@@ -58,5 +58,5 @@ mock_fastqs <- fastq_df %>%
 
 files_file <- bind_rows(experiment_fastqs, inoculum_fastqs, mock_fastqs)	
 
-write.table(files_file, 'data/mothur/humanGF_cdiff.files', sep = '\t',
+write.table(files_file, 'data/raw/humanGF_cdiff.files', sep = '\t',
 	quote = FALSE, row.names = FALSE, col.names = FALSE)
