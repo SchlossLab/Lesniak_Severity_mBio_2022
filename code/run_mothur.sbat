@@ -1,0 +1,39 @@
+#!/bin/bash
+
+###############################
+#                             #
+#  1) Job Submission Options  #
+#                             #
+###############################
+
+# Name
+#SBATCH --job-name=run_mothur
+
+# Resources
+# For MPI, increase ntasks-per-node
+# For multithreading, increase cpus-per-task
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=4GB
+#SBATCH --time=100:00:00
+
+# Account
+#SBATCH --account=pschloss1
+#SBATCH --partition=standard
+
+# Logs
+#SBATCH --mail-user=nlesniak@umich.edu
+#SBATCH --mail-type=END,FAIL
+
+echo 'Starting'
+
+
+#######################
+#
+# 2) Job Commands
+#
+######################
+
+bash code/get_references.batch
+bash code/get_good_seqs.batch
