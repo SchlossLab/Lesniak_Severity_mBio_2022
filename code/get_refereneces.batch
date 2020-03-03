@@ -1,0 +1,36 @@
+mkdir data/scratch/
+
+echo PROGRESS: Preparing SILVA database v4 sequence alignment files.
+
+# Downloading the prepared SILVA database from the mothur website
+# This version is from v123 and described at http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/
+wget -N -P data/scratch/ http://mothur.org/w/images/1/15/Silva.seed_v123.tgz
+
+# Decompressing the database
+tar xvzf data/scratch/Silva.seed_v123.tgz -C data/scratch
+
+# Using mothur to pull out the v4 region from bacterial sequences
+mothur "#set.current(outputdir=data/scratch/, processors=8);
+	get.lineage(fasta=data/scratch/silva.seed_v123.align, taxonomy=data/scratch/silva.seed_v123.tax, taxon=Bacteria);
+	pcr.seqs(fasta=current, start=11894, end=25319, keepdots=F)"
+
+# Renaming the output file and moving it from the tmp dir to the output dir
+mv data/scratch/silva.seed_v123.pick.align data/references/silva.seed.align
+mv data/scratch/silva.seed_v123.pick.pcr.align data/references/silva.v4.align
+
+
+
+echo PROGRESS: Preparing Ribosomal Database Project taxonomy files.
+
+# Downloading the prepared RDP database from the mothur website
+# For more information see http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/
+wget -N -P data/scratch/ http://mothur.org/w/images/8/88/Trainset16_022016.pds.tgz
+
+# Decompressing the database
+tar xvzf data/scratch/Trainset16_022016.pds.tgz -C data/scratch/
+
+# Move the taxonomy files out of the tmp dir
+mv data/scratch/trainset16_062016.pds/trainset16_022016* data/references
+
+# Cleaning up reference dir
+rm -rf data/scratch/
