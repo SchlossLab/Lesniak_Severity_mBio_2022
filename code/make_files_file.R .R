@@ -56,7 +56,11 @@ mock_fastqs <- fastq_df %>%
 	mutate(read = str_extract(fastq, 'R[12]')) %>%
 	spread(read, fastq, fill = 'NA')
 
-files_file <- bind_rows(experiment_fastqs, inoculum_fastqs, mock_fastqs)	
+files_file <- bind_rows(experiment_fastqs, inoculum_fastqs, mock_fastqs) %>% 
+	# since there is - in the sample nanmes and this is the symbol mothur uses to split sames
+	# mothur attempts to split all the file names containing - 
+	# replace all - with another character ('v')
+	mutate(sample_names = gsub('[-_]', 'v', sample_names))
 
 write.table(files_file, 'data/raw/humanGF_cdiff.files', sep = '\t',
 	quote = FALSE, row.names = FALSE, col.names = FALSE)
