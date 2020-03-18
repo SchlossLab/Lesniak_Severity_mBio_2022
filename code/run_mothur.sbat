@@ -14,9 +14,9 @@
 # For multithreading, increase cpus-per-task
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=10GB
-#SBATCH --time=80:00:00
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=4GB
+#SBATCH --time=120:00:00
 
 # Account
 #SBATCH --account=pschloss1
@@ -38,7 +38,17 @@ echo 'Starting'
 # Connecting node to internet
 source /etc/profile.d/http_proxy.sh 
 
-# crete all reference files
-#bash code/get_references.batch
+# create all reference files
+bash code/get_references.batch
+
 # run files through mothur
 /nfs/turbo/schloss-lab/bin/mothur code/get_good_seqs.batch
+/nfs/turbo/schloss-lab/bin/mothur code/get_error.batch
+/nfs/turbo/schloss-lab/bin/mothur code/get_shared_otus.batch
+
+#rename and split shared files
+mv data/mothur/*.shared data/mothur/complete.final.shared
+mothur "#remove.groups(shared=data/mothur/complete.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
+mv data/mothur/complete.final.0.03.pick.shared data/process/sample.final.shared
+mothur "#get.groups(shared=data/mothur/complete.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
+mv data/mothur/complete.final.0.03.pick.shared data/process/mock.final.shared
