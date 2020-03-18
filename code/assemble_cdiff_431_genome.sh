@@ -25,3 +25,6 @@ samtools view -S -b data/process/cdiff_16S/cdiff_genome_alignment/SRR804616.alig
 bcftools mpileup -f data/reference/cdifficile630_reference_genome.fasta data/process/cdiff_16S/cdiff_genome_alignment/SRR804616.aligned.bam | bcftools call -mv -Oz -o data/process/cdiff_16S/cdiff_genome_alignment/calls.vcf.gz
 tabix data/process/cdiff_16S/cdiff_genome_alignment/calls.vcf.gz
 cat data/reference/cdifficile630_reference_genome.fasta | bcftools consensus data/process/cdiff_16S/cdiff_genome_alignment/calls.vcf.gz > data/process/cdiff_16S/consensus_cdifficile_431.fasta
+
+var='>DA00431 Clostridioides difficile 027'
+sed -i '' "1s/.*/$var/" data/process/cdiff_16S/consensus_cdifficile_431.fasta
