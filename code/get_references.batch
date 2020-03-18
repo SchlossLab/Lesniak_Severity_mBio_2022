@@ -44,7 +44,7 @@ wget -N -P data/scratch/ https://s3.amazonaws.com/zymo-files/BioPool/ZymoBIOMICS
 unzip -o data/scratch/ZymoBIOMICS.STD.refseq.v2.zip -d data/scratch/
 
 # Overwriting the current mock sequence file if one already exists, creates the file if it doesn't exist
-echo -n "" > data/scratch//zymo.mock.16S.fasta
+echo -n "" > data/scratch/zymo.mock.16S.fasta
 
 # Concatenating all of the sequence files into a single reference file
 for FASTA in data/scratch/ZymoBIOMICS.STD.refseq.v2/ssrRNAs/*; do
@@ -54,7 +54,7 @@ for FASTA in data/scratch/ZymoBIOMICS.STD.refseq.v2/ssrRNAs/*; do
 done
 
 # Copying data files to tmp dir for v4 alignment
-cp "data/references/silva.seed.align data/references/zymo.mock.16S.fasta data/scratch/
+cp data/references/silva.seed.align "data/references/zymo.mock.16S.fasta data/scratch/
 
 # Aligning mock sequences to the SILVA v4 region
 # Will generate the following warning message '[WARNING]: 4 of your sequences generated alignments that eliminated too many bases' 
