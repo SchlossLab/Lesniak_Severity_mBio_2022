@@ -8,7 +8,7 @@ library(tidyverse)
 
 # read in table with all available C difficile genomic sequences
 cdiff_genome_df <- read_delim('data/process/cdiff_16S/assembly_summary.txt', delim = '\t',
-	skip = 1, comment = '') %>% 
+	skip = 1, comment = '') 
 
 # filter to include only complete genomes
 cdiff_genome_paths <- cdiff_genome_df %>% 
