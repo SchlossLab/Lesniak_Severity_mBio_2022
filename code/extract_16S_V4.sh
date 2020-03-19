@@ -9,7 +9,7 @@ done
 gunzip data/process/cdiff_16S/cdiff_genomes/*.fna.gz
 
 # get file list of all the C difficile refseq genomes 
-# includes the genome used as the reference for assebmbling the 431 genome
+# includes the genome used as the reference for assembling the 431 genome
 # GCF_000009205.2_ASM920v2 >NC_009089.1 Clostridioides difficile 630, complete genome
 # and the DA00431 genome
 genome_list=(data/process/cdiff_16S/consensus_cdifficile_431.fasta \
@@ -29,7 +29,7 @@ do
 	# remove new lines splitting sequences
 	cat $temp_file  | tr -d '\n' | 
 		grep -E -o '(GTGCCAGC.GCCGCGGTAA.{200,255}ATTAGA.ACCC..GTAGTCC)|(GGACTAC..GGGT.TCTAAT.{200,255}TTACCGCGGC.GCTGGCAC)' | # extract 16S gene
-		sed "s/$/$(printf '\t')$genome/" >> data/process/cdiff_16S/cdifficile_16S_V4.txt # add genome name to each line
+		sed "s/$/$(printf '\t')$genome/" >> data/process/cdiff_16S/all_cdifficile_16S_V4.txt # add genome name to each line
 done
 
 rm -r data/process/cdiff_16S/cdiff_genomes
