@@ -26,5 +26,10 @@ bcftools mpileup -f data/reference/cdifficile630_reference_genome.fasta data/pro
 tabix data/process/cdiff_16S/cdiff_genome_alignment/calls.vcf.gz
 cat data/reference/cdifficile630_reference_genome.fasta | bcftools consensus data/process/cdiff_16S/cdiff_genome_alignment/calls.vcf.gz > data/process/cdiff_16S/consensus_cdifficile_431.fasta
 
+# rename assembled genome
 var='>DA00431 Clostridioides difficile 027'
 sed -i '' "1s/.*/$var/" data/process/cdiff_16S/consensus_cdifficile_431.fasta
+
+# clean up intermediate files
+rm data/process/cdiff_16S/SRR5804616*
+rm -r data/process/cdiff_16S/cdiff_genome_alignment
