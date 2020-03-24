@@ -1,0 +1,53 @@
+Returning to the GF-human microbiota project
+Refreshing myself on where we were and what to do
+Two issues that came up
+	1. C difficile sequences in day 0/donor samples
+>
+	2. Multiple inocula samples were sequences
+			Original donor samples were sequenced on 454 V35
+			donor and inocula samples were sequenced on a separate 16S run
+			A few were sequenced with the rest of the experimental samples, but only DA00581 was used
+		Differences between 454 and 16S seem to be anaerobic shifts, which could have possibly occured during the inoculation steps.
+		Option 1: Use samples sequenced via 16S together, since those are closer to what was used and we cannot be sure there is a shift in the microbes and if that shift was present at the time of inoculation or not
+		Option 2: Use 454 sequences since are least likely to have any changes frm the donor and use them to describe the donor and not make comparisons to the mice
+>		Option 3: Use both, one to describe the donor (supplement?) and one to describe the inocula
+			Obtain all sequencing files
+				X - Inocula 16S
+				X - Donor Source Sample 454 - 
+				X - Sample 16S - located /nfs/locker/microbio-schloss-data/alyx/humanGF_2015.tgz
+
+Start analysis with cleaning metafile
+	already started make_HumanCdGF_metadata_file.R
+>		check to make sure not eliminating samples when subsetting to match meta and shared
+>		add note on why day -7 was removed (only available for INA and OUTA)
+>		add note on why P2/DA00810 was removed
+>		remove AMS
+>		leave cecum in (only sample for some of the mice which died early)
+
+Rerun mothur with updated files file
+>	remove AMS, P2, D -7 from files file
+
+CFU
+>	quantify colonization rate
+		previously tried to measure slope but also need to take delayed colonization into account
+		day CFU > 10^6?
+
+modeling
+>	include PCA coordinates and diversity metrics
+>	use precision/recall for early death since imbalanced
+
+
+workflow
+	make_files_file.R
+	run_mothur.sbat
+		get_references.batch
+		get_good_seqs.batch
+		get_error.batch
+		get_shared.batch
+	make_humanCdGF_metadata_file.R (does this need to be done before make files?)
+	cdiff 16S
+		assemble_cdiff_431_genome.sh
+		extract_16S_V4.sh
+			get_cdiff_genome_paths.R
+		get_cdiff_16S_variation.R
+	
