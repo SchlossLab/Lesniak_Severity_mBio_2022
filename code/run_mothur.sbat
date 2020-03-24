@@ -52,3 +52,4 @@ mothur "#remove.groups(shared=data/mothur/complete.final.shared, groups=mockvS28
 mv data/mothur/complete.final.0.03.pick.shared data/process/sample.final.shared
 mothur "#get.groups(shared=data/mothur/complete.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
 mv data/mothur/complete.final.0.03.pick.shared data/process/mock.final.shared
+mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy data/process/final.taxonomy
