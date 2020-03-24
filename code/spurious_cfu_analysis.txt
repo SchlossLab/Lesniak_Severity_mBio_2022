@@ -68,6 +68,7 @@ Meeting with Anna and her advice, 1/19:
 - Toxin assay doesnt measure binary toxin. Thats what this strain has. so some argument could be made about there being that and us not measuring it
 - the cdiff OTUs are different OTU numbers
 -day 0 they have cdiff?!?!?! but not donors?! by 16S. but we might not be able to trust Day 0 CFU, cant find anywhere alyx counted for it
+		* some donors do, and found alyx's notes for Day 0
 
 So what CAN we answer:
 -D1/D2, AUC , wt loss- predict D1/D2 from D0
@@ -88,3 +89,60 @@ Concentrate on this study now as a disease model
 
 Search for Cdiff OTUs in donor and water controls 
 Lots of caveats. organize these thoughts later. 
+
+#------------------------------------------------------------------------------------#
+
+Reviewing notebook and notes from mouse experiments 2/11/2020
+In noticing there are counts that group under Clostridium XI for some day 0 samples
+summing all Clostridium XI otus 
+	OTU 		counts
+	Otu000033	3061
+	Otu000152	8701
+	Otu000153	29231
+	Otu000628	2805
+	Otu001100	228
+	Otu001149	108
+	Otu001521	9
+	Otu001845	7
+	Otu002284	3
+	Otu002316	4
+	Otu003946	4
+	Otu004148	2
+	Otu004423	2
+	Otu004549	1
+	Otu005188	3
+	Otu005403	1
+
+ sample counts
+DA00369      4
+DA00884      3
+DA10027      2
+DA10034      4
+DA10148      8
+
+      sample counts human_source cdiff_donor_counts
+  369-331-D0     67      DA00369                  4
+  369-992-D0    148      DA00369                  4
+  430-304-D0      2      DA00430                  0
+CONA-2953-D0      5      DA00431                  0 
+CONA-2955-D0     13      DA00431                  0
+  CONA-NT-D0     18      DA00431                  0
+ IN1-2084-D0      2      DA00884                  3 
+ IN3-2336-D0      2      DA00953                  0
+   IN3-NT-D0      5      DA00953                  0
+ INA-2056-D0      2      DA01245                  0
+ INA-2064-D0      4      DA01245                  0
+ LINE-978-D0      4      DA01146                  0
+ MOUT-568-D0     20      DA10093                  0
+ MOUT-896-D0     16      DA10093                  0
+  NP2-979-D0     39      DA01324                  0
+  NP2-983-D0     20      DA01324                  0
+ OUT-2028-D0     36      DA10034                  4
+ OUT-2081-D0      7      DA10034                  4
+ OUT-2096-D0      8      DA10034                  4
+
+There are some donors with 16S sequences clustering into Clostridium XI, and some of those mice come from those donors, but also some of them do not and some that come from those donors do not have any sequences detected.
+But to look further into this, to see what was plated on day 0 I looked back into the notebook and notes from the experiments.
+It appears that all mice were plated regularly but only recorded when C difficile colonies were detected or daily post C difficile challenge.
+	So there were no record of CFU for day 0 but for some there were yes/no for colonies or notes stating that the cage has C difficile or the days which a mouse in the cage had detectable C difficile in their stool.
+
