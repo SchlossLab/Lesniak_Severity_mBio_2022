@@ -55,6 +55,15 @@ sequence_identity_df <- map_dfr(unique_seqs, function(i){
 
 write_lines(concensus_seq, 'data/process/cdiff_16S/consensus_cdifficile_16S_V4.txt')
 
+#cdiff_v4_seq_dist_plot <- sequence_identity_df %>% 
+#	left_join(sequence_distribution, by = c('sequence')) %>% 
+#	ggplot(aes(x = percent_identity, y = n)) + 
+#		geom_bar(stat='identity', width = .125) + 
+#		labs(x = 'Percent Identity to C. difficile Consensus Sequence', y = 'Sequence Counts in C. difficile genomes', 
+#			title = 'Distribution of C. difficile 16S V4 gene sequences',
+#			subtitle = '85 Genomes with 819 Sequences') +
+#		coord_cartesian(xlim = c(96,100.2)) + theme_bw() + coord_flip()
+
 # select sequences below 97% similar to consensus sequence
 outlier_sequence_16S <- sequence_identity_df %>% 
 	filter(percent_identity < 97) %>% 
