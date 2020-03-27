@@ -44,7 +44,7 @@ bash code/get_donor_seqs.sh
 bash code/get_references.batch
 
 # run donor sequence files through mothur
-mothur code/get_donor_shared.batch
+/nfs/turbo/schloss-lab/bin/mothur code/get_donor_shared.batch
 #rename and split shared files
 mv data/mothur/*.shared data/mothur/complete.donor.final.shared
 /nfs/turbo/schloss-lab/bin/mothur "#remove.groups(shared=data/mothur/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
