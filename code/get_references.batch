@@ -10,7 +10,7 @@ tar xvzf data/scratch/silva.seed_v138.tgz -C data/scratch
 
 # Using mothur to pull out the v35 and v4 region from bacterial sequences
 # And rename the output file and moving it from the tmp dir to the output dir
-mothur "#set.current(outputdir=data/scratch/, processors=8);
+/nfs/turbo/schloss-lab/bin/mothur "#set.current(outputdir=data/scratch/, processors=8);
 	get.lineage(fasta=data/scratch/silva.seed_v138.align, taxonomy=data/scratch/silva.seed_v138.tax, taxon=Bacteria);
 	pcr.seqs(fasta=data/scratch/silva.seed_v138.pick.align, start=11894, end=25319, keepdots=F);
 	system(mv data/scratch/silva.seed_v138.pick.pcr.align data/references/silva.v4.align);
@@ -39,7 +39,7 @@ wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/data/MiSeqDev
 cp data/scratch/HMP_MOCK.fasta data/references/HMP_MOCK.fasta
 
 # Aligning mock sequences to the SILVA v35 and v4 region
-mothur "#align.seqs(fasta=data/scratch/HMP_MOCK.fasta, reference=data/scratch/silva.seed_v138.align, processors=8);
+/nfs/turbo/schloss-lab/bin/mothur "#align.seqs(fasta=data/scratch/HMP_MOCK.fasta, reference=data/scratch/silva.seed_v138.align, processors=8);
 	pcr.seqs(fasta=data/scratch/HMP_MOCK.align, start=11894, end=25319, keepdots=F);
 	degap.seqs(fasta=data/scratch/HMP_MOCK.pcr.align);
 	system(mv data/scratch/HMP_MOCK.pcr.ng.fasta data/references/HMP_MOCK.v4.align);
