@@ -1,12 +1,12 @@
 mkdir data/scratch/
 
-echo PROGRESS: Preparing SILVA database v4 sequence alignment files.
+echo PROGRESS: Preparing SILVA database v35 and v4 sequence alignment files.
 
 # Downloading the prepared SILVA database from the mothur website
 # This version is from v138 and described at https://mothur.org/blog/2020/SILVA-v138-reference-files/
 wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/wiki/silva.seed_v138.tgz
 # Decompressing the database
-tar xvzf data/scratch/Silva.seed_v138.tgz -C data/scratch
+tar xvzf data/scratch/silva.seed_v138.tgz -C data/scratch
 
 # Using mothur to pull out the v35 and v4 region from bacterial sequences
 # And rename the output file and moving it from the tmp dir to the output dir
@@ -24,7 +24,7 @@ echo PROGRESS: Preparing Ribosomal Database Project taxonomy files.
 wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/wiki/trainset16_022016.pds.tgz
 
 # Decompressing the database
-tar xvzf data/scratch/Trainset16_022016.pds.tgz -C data/scratch/
+tar xvzf data/scratch/trainset16_022016.pds.tgz -C data/scratch/
 
 # Move the taxonomy files out of the tmp dir
 mv data/scratch/trainset16_022016.pds/trainset16_022016* data/reference
