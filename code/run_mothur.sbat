@@ -38,14 +38,26 @@ echo 'Starting'
 # Connecting node to internet
 source /etc/profile.d/http_proxy.sh 
 
-# create all reference files
+# create all data and reference files
+bash code/get_donor_seqs.sh
+	# runs get_donor_seqs.R
 bash code/get_references.batch
 
-# run files through mothur
-/nfs/turbo/schloss-lab/bin/mothur code/get_good_seqs.batch
-/nfs/turbo/schloss-lab/bin/mothur code/get_error.batch
-/nfs/turbo/schloss-lab/bin/mothur code/get_shared_otus.batch
+# run donor sequence files through mothur
+mothur code/get_donor_shared.batch
+#rename and split shared files
+mv data/mothur/*.shared data/mothur/complete.donor.final.shared
+mothur "#remove.groups(shared=data/mothur/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
+mv data/mothur/complete.donor.final.0.03.pick.shared data/process/donor.final.shared
+mothur "#get.groups(shared=data/mothur/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
+mv data/mothur/complete.donor.final.0.03.pick.shared data/process/mock.donor.final.shared
+#mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy data/process/final.taxonomy
 
+
+# run main experiment files through mothur
+mothur code/get_good_seqs.batch
+mothur code/get_error.batch
+mothur code/get_shared_otus.batch
 #rename and split shared files
 mv data/mothur/*.shared data/mothur/complete.final.shared
 mothur "#remove.groups(shared=data/mothur/complete.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
