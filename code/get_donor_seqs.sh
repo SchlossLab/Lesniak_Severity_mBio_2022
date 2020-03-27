@@ -7,6 +7,9 @@ else
    curl -o $FILE https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/MIMARKS_cdclinical.xlsx
 fi
 
+# run rscript to create donor files
+Rscript code/get_donor_seqs.R
+
 # download sequence files
 for temp_file in $(cat data/process/donor_seq_files.txt)
 do
@@ -16,6 +19,3 @@ do
 	curl -o data/raw/$temp_file.oligos https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/$temp_file.oligos
 	bzip2 -d $temp_file.sff.bz2
 done
-
-# run rscript to create donor files
-Rscript code/get_donor_seqs.R
