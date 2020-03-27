@@ -27,7 +27,7 @@ wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/wiki/trainset
 tar xvzf data/scratch/trainset16_022016.pds.tgz -C data/scratch/
 
 # Move the taxonomy files out of the tmp dir
-mv data/scratch/trainset16_022016.pds/trainset16_022016* data/reference
+mv data/scratch/trainset16_022016.pds/trainset16_022016* data/references
 
 
 echo PROGRESS: Preparing mock sequence files for mothur. 

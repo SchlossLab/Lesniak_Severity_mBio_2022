@@ -15,7 +15,7 @@ for temp_file in $(cat data/process/donor_seq_files.txt)
 do
 	temp_file=data/raw/$temp_file
 	echo Processing $temp_file
-	curl -o data/raw/$temp_file.sff.bz2 https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/$temp_file.sff.bz2
-	curl -o data/raw/$temp_file.oligos https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/$temp_file.oligos
+	curl -o $temp_file.sff.bz2 https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/$temp_file.sff.bz2
+	curl -o $temp_file.oligos https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/$temp_file.oligos
 	bzip2 -d $temp_file.sff.bz2
 done
