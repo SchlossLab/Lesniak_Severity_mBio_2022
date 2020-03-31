@@ -16,7 +16,10 @@ library(dplyr)
 library(tidyr)
 library(readr)
 
-taxonomy_file <- 'data/process/final.taxonomy'
+input_file <- as.character(commandArgs(trailingOnly=TRUE))
+
+taxonomy_file <- paste0('data/process/', input_file)
+print(paste('Converting', taxonomy_file))
 taxonomy_df <- read.table(taxonomy_file, sep = '\t', header = T)
 
 levels <- c('Kingdom','Phylum','Class','Order','Family','Genus')
@@ -28,7 +31,7 @@ taxonomy_df_edit <- taxonomy_df %>%
 # in older version of mothur unclassified are listed as unclassified
 # without information from higher level classification
 # for those cases, append with lowest identified classification
-if(any(taxonomy_df_edit$Genus == 'unclassified')){ 
+if(any(grepl('nclassified', taxonomy_df_edit$Genus))){ 
 	taxonomy_df_edit <- taxonomy_df_edit %>% 
 		gather(Level, Classification, -OTU) %>% # convert to long form to group classification by OTU 
 		mutate(Level = factor(Level, levels))  %>% # order classification level
@@ -50,4 +53,4 @@ taxonomy_df_edit <- taxonomy_df_edit %>%
         gsub('tu0*', 'TU ', OTU),')'), # create labels 
       otu_label = paste0(gsub('tu0*', 'TU ', OTU))) # create labels  
 
-write_tsv(taxonomy_df_edit, 'data/process/final.taxonomy.clean.tsv')
+write_tsv(taxonomy_df_edit, paste0('data/process/', input_file, '.clean.tsv'))
