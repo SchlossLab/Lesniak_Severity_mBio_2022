@@ -44,8 +44,11 @@ cp data/scratch/HMP_MOCK.fasta data/references/HMP_MOCK.fasta
 	degap.seqs(fasta=data/scratch/HMP_MOCK.pcr.align);
 	system(mv data/scratch/HMP_MOCK.pcr.ng.fasta data/references/HMP_MOCK.v4.align);
 	pcr.seqs(fasta=data/scratch/HMP_MOCK.align, start=6426, end=27654, keepdots=F);
-	degap.seqs(fasta=data/scratch/HMP_MOCK.pcr.align);
-	system(mv data/scratch/HMP_MOCK.pcr.ng.fasta data/references/HMP_MOCK.v35.align)"
+	system(mv data/scratch/HMP_MOCK.pcr.align data/references/HMP_MOCK.v35.align)"
+
+# Get shhh.flows lookup file
+curl -o data/references/lookup_gsflx.zip https://mothur.s3.us-east-2.amazonaws.com/wiki/lookup_gsflx.zip
+unzip data/references/lookup_gsflx.zip -d data/references/
 
 # Cleaning up reference dir
 rm -rf data/scratch/
