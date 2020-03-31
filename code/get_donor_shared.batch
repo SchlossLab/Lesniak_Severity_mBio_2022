@@ -1,0 +1,54 @@
+
+#get good seqs
+set.dir(input=data/raw/, output=data/mothur/donor seed=19760620)
+sffinfo(sff= HLFAWTL01.sff, flow=T)
+sffinfo(sff= HLFAWTL02.sff, flow=T)
+sffinfo(sff= HD7UIAO01.sff, flow=T)
+sffinfo(sff= HD9SPZN01.sff, flow=T)
+set.dir(input=data/mothur/donor, output=data/mothur/donor)
+trim.flows(flow=HD7UIAO01.flow, oligos=data/raw/HD7UIAO01.oligos, pdiffs=2, bdiffs=1)
+trim.flows(flow=HD9SPZN01.flow, oligos=data/raw/HD9SPZN01.oligos, pdiffs=2, bdiffs=1)
+trim.flows(flow=HLFAWTL01.flow, oligos=data/raw/HLFAWTL01.oligos, pdiffs=2, bdiffs=1)
+trim.flows(flow=HLFAWTL02.flow, oligos=data/raw/HLFAWTL02.oligos, pdiffs=2, bdiffs=1)
+
+shhh.flows(file=HD7UIAO01.flow.files, lookup=data/references/LookUp_GSFLX.patq)
+shhh.flows(file=HD9SPZN01.flow.files, lookup=data/references/LookUp_GSFLX.patq)
+shhh.flows(file=HLFAWTL01.flow.files, lookup=data/references/LookUp_GSFLX.patq)
+shhh.flows(file=HLFAWTL02.flow.files, lookup=data/references/LookUp_GSFLX.patq)
+
+trim.seqs(fasta=HD7UIAO01.shhh.fasta, name=HD7UIAO01.shhh.names, oligos=HD7UIAO01.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=trim)
+trim.seqs(fasta=HD9SPZN01.shhh.fasta, name=HD9SPZN01.shhh.names, oligos=HD9SPZN01.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=trim)
+trim.seqs(fasta=HLFAWTL01.shhh.fasta, name=HLFAWTL01.shhh.names, oligos=HLFAWTL01.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=trim)
+trim.seqs(fasta=HLFAWTL02.shhh.fasta, name=HLFAWTL02.shhh.names, oligos=HLFAWTL02.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=trim)
+
+merge.files(input=HD7UIAO01.shhh.trim.fasta-HD9SPZN01.shhh.trim.fasta-HLFAWTL01.shhh.trim.fasta-HLFAWTL02.shhh.trim.fasta, output=patient_inocula.shhh.trim.fasta)
+merge.files(input=HD7UIAO01.shhh.trim.names-HD9SPZN01.shhh.trim.names-HLFAWTL01.shhh.trim.names-HLFAWTL02.shhh.trim.names, output=patient_inocula.shhh.trim.names)
+merge.files(input=HD7UIAO01.shhh.groups-HD9SPZN01.shhh.groups-HLFAWTL01.shhh.groups-HLFAWTL02.shhh.groups, output=patient_inocula.shhh.groups)
+
+set.current(processors=8)
+unique.seqs(fasta=patient_inocula.shhh.trim.fasta, name=patient_inocula.shhh.trim.names)
+align.seqs(fasta=current, reference=data/references/silva.v35.align)
+screen.seqs(fasta=current, name=current, group=patient_inocula.shhh.groups, end=21227, optimize=start, criteria=95)
+filter.seqs(fasta=current, vertical=T, trump=.)
+unique.seqs(fasta=current, name=current)
+pre.cluster(fasta=current, name=current, group=current, diffs=2)
+chimera.vsearch(fasta=current, name=current, group=current, dereplicate=T)
+remove.seqs(accnos=current, fasta=current, name=current, group=current, dups=T)
+classify.seqs(fasta=current, name=current, group=current, template=data/references/trainset16_022016.pds.fasta, taxonomy=data/references/trainset16_022016.pds.tax, cutoff=80)
+remove.lineage(fasta=current, name=current, group=current, taxonomy=current, taxon=Mitochondria-Chloroplast-Archaea-Eukaryota-unknown)
+
+
+#error analysis
+filter.seqs(fasta=data/references/HMP_MOCK.v35.align, hard=patient_inocula.filter)
+get.groups(fasta=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta, group=patient_inocula.shhh.good.pick.pick.groups, name=patient_inocula.shhh.trim.unique.good.filter.pick.pick.names, accnos=data/process/donor_mock_ids.accnos)
+seq.error(fasta=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.pick.fasta, name=patient_inocula.shhh.trim.unique.good.filter.pick.pick.pick.names, reference=data/references/HMP_MOCK.v35.filter.fasta)
+
+# select only our donor and mock samples
+get.groups(fasta=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta, name=patient_inocula.shhh.trim.unique.good.filter.pick.pick.names, group=patient_inocula.shhh.good.pick.pick.groups, taxonomy=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, accnos=data/process/donor_sample_ids.accnos)
+rename.file(fasta=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.pick.fasta, name=patient_inocula.shhh.trim.unique.good.filter.pick.pick.pick.names, group=patient_inocula.shhh.good.pick.pick.pick.groups, taxonomy=patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.pick.taxonomy, prefix=donor.final)
+
+#get otus
+dist.seqs(fasta=donor.final.fasta, cutoff=0.03)
+cluster(column=current, count=current)
+make.shared(list=current, count=current, label=0.03)
+classify.otu(list=donor.final.opti_mcc.list, name=donor.final.names, taxonomy=donor.final.taxonomy, label=0.03)

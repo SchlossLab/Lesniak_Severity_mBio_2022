@@ -1,72 +1,54 @@
 mkdir data/scratch/
 
-echo PROGRESS: Preparing SILVA database v4 sequence alignment files.
+echo PROGRESS: Preparing SILVA database v35 and v4 sequence alignment files.
 
 # Downloading the prepared SILVA database from the mothur website
-# This version is from v123 and described at http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/
-wget -N -P data/scratch/ http://mothur.org/w/images/1/15/Silva.seed_v123.tgz
-
+# This version is from v138 and described at https://mothur.org/blog/2020/SILVA-v138-reference-files/
+wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/wiki/silva.seed_v138.tgz
 # Decompressing the database
-tar xvzf data/scratch/Silva.seed_v123.tgz -C data/scratch
+tar xvzf data/scratch/silva.seed_v138.tgz -C data/scratch
 
-# Using mothur to pull out the v4 region from bacterial sequences
+# Using mothur to pull out the v35 and v4 region from bacterial sequences
+# And rename the output file and moving it from the tmp dir to the output dir
 /nfs/turbo/schloss-lab/bin/mothur "#set.current(outputdir=data/scratch/, processors=8);
-	get.lineage(fasta=data/scratch/silva.seed_v123.align, taxonomy=data/scratch/silva.seed_v123.tax, taxon=Bacteria);
-	pcr.seqs(fasta=current, start=11894, end=25319, keepdots=F)"
-
-# Renaming the output file and moving it from the tmp dir to the output dir
-mv data/scratch/silva.seed_v123.pick.align data/references/silva.seed.align
-mv data/scratch/silva.seed_v123.pick.pcr.align data/references/silva.v4.align
-
-
+	get.lineage(fasta=data/scratch/silva.seed_v138.align, taxonomy=data/scratch/silva.seed_v138.tax, taxon=Bacteria);
+	pcr.seqs(fasta=data/scratch/silva.seed_v138.pick.align, start=11894, end=25319, keepdots=F);
+	system(mv data/scratch/silva.seed_v138.pick.pcr.align data/references/silva.v4.align);
+	pcr.seqs(fasta=data/scratch/silva.seed_v138.pick.align, start=6426, end=27654, keepdots=F);
+	system(mv data/scratch/silva.seed_v138.pick.pcr.align data/references/silva.v35.align)"
 
 echo PROGRESS: Preparing Ribosomal Database Project taxonomy files.
 
 # Downloading the prepared RDP database from the mothur website
-# For more information see http://blog.mothur.org/2017/03/15/RDP-v16-reference_files/
-wget -N -P data/scratch/ https://mothur.org/w/images/c/c3/Trainset16_022016.pds.tgz
+# For more information see https://mothur.org/blog/2017/RDP-v16-reference_files/
+wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/wiki/trainset16_022016.pds.tgz
 
 # Decompressing the database
-tar xvzf data/scratch/Trainset16_022016.pds.tgz -C data/scratch/
+tar xvzf data/scratch/trainset16_022016.pds.tgz -C data/scratch/
 
 # Move the taxonomy files out of the tmp dir
 mv data/scratch/trainset16_022016.pds/trainset16_022016* data/references
 
 
-echo PROGRESS: Preparing v4 mock sequence files for mothur. 
+echo PROGRESS: Preparing mock sequence files for mothur. 
 
-# We use ZymoBIOMICS Microbial Community Standard (Cat. no. D6306) as our mock community standard
-# More information can be found at https://www.zymoresearch.com/zymobiomics-community-standard
+# We used HMP Mock as our mock community standard
 # Downloading sequence files for mock community members
-wget -N -P data/scratch/ https://s3.amazonaws.com/zymo-files/BioPool/ZymoBIOMICS.STD.refseq.v2.zip
+wget -N -P data/scratch/ https://mothur.s3.us-east-2.amazonaws.com/data/MiSeqDevelopmentData/HMP_MOCK.fasta
 
-# Decompressing
-unzip -o data/scratch/ZymoBIOMICS.STD.refseq.v2.zip -d data/scratch/
+cp data/scratch/HMP_MOCK.fasta data/references/HMP_MOCK.fasta
 
-# Overwriting the current mock sequence file if one already exists, creates the file if it doesn't exist
-echo -n "" > data/scratch/zymo.mock.16S.fasta
+# Aligning mock sequences to the SILVA v35 and v4 region
+/nfs/turbo/schloss-lab/bin/mothur "#align.seqs(fasta=data/scratch/HMP_MOCK.fasta, reference=data/scratch/silva.seed_v138.align, processors=8);
+	pcr.seqs(fasta=data/scratch/HMP_MOCK.align, start=11894, end=25319, keepdots=F);
+	degap.seqs(fasta=data/scratch/HMP_MOCK.pcr.align);
+	system(mv data/scratch/HMP_MOCK.pcr.ng.fasta data/references/HMP_MOCK.v4.align);
+	pcr.seqs(fasta=data/scratch/HMP_MOCK.align, start=6426, end=27654, keepdots=F);
+	system(mv data/scratch/HMP_MOCK.pcr.align data/references/HMP_MOCK.v35.align)"
 
-# Concatenating all of the sequence files into a single reference file
-for FASTA in data/scratch/ZymoBIOMICS.STD.refseq.v2/ssrRNAs/*; do
-
-	cat "${FASTA}" >> data/references/zymo.mock.16S.fasta
-
-done
-
-# Copying data files to tmp dir for v4 alignment
-cp data/references/silva.seed.align "data/references/zymo.mock.16S.fasta data/scratch/
-
-# Aligning mock sequences to the SILVA v4 region
-# Will generate the following warning message '[WARNING]: 4 of your sequences generated alignments that eliminated too many bases' 
-# because 4 of the community sequences are from Cryptococcus and Saccharomyces so those will be filtered out
-/nfs/turbo/schloss-lab/bin/mothur "#align.seqs(fasta=data/scratch/zymo.mock.16S.fasta, reference=data/scratch/silva.seed.align, processors=8);
-	pcr.seqs(fasta=data/scratch/zymo.mock.16S.align, start=11894, end=25319, keepdots=F);
-	degap.seqs(fasta=data/scratch/zymo.mock.16S.pcr.align)"
-
-# Sorting the output file by the first field (read name) and second letter (ignores the '>' at the read header and will sort on the second letter instead)
-# Not super important but it makes it more human friendly
-awk '{ORS=NR%2?",":"\n";print}' data/scratch/zymo.mock.16S.pcr.ng.fasta | sort -k 1.2 | tr , '\n' > data/references/zymo.mock.16S.v4.fasta
-
+# Get shhh.flows lookup file
+curl -o data/references/lookup_gsflx.zip https://mothur.s3.us-east-2.amazonaws.com/wiki/lookup_gsflx.zip
+unzip data/references/lookup_gsflx.zip -d data/references/
 
 # Cleaning up reference dir
 rm -rf data/scratch/
