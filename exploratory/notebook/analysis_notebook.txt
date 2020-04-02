@@ -40,14 +40,17 @@ modeling
 workflow
 	make_files_file.R
 	run_mothur.sbat
+		get_donor_shared.batch
 		get_references.batch
 		get_good_seqs.batch
 		get_error.batch
 		get_shared.batch
-	make_humanCdGF_metadata_file.R (does this need to be done before make files?)
 	cdiff 16S
 		assemble_cdiff_431_genome.sh
 		extract_16S_V4.sh
 			get_cdiff_genome_paths.R
 		get_cdiff_16S_variation.R
+	make_humanCdGF_metadata_file.R
+	build_fig1.R
+		Sum_OTU_by_Tax.R
 	
