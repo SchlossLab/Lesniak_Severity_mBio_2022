@@ -49,7 +49,11 @@ mothur code/get_donor_shared.batch
 mv data/mothur/donor/donor.final.opti_mcc.shared data/mothur/donor/complete.donor.final.shared
 mothur "#remove.groups(shared=data/mothur/donor/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
 mv data/mothur/donor/complete.donor.final.0.03.pick.shared data/process/donor.final.shared
-mothur "#get.groups(shared=data/mothur/donor/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
+mothur "#summary.single(shared=data/process/donor.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=T);
+	dist.shared(shared=data/process/donor.final.shared, calc=thetayc-jclass, subsample=t);
+	nmds(phylip=data/process/donor.final.thetayc.0.03.lt.ave.dist);
+	sub.sample(data/process/donor.final.shared);
+	get.groups(shared=data/mothur/donor/complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
 mv data/mothur/donor/complete.donor.final.0.03.pick.shared data/process/mock.donor.final.shared
 mv data/mothur/donor/donor.final.opti_mcc.0.03.cons.taxonomy data/process/donor.final.taxonomy
 mv data/mothur/donor/patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.pick.error.count data/process/donor.error.count 
@@ -62,7 +66,11 @@ mothur code/get_shared_otus.batch
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared data/mothur/complete.sample.final.shared
 mothur "#remove.groups(shared=data/mothur/complete.sample.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/process/sample.final.shared
-mothur "#get.groups(shared=data/mothur/complete.sample.final.shared, groups=mockvS282-mockvS343-mockvS344-mockvS96)"
+mothur "#summary.single(shared=data/process/sample.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=T);
+	dist.shared(shared=data/process/sample.final.shared, calc=thetayc-jclass, subsample=t);
+	nmds(phylip=data/process/sample.final.thetayc.0.03.lt.ave.dist);
+	sub.sample(data/process/sample.final.shared, size=2107);
+	get.groups(shared=data/mothur/complete.sample.final.shared, groups=mockvS282-mockvS343-mockvS344-mockvS96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/process/mock.sample.final.shared
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy data/process/final.taxonomy
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.error.count data/process/sample.error.count
