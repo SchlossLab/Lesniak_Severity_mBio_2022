@@ -23,7 +23,7 @@ sum_otu_by_taxa <- function(taxonomy_df, otu_df, taxa_level = 'NA', top_n = 0, s
 			'Check to make sure you have entered a data frame for taxonomy and shared 
 			and you have selected a classification level - ',
 			paste0(levels, collapse = ', ')))}
-	if(length(tax_file$OTU) < 1){stop(paste0(
+	if(length(taxonomy_df$OTU) < 1){stop(paste0(
 			'Check to make sure you have formatted the taxonomy file with convert_OTU_labels.R'))
 	}
 	if(silent == F){
