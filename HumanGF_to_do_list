@@ -1,0 +1,64 @@
+TO do list
+
+Cdiff sequence analysis
+X	which samples have the cdiff seqeunce
+X		what is the relative abundance in those samples?
+X			only ones significantly above mock are one set of mice
+x				look into donor for sequences
+X					No donors have high Peptostreptococcus
+X						Highest is 3% but in donor w/o CDI
+X						Donors w/CDI had 0, 0.2 and 0.03% relative abundances
+X					No sequences map to C diff 630 with high identity
+				> either remove group with high (10%) c diff on day 0 or discuss
+X		what other bacteria map to the cdiff 16s v4 sequence
+X			none - cdiff consensus only maps to cdiff
+
+Rerun donor samples through mothur
+X	inocula and cdiff strain donors
+X	rerun mothur with the hmp mock
+
+4/2/2020
+Concerns about the C diff 16S V4 sequences in the mock/day7/day0 samples and higher error rate (0.21%)
+    Based on previous tests of the donor samples we are confident they did not have C diff present
+    So most of these errors are likely due to some sort of contamination
+        Suspect either sequencer carryover or PCR contamination
+        What to do
+			Are DA samples still available?
+			Can we determine which C difficile is in our sample?
+			Check if genomic DNA is still in freezer
+			Could recheck error rate of exp samples w/o S96 which had lower seqeuncing depth
+			Although looks fairly similar to other three
+			Which donors have C difficile present on day 0?
+
+
+Initial community analysis
+	Donor diversity
+	Beta diversity comparison within group and across groups
+	Compare divesity of samples between donors and mice groups
+		Beta or shared/unique OTUs
+
+Infection dynamics analysis
+	CFU dynamics
+	Histological severity
+Disease severity analysis
+	Outcome and histology
+		Wilcoxon
+		Correlation
+		Linear regression
+		Logistic L2 regression
+Severity not limited to specific strain
+	CFU across strains
+	Explain reasoning for selected strains
+		Analyze genomes
+		Investigate donor community differences
+
+Sarah 
+	PCoA
+	effects/r squared/p value
+		variable or varible:variable
+		mixed effects model? vegan::adonis?
+	LogReg model
+		Significantly different OTUs across source hightlighted
+		Shared across models highlighted
+	Time series plot of OTU that associate with colonization and also differ by source
+	Time series of candidate OTUs to explain differences by source
