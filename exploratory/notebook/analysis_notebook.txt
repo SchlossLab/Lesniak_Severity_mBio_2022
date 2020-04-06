@@ -12,9 +12,14 @@ Two issues that came up
 		Option 2: Use 454 sequences since are least likely to have any changes frm the donor and use them to describe the donor and not make comparisons to the mice
 >		Option 3: Use both, one to describe the donor (supplement?) and one to describe the inocula
 			Obtain all sequencing files
-				X - Inocula 16S
+				X - Inocula 16S - sequenced 2014-06-03
+					contains all inocula
 				X - Donor Source Sample 454 - 
 				X - Sample 16S - located /nfs/locker/microbio-schloss-data/alyx/humanGF_2015.tgz
+					contains a few inocula samples
+> trying to explain/understand presence of Cdiff 16S in early samples
+	- see c diff seq branch for files and analysis
+
 
 Start analysis with cleaning metafile
 	already started make_HumanCdGF_metadata_file.R
