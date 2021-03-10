@@ -2,7 +2,8 @@ Returning to the GF-human microbiota project
 Refreshing myself on where we were and what to do
 Two issues that came up
 	1. C difficile sequences in day 0/donor samples
->
+>	Based on analysis of data from more recent experiments, we saw the presence of cdiff sequences around/below 1% in samples prior to challenge, so the only samples of concern are LINE cages
+
 	2. Multiple inocula samples were sequences
 			Original donor samples were sequenced on 454 V35
 			donor and inocula samples were sequenced on a separate 16S run
@@ -12,14 +13,9 @@ Two issues that came up
 		Option 2: Use 454 sequences since are least likely to have any changes frm the donor and use them to describe the donor and not make comparisons to the mice
 >		Option 3: Use both, one to describe the donor (supplement?) and one to describe the inocula
 			Obtain all sequencing files
-				X - Inocula 16S - sequenced 2014-06-03
-					contains all inocula
+				X - Inocula 16S
 				X - Donor Source Sample 454 - 
 				X - Sample 16S - located /nfs/locker/microbio-schloss-data/alyx/humanGF_2015.tgz
-					contains a few inocula samples
-> trying to explain/understand presence of Cdiff 16S in early samples
-	- see c diff seq branch for files and analysis
-
 
 Start analysis with cleaning metafile
 	already started make_HumanCdGF_metadata_file.R
@@ -31,6 +27,8 @@ Start analysis with cleaning metafile
 
 Rerun mothur with updated files file
 >	remove AMS, P2, D -7 from files file
+> 	remove LINE/DA01146
+>	include donor samples 884, 395, 458, and 299
 
 CFU
 >	quantify colonization rate
@@ -45,17 +43,14 @@ modeling
 workflow
 	make_files_file.R
 	run_mothur.sbat
-		get_donor_shared.batch
 		get_references.batch
 		get_good_seqs.batch
 		get_error.batch
 		get_shared.batch
+	make_humanCdGF_metadata_file.R (does this need to be done before make files?)
 	cdiff 16S
 		assemble_cdiff_431_genome.sh
 		extract_16S_V4.sh
 			get_cdiff_genome_paths.R
 		get_cdiff_16S_variation.R
-	make_humanCdGF_metadata_file.R
-	build_fig1.R
-		Sum_OTU_by_Tax.R
 	
