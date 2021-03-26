@@ -55,7 +55,8 @@ toxin_data <- read_xlsx(input_toxin, sheet = 'Sheet1',
 			   toxin_sample_type = Sample_source) %>% 
 		separate(group, c('cage_id', 'ear_tag', 'day'), remove = F, fill = 'left') %>% 
 		mutate(mouse_id = paste0(cage_id, '_', ear_tag), # create unique mouse id
-			   group = gsub('-', '_', group)) %>% # adjust sample labels to be mothur friendly
+			   group = gsub('-', '_', group), # adjust sample labels to be mothur friendly
+			   mouse_id = ifelse(mouse_id == 'NA_NA', group, mouse_id)) %>% # set mouse_id for inoculum
 		select(-day) # eliminate column that is the same as toxin_day
 
 # Read in histology data
