@@ -27,7 +27,7 @@ sources <- read_tsv('data/process/human_source_tidy.tsv',
 	select(source = sample_id, source_number)
 
 # separate fastqs by sample type - mock, inoculum, experiment since each has a different name structure
-fastq_df <- tibble(fastq = fastq_list) 
+fastq_df <- tibble(fastq = fastq_list) %>% 
 	mutate(sample_names = gsub('_S.*', '', fastq), # remove sequencing file naming suffixes
 		sample_type = case_when(grepl('[Mm]ock', sample_names) ~ 'mock',
 			grepl('D', sample_names) ~ 'experiment', # all experiment samples have day denoted with a D
