@@ -3,7 +3,7 @@ Returning to the GF-human microbiota project
 Refreshing myself on where we were and what to do
 Two issues that came up
 	1. C difficile sequences in day 0/donor samples
->	Based on analysis of data from more recent experiments, we saw the presence of cdiff sequences around/below 1% in samples prior to challenge, so the only samples of concern are LINE cages and are removed from analysis
+	Based on analysis of data from more recent experiments, we saw the presence of cdiff sequences around/below 1% in samples prior to challenge, so the only samples of concern are LINE cages and are removed from analysis
 
 	2. Multiple inocula samples were sequences
 			Original donor samples were sequenced on 454 V35
@@ -12,30 +12,15 @@ Two issues that came up
 		Differences between 454 and 16S seem to be anaerobic shifts, which could have possibly occured during the inoculation steps.
 		Option 1: Use samples sequenced via 16S together, since those are closer to what was used and we cannot be sure there is a shift in the microbes and if that shift was present at the time of inoculation or not
 		Option 2: Use 454 sequences since are least likely to have any changes frm the donor and use them to describe the donor and not make comparisons to the mice
->		Option 3: Use both, one to describe the donor (supplement?) and one to describe the inocula
+		Option 3: Use both, one to describe the donor (supplement?) and one to describe the inocula
 			Obtain all sequencing files
 				X - Donor 16S - 16S sequenced in 2016, 
 						based on emails with Shayna and Kaitlin, appears to be from the donor aliquots
 						does not include other communities cdiff was isolated from (299, 395, and 458)
-						DA00369_inoculum
-						DA00430_inoculum
-						DA00578_2_inoculum
-						DA00581_inoculum
-						DA00431_inoculum
-						DA00884_inoculum
-						DA01134_inoculum
-						DA00953_inoculum
-						DA01245_inoculum
-						DA01146_inoculum
-						DA10093_inoculum
-						DA01324_inoculum
-						DA10082_inoculum
-						DA10034_inoculum
-						DA10148_inoculum
-						DA10027_inoculum  
-						location unknown
-							sequenced by core August 2016, in kaitlins dir sept 2016 btu dont see any fastqs in any of her dir in the locker
+						sequenced by core August 2016, in kaitlins dir sept 2016 btu dont see any fastqs in any of her dir in the locker
 							not in and schloss or schubert dir
+						contacted kaitlin and she was able to locate them and shared them with me
+							contains all the samples used as fmt but not the communtities the cdiff strains came from
 				X - Donor Source Sample 454 - originally sequenced for Shubert et al 2014
 				X - Sample 16S - 16S sequenced in 2015
 						located /nfs/locker/microbio-schloss-data/alyx/humanGF_2015.tgz
@@ -48,6 +33,8 @@ Two issues that came up
 				DA00369	None in tube
 				DA01245 Did not find
 				DA10082 Did not Find
+		Option 4: Use donor samples resequenced together from 2016
+			Obtained sequence data from run in 2016 which we reseqeunced the donor samples from stool
 				
 
 Start analysis with cleaning metafile
@@ -58,9 +45,9 @@ Start analysis with cleaning metafile
 		leave cecum in (only sample for some of the mice which died early)
 
 Rerun mothur with updated files file
->	remove AMS, DA00810, DA01146, D-7 from files file
->	rename donor sample 884 (inpa-control-DA0084)
->	include donor samples 395, 458, and 299?
+	remove AMS, DA00810, DA01146, D-7 from files file
+	remove donor/inocula samples since incomplete
+	add resequenced complete set of donor samples
 
 CFU
 >	quantify colonization rate
@@ -73,16 +60,11 @@ modeling
 
 
 workflow
-	tidy_raw_data.R
-	make_files_file.R
+	tidy_raw_data.R # converts raw xlsx workbooks to tidied tsv
+	make_files_file.R # generates the files file to run mothur
 	run_mothur.sbat
 		get_references.batch
 		get_good_seqs.batch
 		get_error.batch
 		get_shared.batch
-	cdiff 16S
-		assemble_cdiff_431_genome.sh
-		extract_16S_V4.sh
-			get_cdiff_genome_paths.R
-		get_cdiff_16S_variation.R
 	

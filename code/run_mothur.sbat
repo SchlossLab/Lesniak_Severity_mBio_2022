@@ -39,25 +39,7 @@ echo 'Starting'
 source /etc/profile.d/http_proxy.sh 
 
 # create all data and reference files
-bash code/get_donor_seqs.sh
-	# runs get_donor_seqs.R
 bash code/get_references.batch
-
-# run donor sequence files through mothur
-mothur code/get_donor_shared.batch
-#rename and split shared files
-mv data/mothur/donor/donor.final.opti_mcc.shared data/mothur/donor/complete.donor.final.shared
-mothur "#remove.groups(shared=data/mothur/donor/complete.donor.final.shared, accnos=data/mothur/donor_mock_ids.accnos)"
-mv data/mothur/donor/complete.donor.final.0.03.pick.shared data/mothur/donor.final.shared
-mothur "#set.dir(input=data/mothur/donor, output=data/mothur/donor);
-	summary.single(shared=donor.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=T);
-	dist.shared(shared=donor.final.shared, calc=thetayc-jclass, subsample=t);
-	nmds(phylip=donor.final.thetayc.0.03.lt.ave.dist);
-	sub.sample(shared=donor.final.shared);
-	get.groups(shared=complete.donor.final.shared, accnos=data/process/donor_mock_ids.accnos)"
-mv data/mothur/donor/complete.donor.final.0.03.pick.shared data/mothur/process/mock.donor.final.shared
-mv data/mothur/donor/donor.final.opti_mcc.0.03.cons.taxonomy data/mothur/donor/donor.final.taxonomy
-mv data/mothur/donor/patient_inocula.shhh.trim.unique.good.filter.unique.precluster.pick.pick.pick.error.count data/mothur/donor/donor.error.count 
 
 # run main experiment files through mothur
 mothur code/get_good_seqs.batch
@@ -65,14 +47,13 @@ mothur code/get_error.batch
 mothur code/get_shared_otus.batch
 #rename and split shared files
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared data/mothur/complete.sample.final.shared
-mothur "#remove.groups(shared=data/mothur/complete.sample.final.shared, groups=mockvS282-mockvS283-mockvS288-mockvS343-mockvS344-mockvS384-mockvS96)"
+mothur "#remove.groups(shared=data/mothur/complete.sample.final.shared, groups=mock_S282-mock_S343-mock_S344-mock_S102-mock_S96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/mothur/sample.final.shared
 mothur "#set.dir(input=data/mothur/donor, output=data/mothur/donor);
-	summary.single(shared=sample.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=T);
-	dist.shared(shared=sample.final.shared, calc=thetayc-jclass, subsample=t);
-	nmds(phylip=sample.final.thetayc.0.03.lt.ave.dist);
+	summary.single(shared=sample.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=2107);
+	dist.shared(shared=sample.final.shared, calc=thetayc-jclass, subsample=2107);
 	sub.sample(sample.final.shared, size=2107);
-	get.groups(shared=complete.sample.final.shared, groups=mockvS282-mockvS343-mockvS344-mockvS96)"
+	get.groups(shared=complete.sample.final.shared, groups=mock_S282-mock_S343-mock_S344-mock_S102-mock_S96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/process/mock.sample.final.shared
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy data/mothur/final.taxonomy
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.error.count data/mothur/sample.error.count
