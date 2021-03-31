@@ -1,4 +1,4 @@
 set.current(inputdir=data/mothur, outputdir=data/mothur, processors=8)
-get.groups(count=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.denovo.vsearch.pick.pick.count_table, fasta=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.fasta, taxonomy=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, groups=mockvS282-mockvS343-mockvS344-mockvS96)
+get.groups(count=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.denovo.vsearch.pick.pick.count_table, fasta=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.fasta, taxonomy=humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, groups=mock_S282-mock_S343-mock_S344-mockvS96-mockvS102)
 
 seq.error(fasta=current, count=current, reference=data/references/HMP_MOCK.v4.align, aligned=F)
