@@ -59,4 +59,4 @@ files_file <- bind_rows(experiment_fastqs, inoculum_fastqs, mock_fastqs) %>%
 	mutate(sample_names = gsub('-', '_', sample_names))
 
 # output files file
-write_tsv(files_file, 'data/raw/humanGF_cdiff.files', col_names = FALSE)
+write_tsv(files_file, 'data/process/humanGF_cdiff.files', col_names = FALSE)
