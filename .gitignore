@@ -7,8 +7,6 @@ head.batch
 tail.batch
 
 data/*
-!data/process
-data/mothur
 !data/raw
 
 *.fastq
