@@ -52,6 +52,7 @@ mv data/mothur/complete.sample.final.0.03.pick.shared data/mothur/sample.final.s
 code/mothur/mothur "#set.dir(input=data/mothur/donor, output=data/mothur/donor);
 	summary.single(shared=sample.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=2107);
 	dist.shared(shared=sample.final.shared, calc=thetayc-jclass, subsample=2107);
+	nmds(phylip=current);
 	sub.sample(sample.final.shared, size=2107);
 	get.groups(shared=complete.sample.final.shared, groups=mock_S282-mock_S343-mock_S344-mock_S102-mock_S96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/process/mock.sample.final.shared
