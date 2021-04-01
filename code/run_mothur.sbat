@@ -42,14 +42,14 @@ source /etc/profile.d/http_proxy.sh
 bash code/get_references.batch
 
 # run main experiment files through mothur
-mothur code/get_good_seqs.batch
-mothur code/get_error.batch
-mothur code/get_shared_otus.batch
+code/mothur/mothur code/get_good_seqs.batch
+code/mothur/mothur code/get_error.batch
+code/mothur/mothur code/get_shared_otus.batch
 #rename and split shared files
 mv data/mothur/humanGF_cdiff.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared data/mothur/complete.sample.final.shared
-mothur "#remove.groups(shared=data/mothur/complete.sample.final.shared, groups=mock_S282-mock_S343-mock_S344-mock_S102-mock_S96)"
+code/mothur/mothur "#remove.groups(shared=data/mothur/complete.sample.final.shared, groups=mock_S282-mock_S343-mock_S344-mock_S102-mock_S96)"
 mv data/mothur/complete.sample.final.0.03.pick.shared data/mothur/sample.final.shared
-mothur "#set.dir(input=data/mothur/donor, output=data/mothur/donor);
+code/mothur/mothur "#set.dir(input=data/mothur/donor, output=data/mothur/donor);
 	summary.single(shared=sample.final.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=2107);
 	dist.shared(shared=sample.final.shared, calc=thetayc-jclass, subsample=2107);
 	sub.sample(sample.final.shared, size=2107);
