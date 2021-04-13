@@ -1,7 +1,7 @@
-initial\_analysis\_notebook\_030521
+initial\_analysis\_notebook
 ================
 Nick Lesniak
-4/1/2021
+4/13/2021
 
 ### Process sequencing data
 
@@ -18,31 +18,31 @@ counts error rate for the data was 0.19%
 
 Sampled spread of diverse donors for inoculating germ-free mice
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 > recalc nmds with just these samples?
 
 Unique communities without conserved structure
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 > does outcome matter at this point? in this figure?
 
 Donor communities colonize mice and shift community, ~~but
 consistently~~
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 # Figure 2 - Mice were colonized without any perturbation
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
-![](initial_analysis_notebook_030521_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 > NAs on Day 0 for DA01134, DA10034, DA00884  
 > Last samples for moribund mice is from cecum  
@@ -51,11 +51,11 @@ consistently~~
 
 # Figure 3 - Difference in severity
 
-![](initial_analysis_notebook_030521_files/figure-gfm/histology-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/histology-1.png)<!-- -->
 
 Mice were challenged with a strain isolated that matched Clostridioides
 difficile ribotype 027
 
 > what is published about histology of 027 in C57/B6 mice?
 
-![](initial_analysis_notebook_030521_files/figure-gfm/toxin-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/toxin-1.png)<!-- -->
