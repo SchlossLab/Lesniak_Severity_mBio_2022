@@ -1,0 +1,484 @@
+---
+title: "initial_analysis_notebook"
+author: "Nick Lesniak"
+date: "4/13/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+#knitr::opts_knit$set(root.dir = '../../..')
+```
+
+### Process sequencing data
+
+- removed unused fastq files
+ 
+### run fastqs through mothur
+    
+```{r read in data}
+library(tidyverse)
+
+# calculate error rate
+error_df <- read.table('../../../data/mothur/sample.error.count', header = T)
+total_seqs <- sum(error_df$Sequences)
+total_errors <- sum(error_df$Errors * error_df$Sequences)
+error_rate <- total_errors / (total_seqs * 253) * 100
+
+read_tsv('../../../data/mothur/sample.final.shared',
+         col_types = cols(.default = col_double(),
+                          Group = col_character())) %>% 
+  select(-numOtus, -label) %>% 
+  pivot_longer(cols = -Group, values_to = 'count', names_to = 'otu') %>% 
+  group_by(Group) %>% 
+  summarise(counts = sum(count)) %>% 
+  filter(counts < 2020) %>% 
+  arrange(counts) %>% 
+  mutate(list = paste0(Group, ' (', counts, ' seqs)')) %>% 
+  pull(list) %>% 
+  paste(., collapse = ', ')
+```
+
+subsampled to 2017, eliminating the 25 samples listed above with their counts
+error rate for the data was `r round(error_rate, 2)`%
+
+
+```{r}
+# 
+source('../../../code/Sum_OTU_by_Tax.R')
+
+# load in data
+metadata <- read_tsv('../../../data/process/metadata_tidy.tsv',
+                     col_type = 'cccccDddddDcdddddcdl') 
+toxin <- read_tsv('../../../data/process/toxin_tidy.tsv',
+                  col_type = 'cccccdc')
+histology <- read_tsv('../../../data/process/histology_tidy.tsv',
+                      col_type = 'ccccdddcdcc')
+human_source <- read_tsv('../../../data/process/human_source_tidy.tsv',
+                         col_type = cols(.default = col_character(), age = col_double()))
+shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
+         col_types = cols(.default = col_double(),
+                          Group = col_character())) %>% 
+  mutate(Group = ifelse(grepl('_D|DA', Group), Group,
+      gsub('D', '_D', Group))) %>% 
+  select(-label, -numOtus) %>% 
+  pivot_longer(-Group, names_to = 'otu', values_to = 'counts') %>% 
+  filter(counts > 0) %>% 
+  mutate(relative_abundance = counts/2107 * 100)
+taxonomy <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
+                     col_types = cols(.default = col_character()))
+nmds_df <- read_tsv('../../../data/mothur/sample.final.thetayc.0.03.lt.ave.nmds.axes',
+         col_types ='cdd') %>% 
+    mutate(group = ifelse(grepl('_D|DA', group), group,
+                        gsub('D', '_D', group)))
+source('../../../code/read_dist.R')
+beta_df <- read_dist('../../../data/mothur/sample.final.thetayc.0.03.lt.ave.dist') %>% 
+      mutate(rows = ifelse(grepl('_D|DA', rows), rows,
+                        gsub('D', '_D', rows)),
+             columns = ifelse(grepl('_D|DA', columns), columns,
+                        gsub('D', '_D', columns)))
+donor_colors <- c("#41bbc5", "#7e2640", "#9ad859", "#682dbd", "#728e24", "#e26df8", "#23980d", "#fd048f", "#46e33e", "#fa1bfc", "#155126", "#f9b2d1", "#154975", "#e2c627", "#6294ce")
+```
+
+# Figure 1 - Human communities reporducibly colonize mice
+
+Sampled spread of diverse donors for inoculating germ-free mice
+
+```{r fig.width=7, fig.height=5}
+
+human_source_list <- shared %>% 
+  filter(grepl('DA', Group)) %>% 
+  pull(Group) %>% unique
+
+# plot distribution of donors by their stool status - case/diarrheal/nondiarrheal control
+#
+#human_source %>% 
+#  filter(sample_id %in% human_source_list) %>% 
+#  select(sample_id, disease_stat) %>% 
+#  left_join(nmds_df, by = c('sample_id' = 'group')) %>% 
+#  ggplot(aes(x = axis1, y = axis2, color = disease_stat)) + 
+#    geom_point(size = 5) + 
+#    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = NULL) + 
+#    theme_bw()
+#
+# status doesnt matter to this story as much as the outcome of the challenge
+
+donor_by_outcome <- histology %>% 
+  select(human_source, epithelial_damage) %>% 
+  group_by(human_source) %>% 
+  summarise(epithelial_damage = mean(epithelial_damage)) %>% 
+  mutate(epithelial_damage = epithelial_damage > 1) %>% 
+  left_join(unique(select(metadata, human_source, early_euth, cdiff_strain),
+            by = c('human_source'))) %>% 
+  filter(cdiff_strain == 431) %>% 
+  mutate(outcome = case_when(early_euth == T ~ 'moribund',
+                             epithelial_damage == F ~ 'mild',
+                             epithelial_damage == T ~ 'severe',
+                             T ~ 'NA'),
+         outcome = factor(outcome, levels = c('mild', 'severe', 'moribund'))) %>% 
+  select(human_source, outcome)
+
+donor_by_outcome %>% 
+  left_join(nmds_df, by = c('human_source' = 'group')) %>% 
+  ggplot(aes(x = axis1, y = axis2, color = outcome)) + 
+    geom_point() + 
+    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = NULL) + 
+    theme_bw()
+
+
+```
+  
+> recalc nmds with just these samples?
+  
+  
+  
+  
+Unique communities without conserved structure
+```{r}
+shared %>% 
+  filter(grepl('DA', Group)) %>% 
+  left_join(donor_by_outcome, 
+            by = c('Group' = 'human_source')) %>% 
+#  mutate(label = case_when(disease_stat == 'Case' ~ 'CDI_431',
+#                           disease_stat == 'NonDiarrhealControl' ~ paste0('NDC_', gsub('DA0*', '', Group)),
+#                           disease_stat == 'DiarrhealControl' ~ paste0('DC_', gsub('DA0*', '', Group)))) %>% 
+  left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
+  rename(taxa_level = Class) %>% 
+  group_by(Group, taxa_level, outcome) %>% 
+  summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
+  group_by(taxa_level) %>% 
+  mutate(median_ra = median(relative_abundance)) %>% 
+  ggplot(aes(x = Group, 
+             y = reorder(taxa_level, median_ra), 
+             fill = relative_abundance)) + 
+    geom_tile() + 
+    scale_fill_gradient2(low="white", mid='#0B775E', high = 'black',
+		  	limits = c(-2,2), na.value = NA, midpoint = .3,
+			  breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100')) + 
+	  theme_bw() + 
+    labs(x = NULL, y = NULL, fill = NULL) + 
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    facet_grid(.~outcome, scales = 'free_x')
+```
+  
+> does outcome matter at this point? in this figure?
+  
+  
+Donor communities colonize mice and shift community, ~~but consistently~~
+
+```{r fig.width = 10}
+shared %>% 
+  filter(grepl('D0', Group)) %>% 
+  left_join(select(metadata, group, human_source, mouse_id), by = c('Group' = 'group')) %>% 
+  left_join(donor_by_outcome, by = c('human_source')) %>% 
+#  mutate(label = case_when(disease_stat == 'Case' ~ paste('CDI', gsub('DA0*', '', human_source), 
+#                                                          gsub('^.*_', '', mouse_id), sep = '_'), 
+#                           disease_stat == 'NonDiarrhealControl' ~ paste('NDC', gsub('DA0*', '', human_source), 
+#                                                                         gsub('^.*_', '', mouse_id), sep = '_'),
+#                           disease_stat == 'DiarrhealControl' ~ paste('DC', gsub('DA0*', '', human_source), 
+#                                                                      gsub('^.*_', '', mouse_id), sep = '_'))) %>% 
+  left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
+  rename(taxa_level = Class) %>% 
+  group_by(Group, taxa_level, human_source) %>% 
+  summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
+  group_by(taxa_level) %>% 
+  mutate(median_ra = median(relative_abundance)) %>% 
+  ggplot(aes(x = Group, 
+             y = reorder(taxa_level, median_ra), 
+             fill = relative_abundance)) + 
+    geom_tile() + 
+    scale_fill_gradient2(low="white", mid='#0B775E', high = 'black',
+		  	limits = c(-2,2), na.value = NA, midpoint = .3,
+			  breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100')) + 
+	  theme_bw() + 
+    labs(x = NULL, y = NULL, fill = NULL) + 
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    facet_grid(.~human_source, scales = 'free_x')
+
+
+```
+
+```{r}
+nmds_df %>% 
+  left_join(filter(select(metadata, group, human_source, day), day %in% c(0, 10)), by = c('group')) %>% 
+  mutate(human_source = case_when(!is.na(human_source) ~ human_source,
+                                  grepl('DA', group) ~ group,
+                                  grepl('CON3', group) ~ 'DA00430',
+                                  T ~ 'Unknown'),
+         sample_type = ifelse(grepl('DA', group), 'human', 'murine')) %>% 
+  filter(sample_type == 'human' | day == 0) %>% 
+  ggplot(aes(x = axis1, y = axis2, color = human_source)) +
+    geom_point() + 
+    scale_color_manual(values = donor_colors) + 
+    facet_grid(~sample_type) + 
+    theme_bw() + 
+    guides(color = 'none') + 
+    labs(x = 'NMDS axis 1', y = 'NMDS axis 2')
+```
+
+```{r}
+day_0_samples <- metadata %>% 
+  filter(day == 0) %>% 
+  select(group, human_source)
+# compare distance between:
+#   donor and recipient
+#   co-recipients
+#   other cages
+#   other donors
+donor_v_recipent <- bind_rows(
+    day_0_samples %>% 
+      inner_join(beta_df, by = c('group' = 'rows', 'human_source' = 'columns')),
+    day_0_samples %>% 
+      inner_join(beta_df, by = c('group' = 'columns', 'human_source' = 'rows'))) %>% 
+  mutate(comparison = 'Donor\nvs\nRecipient')
+
+corecipient <- day_0_samples %>% 
+  left_join(day_0_samples, by = c('human_source')) %>% 
+  filter(group.x != group.y) %>% 
+  inner_join(beta_df, by = c('group.x' = 'rows', 'group.y' = 'columns')) %>% 
+  mutate(comparison = 'Recipients\ncompared to\nothers w/same donor')
+
+other_donors <- beta_df %>% 
+  filter((grepl('DA', rows) & grepl('D0', columns)) | 
+         (grepl('D0', rows) & grepl('DA', columns))) %>% 
+  anti_join(donor_v_recipent, by = c('rows' = 'group', 'columns' = 'human_source')) %>% 
+  anti_join(donor_v_recipent, by = c('rows' = 'human_source', 'columns' = 'group')) %>% 
+  mutate(comparison = 'Donor\nvs\nNon-recipients')
+
+other_recipients <- beta_df %>% 
+  filter(grepl('D0', rows) & grepl('D0', columns)) %>% 
+  anti_join(corecipient, by = c('rows' = 'group.x', 'columns' = 'group.y')) %>% 
+  mutate(comparison = 'Recipients\ncompared to\nothers w/different donor')
+
+bind_rows(donor_v_recipent, corecipient, other_donors, other_recipients) %>% 
+  mutate(comparison = factor(comparison, levels = 
+                              c('Donor\nvs\nRecipient', 'Recipients\ncompared to\nothers w/same donor', 
+                                'Donor\nvs\nNon-recipients', 'Recipients\ncompared to\nothers w/different donor'))) %>% 
+  ggplot(aes(x = comparison, y = distances)) + 
+    geom_boxplot() + 
+    labs(x = NULL, y = 'Theta YC') +
+    theme_bw()
+
+corecipient %>% 
+  separate(group.x, c('cageA', 'mouseA', 'dayA')) %>% 
+  separate(group.y, c('cageB', 'mouseB', 'dayB')) %>% 
+  mutate(same_cage = cageA == cageB,) %>% 
+  ggplot(aes(x = human_source, y = distances, color = human_source, shape = same_cage)) +
+    geom_jitter(aes(color = human_source), width = 0.2) + 
+    scale_color_manual(values = donor_colors) + 
+    scale_shape_manual(values = c(18,16)) + 
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    theme_bw() +
+    theme(legend.position = 'bottom') + 
+    labs(y = 'Theta YC', x = 'Donor Source', color = NULL, shape = 'Same Cage') + 
+    guides(color = 'none')
+```
+
+
+```{r}
+#genus <- sum_otu_by_taxa(taxonomy_df = taxonomy,
+#                         otu_df = select(shared, Group = sample_id, contains('Otu')),
+#                         taxa_level = 'Genus', 
+#                         top_n = 12)
+#donor_genus <- sum_otu_by_taxa(taxonomy_df = donor_taxonomy,
+#                         otu_df = donor,
+#                         taxa_level = 'Genus', 
+#                         top_n = 12)
+#
+#donor_order <- donor_genus %>% 
+#    filter(taxa == 'Other') %>% 
+#    arrange(desc(abundance)) %>% 
+#    pull(Group)
+#
+#
+#donor_genus %>% 
+#  mutate(rel_abun = abundance/2779 * 100,
+#         taxa = factor(taxa,
+#                       levels = c("Alistipes", "Bacteroides", "Blautia", 
+#                                  "Clostridium_sensu_stricto", "Cronobacter",
+#                                  "Enterococcus", "Faecalibacterium", 
+#                                  "Lachnospiraceae_unclassified", "Lactobacillus", 
+#                                  "Prevotella", "Ruminococcaceae_unclassified", "Other")),
+#          Group = factor(Group, levels = donor_order)) %>% 
+#  ggplot(aes(x = Group, y = taxa, fill = rel_abun)) + 
+#    labs(x = NULL, y = NULL, fill = 'Relative Abundance') + 
+#    geom_tile() + 
+#    scale_fill_gradient(low = 'white', high = 'black')
+#    coord_flip()
+# 
+##    scale_fill_gradient2(low="white", mid='blue3', high = 'black',
+##  			limits = c(-2,2), na.value = NA, midpoint = .3,
+##  			breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100'))
+
+```
+
+
+# Figure 2 - Mice were colonized without any perturbation
+
+```{r fig.height = 14}
+metadata %>% 
+  filter(cdiff_strain == 431) %>% 
+  mutate(human_source = factor(human_source, levels = 
+                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
+                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
+                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
+  ggplot(aes(x = day, y = log10(cdiff_cfu + 60), color = human_source)) +
+    stat_summary(fun = 'median', geom = 'line') + 
+    geom_point(alpha = 0.3) +
+    facet_grid(human_source~.) + 
+    scale_color_manual(values = donor_colors) + 
+    guides(color = 'none') + 
+    theme_bw() + 
+    labs(x = 'Day', y = 'C. difficile CFU (log10)')
+
+metadata %>% 
+  filter(cdiff_strain == 431) %>% 
+  mutate(human_source = factor(human_source, levels = 
+                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
+                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
+                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
+  ggplot(aes(x = day, y = percent_weightLoss, color = human_source)) +
+    stat_summary(fun = 'median', geom = 'line') + 
+    geom_point(alpha = 0.3) +
+    facet_grid(human_source~.) + 
+    scale_color_manual(values = donor_colors) + 
+    guides(color = 'none') + 
+    theme_bw() + 
+    labs(x = 'Day', y = 'Weight (Relative to initial)')
+
+```
+
+```{r}
+metadata %>% 
+  filter(cdiff_strain == 431,
+         day %in% c(1,10)) %>% 
+  mutate(human_source = factor(human_source, levels = 
+                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
+                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
+                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
+  ggplot(aes(x = human_source, y = log10(cdiff_cfu + 60), color = human_source)) +
+    geom_jitter(width = 0.2) + 
+    facet_grid(day~.)+ 
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    scale_color_manual(values = donor_colors) + 
+    theme_bw() + 
+    labs(x = 'Donor Source', y = 'C. difficile CFU (log10)') + 
+    guides(color = 'none')
+
+metadata %>% 
+  filter(cdiff_strain == 431,
+         day %in% c(2,10)) %>% 
+  mutate(human_source = factor(human_source, levels = 
+                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
+                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
+                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
+  ggplot(aes(x = human_source, y = percent_weightLoss, color = human_source)) +
+    geom_jitter(width = 0.2) + 
+    facet_grid(day~.)+ 
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    scale_color_manual(values = donor_colors) + 
+    theme_bw() + 
+    labs(x = 'Donor Source', y = 'Weight (Relative to initial)') + 
+    guides(color = 'none')
+```
+
+```{r}
+metadata %>% 
+  filter(day == 0 | day == mouse_endpoint) %>% 
+  mutate(time_point = ifelse(day == 0, 'Initial', 'Endpoint'),
+         time_point = factor(time_point, levels = c('Initial', 'Endpoint'))) %>% 
+  left_join(nmds_df, by = c('group')) %>% 
+  left_join(donor_by_outcome, by = c('human_source')) %>% 
+  ggplot(aes(x = axis1, y = axis2, color = early_euth)) +
+    geom_point() + 
+    facet_grid(.~time_point) +
+    #scale_color_manual(values  = donor_colors) + 
+    theme_bw() + 
+    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = 'Moribund') + 
+    theme(legend.position = 'bottom')
+  
+
+```
+
+> NAs on Day 0 for DA01134, DA10034, DA00884  
+> Last samples for moribund mice is from cecum  
+> Switch to cage color?  
+> Recalc nmds?  
+
+# Figure 3 - Difference in severity
+
+```{r histology}
+
+histology %>% 
+  left_join(distinct(select(metadata, mouse_id, early_euth)), by = 'mouse_id') %>% 
+  filter(!is.na(early_euth)) %>% 
+  mutate(early_euth = ifelse(early_euth, 'Moribund', 'Colonized')) %>% 
+  left_join(donor_by_outcome, by = c('human_source')) %>% 
+  #filter(outcome == 'mild', epithelial_damage > 0)
+  pivot_longer(cols = c(edema_tissue, inflammation_tissue, epithelial_damage, summary_score),
+               names_to = 'histology', values_to = 'score') %>% 
+  ggplot(aes(x = histology, y = score, fill = outcome)) +
+    geom_boxplot() + 
+    #geom_point(position = position_jitterdodge(), alpha = 0.5) + 
+    theme_bw() + 
+    labs(x = NULL, y = 'Histology Score', fill = 'Outcome') +
+    scale_x_discrete(guide = guide_axis(angle = 45)) + 
+    facet_grid(.~early_euth)
+```
+
+Mice were challenged with a strain isolated that matched Clostridioides difficile ribotype 027  
+
+> what is published about histology of 027 in C57/B6 mice?  
+
+
+```{r toxin}
+
+toxin %>% 
+  filter(!is.na(ear_tag),
+         !is.na(toxin_sample_day)) %>% 
+  left_join(select(metadata, group, human_source), by = c('group')) %>% 
+  left_join(donor_by_outcome, by = c('human_source')) %>% 
+  filter(!is.na(outcome)) %>% 
+  mutate(day = as.numeric(toxin_sample_day)) %>% 
+  ggplot(aes(x = day, y = Log_repiricoal_dilution, fill = outcome)) + 
+#    geom_line(aes(color = outcome, group = mouse_id)) + 
+    geom_boxplot(aes(group = interaction(day, outcome))) +
+    labs(x = 'Day', y = 'Toxin activity') + 
+#    facet_grid(outcome~.) + 
+    theme_bw()
+# check for correlation between toxin and cfu
+#toxin %>% 
+#  filter(!is.na(ear_tag),
+#         !is.na(toxin_sample_day)) %>% 
+#  left_join(select(metadata, group, cdiff_cfu), by = 'group') %>% 
+#  ggplot(aes(x = log10(cdiff_cfu + 0.01), y = Log_repiricoal_dilution)) + 
+#    geom_point(alpha = 0.2) +
+#    labs(x = 'CFU', y = 'Toxin activity') + 
+#    theme_bw()
+# does this matter? 
+
+# how many samples tested are positive for toxin per mouse?
+#toxin %>% 
+#  group_by(mouse_id) %>% 
+#  summarise(n_samples = length(toxin_sample_day),
+#            n_positive = sum(Log_repiricoal_dilution > 1))
+# is this relevant?
+```
+
+```{r, individual cfu plots}
+#metadata %>% 
+#  left_join(mutate(histology, mouse_id = paste0(cage_ID, '_', mouse_ID)) %>% select(-day),
+#            by = c('mouse_id')) %>% 
+#  mutate(outcome = ifelse(summary_score < 4, 'Low', outcome)) %>% 
+#ggplot(aes(x = day, 
+#           y = log_cfu, 
+#           color = outcome, 
+#           group = mouse_id)) + 
+#  geom_line() + 
+#  facet_wrap(outcome~., ncol = 1) +
+#  theme_bw()
+```
+
+

@@ -60,6 +60,7 @@ modeling
 
 
 workflow
+	install_mothur.sh
 	tidy_raw_data.R # converts raw xlsx workbooks to tidied tsv
 	make_files_file.R # generates the files file to run mothur
 	run_mothur.sbat
