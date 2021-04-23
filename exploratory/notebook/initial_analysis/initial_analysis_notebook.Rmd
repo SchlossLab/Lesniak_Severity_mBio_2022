@@ -92,46 +92,14 @@ human_source_list <- shared %>%
   filter(grepl('DA', Group)) %>% 
   pull(Group) %>% unique
 
-# plot distribution of donors by their stool status - case/diarrheal/nondiarrheal control
-#
-#human_source %>% 
-#  filter(sample_id %in% human_source_list) %>% 
-#  select(sample_id, disease_stat) %>% 
-#  left_join(nmds_df, by = c('sample_id' = 'group')) %>% 
-#  ggplot(aes(x = axis1, y = axis2, color = disease_stat)) + 
-#    geom_point(size = 5) + 
+#nmds_df %>% 
+#  filter(group %in% human_source_list) %>% 
+#  ggplot(aes(x = axis1, y = axis2, color = outcome)) + 
+#    geom_point() + 
 #    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = NULL) + 
 #    theme_bw()
-#
-# status doesnt matter to this story as much as the outcome of the challenge
-
-donor_by_outcome <- histology %>% 
-  select(human_source, epithelial_damage) %>% 
-  group_by(human_source) %>% 
-  summarise(epithelial_damage = mean(epithelial_damage)) %>% 
-  mutate(epithelial_damage = epithelial_damage > 1) %>% 
-  left_join(unique(select(metadata, human_source, early_euth, cdiff_strain),
-            by = c('human_source'))) %>% 
-  filter(cdiff_strain == 431) %>% 
-  mutate(outcome = case_when(early_euth == T ~ 'moribund',
-                             epithelial_damage == F ~ 'mild',
-                             epithelial_damage == T ~ 'severe',
-                             T ~ 'NA'),
-         outcome = factor(outcome, levels = c('mild', 'severe', 'moribund'))) %>% 
-  select(human_source, outcome)
-
-donor_by_outcome %>% 
-  left_join(nmds_df, by = c('human_source' = 'group')) %>% 
-  ggplot(aes(x = axis1, y = axis2, color = outcome)) + 
-    geom_point() + 
-    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = NULL) + 
-    theme_bw()
-
-
+# theta yc shows comparison better
 ```
-  
-> recalc nmds with just these samples?
-  
   
   
   
@@ -139,14 +107,9 @@ Unique communities without conserved structure
 ```{r}
 shared %>% 
   filter(grepl('DA', Group)) %>% 
-  left_join(donor_by_outcome, 
-            by = c('Group' = 'human_source')) %>% 
-#  mutate(label = case_when(disease_stat == 'Case' ~ 'CDI_431',
-#                           disease_stat == 'NonDiarrhealControl' ~ paste0('NDC_', gsub('DA0*', '', Group)),
-#                           disease_stat == 'DiarrhealControl' ~ paste0('DC_', gsub('DA0*', '', Group)))) %>% 
   left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
   rename(taxa_level = Class) %>% 
-  group_by(Group, taxa_level, outcome) %>% 
+  group_by(Group, taxa_level) %>% 
   summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
   group_by(taxa_level) %>% 
   mutate(median_ra = median(relative_abundance)) %>% 
@@ -160,11 +123,10 @@ shared %>%
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~outcome, scales = 'free_x')
+    facet_grid(.~Group, scales = 'free_x')
 ```
   
-> does outcome matter at this point? in this figure?
-  
+
   
 Donor communities colonize mice and shift community, ~~but consistently~~
 
@@ -172,13 +134,6 @@ Donor communities colonize mice and shift community, ~~but consistently~~
 shared %>% 
   filter(grepl('D0', Group)) %>% 
   left_join(select(metadata, group, human_source, mouse_id), by = c('Group' = 'group')) %>% 
-  left_join(donor_by_outcome, by = c('human_source')) %>% 
-#  mutate(label = case_when(disease_stat == 'Case' ~ paste('CDI', gsub('DA0*', '', human_source), 
-#                                                          gsub('^.*_', '', mouse_id), sep = '_'), 
-#                           disease_stat == 'NonDiarrhealControl' ~ paste('NDC', gsub('DA0*', '', human_source), 
-#                                                                         gsub('^.*_', '', mouse_id), sep = '_'),
-#                           disease_stat == 'DiarrhealControl' ~ paste('DC', gsub('DA0*', '', human_source), 
-#                                                                      gsub('^.*_', '', mouse_id), sep = '_'))) %>% 
   left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
   rename(taxa_level = Class) %>% 
   group_by(Group, taxa_level, human_source) %>% 
@@ -195,7 +150,9 @@ shared %>%
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~human_source, scales = 'free_x')
+    facet_grid(.~human_source, scales = 'free_x') + 
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank())
 
 
 ```
@@ -222,17 +179,36 @@ nmds_df %>%
 day_0_samples <- metadata %>% 
   filter(day == 0) %>% 
   select(group, human_source)
+day_10_samples <- metadata %>% 
+  filter(day == 10) %>% 
+  select(group, human_source)
+
+
 # compare distance between:
 #   donor and recipient
 #   co-recipients
 #   other cages
 #   other donors
+
+donor_v_donor <- beta_df %>% 
+  filter(grepl('DA', rows),
+         grepl('DA', columns)) %>% 
+  mutate(comparison = 'Donor\nvs\nDonor')
+
 donor_v_recipent <- bind_rows(
     day_0_samples %>% 
       inner_join(beta_df, by = c('group' = 'rows', 'human_source' = 'columns')),
     day_0_samples %>% 
       inner_join(beta_df, by = c('group' = 'columns', 'human_source' = 'rows'))) %>% 
   mutate(comparison = 'Donor\nvs\nRecipient')
+
+donor_v_recipent_end <- bind_rows(
+    day_10_samples %>% 
+      inner_join(beta_df, by = c('group' = 'rows', 'human_source' = 'columns')),
+    day_10_samples %>% 
+      inner_join(beta_df, by = c('group' = 'columns', 'human_source' = 'rows'))) %>% 
+  mutate(comparison = 'Donor\nvs\nRecipient End')
+
 
 corecipient <- day_0_samples %>% 
   left_join(day_0_samples, by = c('human_source')) %>% 
@@ -252,21 +228,46 @@ other_recipients <- beta_df %>%
   anti_join(corecipient, by = c('rows' = 'group.x', 'columns' = 'group.y')) %>% 
   mutate(comparison = 'Recipients\ncompared to\nothers w/different donor')
 
-bind_rows(donor_v_recipent, corecipient, other_donors, other_recipients) %>% 
+day0_v_day10 <- beta_df %>% 
+  separate(rows, c('cageA', 'mouseA', 'dayA')) %>% 
+  separate(columns, c('cageB', 'mouseB', 'dayB')) %>% 
+  filter(mouseA == mouseB & cageA == cageB) %>% 
+  filter((dayA == 'D0' & dayB == 'D10') |
+         (dayA == 'D10' & dayB == 'D0')) %>% 
+  mutate(comparison = 'Day 0\nvs\nDay 10')
+
+
+
+bind_rows(donor_v_donor, donor_v_recipent, corecipient, other_donors, 
+          other_recipients, day0_v_day10, donor_v_recipent_end) %>% 
   mutate(comparison = factor(comparison, levels = 
-                              c('Donor\nvs\nRecipient', 'Recipients\ncompared to\nothers w/same donor', 
-                                'Donor\nvs\nNon-recipients', 'Recipients\ncompared to\nothers w/different donor'))) %>% 
+                              c('Donor\nvs\nDonor',
+                                'Donor\nvs\nRecipient', 
+                                'Recipients\ncompared to\nothers w/same donor', 
+                                'Day 0\nvs\nDay 10',
+                                'Donor\nvs\nRecipient End',
+                                'Donor\nvs\nNon-recipients', 
+                                'Recipients\ncompared to\nothers w/different donor'))) %>% 
   ggplot(aes(x = comparison, y = distances)) + 
-    geom_boxplot() + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+    geom_jitter(alpha = 0.1, width = 0.3) + 
     labs(x = NULL, y = 'Theta YC') +
     theme_bw()
+
+# how do donors distances look by donor?
+#donor_v_donor %>% 
+#  pivot_longer(cols = c(rows, columns)) %>% 
+#  ggplot(aes(x = value, y = distances, color = value)) + geom_point()
+#    geom_jitter(width = 0.25) + 
+#    scale_color_manual(values = donor_colors) %>% 
+#    theme_bw()
 
 corecipient %>% 
   separate(group.x, c('cageA', 'mouseA', 'dayA')) %>% 
   separate(group.y, c('cageB', 'mouseB', 'dayB')) %>% 
-  mutate(same_cage = cageA == cageB,) %>% 
+  mutate(same_cage = cageA == cageB) %>% 
   ggplot(aes(x = human_source, y = distances, color = human_source, shape = same_cage)) +
-    geom_jitter(aes(color = human_source), width = 0.2) + 
+    geom_point(position = position_jitterdodge(), width = 0.2) + 
     scale_color_manual(values = donor_colors) + 
     scale_shape_manual(values = c(18,16)) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
@@ -274,44 +275,6 @@ corecipient %>%
     theme(legend.position = 'bottom') + 
     labs(y = 'Theta YC', x = 'Donor Source', color = NULL, shape = 'Same Cage') + 
     guides(color = 'none')
-```
-
-
-```{r}
-#genus <- sum_otu_by_taxa(taxonomy_df = taxonomy,
-#                         otu_df = select(shared, Group = sample_id, contains('Otu')),
-#                         taxa_level = 'Genus', 
-#                         top_n = 12)
-#donor_genus <- sum_otu_by_taxa(taxonomy_df = donor_taxonomy,
-#                         otu_df = donor,
-#                         taxa_level = 'Genus', 
-#                         top_n = 12)
-#
-#donor_order <- donor_genus %>% 
-#    filter(taxa == 'Other') %>% 
-#    arrange(desc(abundance)) %>% 
-#    pull(Group)
-#
-#
-#donor_genus %>% 
-#  mutate(rel_abun = abundance/2779 * 100,
-#         taxa = factor(taxa,
-#                       levels = c("Alistipes", "Bacteroides", "Blautia", 
-#                                  "Clostridium_sensu_stricto", "Cronobacter",
-#                                  "Enterococcus", "Faecalibacterium", 
-#                                  "Lachnospiraceae_unclassified", "Lactobacillus", 
-#                                  "Prevotella", "Ruminococcaceae_unclassified", "Other")),
-#          Group = factor(Group, levels = donor_order)) %>% 
-#  ggplot(aes(x = Group, y = taxa, fill = rel_abun)) + 
-#    labs(x = NULL, y = NULL, fill = 'Relative Abundance') + 
-#    geom_tile() + 
-#    scale_fill_gradient(low = 'white', high = 'black')
-#    coord_flip()
-# 
-##    scale_fill_gradient2(low="white", mid='blue3', high = 'black',
-##  			limits = c(-2,2), na.value = NA, midpoint = .3,
-##  			breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100'))
-
 ```
 
 
@@ -332,24 +295,7 @@ metadata %>%
     guides(color = 'none') + 
     theme_bw() + 
     labs(x = 'Day', y = 'C. difficile CFU (log10)')
-
-metadata %>% 
-  filter(cdiff_strain == 431) %>% 
-  mutate(human_source = factor(human_source, levels = 
-                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
-                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
-                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
-  ggplot(aes(x = day, y = percent_weightLoss, color = human_source)) +
-    stat_summary(fun = 'median', geom = 'line') + 
-    geom_point(alpha = 0.3) +
-    facet_grid(human_source~.) + 
-    scale_color_manual(values = donor_colors) + 
-    guides(color = 'none') + 
-    theme_bw() + 
-    labs(x = 'Day', y = 'Weight (Relative to initial)')
-
 ```
-
 ```{r}
 metadata %>% 
   filter(cdiff_strain == 431,
@@ -366,7 +312,48 @@ metadata %>%
     theme_bw() + 
     labs(x = 'Donor Source', y = 'C. difficile CFU (log10)') + 
     guides(color = 'none')
+```
+  
+DA00581 is made up of 4 cages, and at day 1 we see 1 cage at ~10^7.5, 2 cages just above 10^5 and 1 cage at 0.
+For the cage at 0 there are three mice, one remains at 0, the other two have transient low appearance of cdiff  as seen below
+ 
 
+```{r}
+metadata %>% filter(human_source == 'DA00581') %>% 
+  ggplot(aes(x = day, y = log10(cdiff_cfu + 60), shape = mouse_id, color = cage_id)) +
+    geom_line() + 
+    geom_point() + 
+    scale_shape_manual(values = 1:11) + 
+    theme_bw() + 
+    guides(shape = 'none') + 
+    labs(x = 'Day', y = 'C. difficile CFU (log10)')
+  
+```
+  
+Points are added to allow identification of individuals. Here we see one mouse has low cfu on days 6 and 7, another mouse on day 10.
+
+
+
+# Figure supplemental - weight loss
+
+```{r fig.height = 14}
+metadata %>% 
+  filter(cdiff_strain == 431) %>% 
+  mutate(human_source = factor(human_source, levels = 
+                                c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148', 
+                                  'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034',
+                                  'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'))) %>% 
+  ggplot(aes(x = day, y = percent_weightLoss, color = human_source)) +
+    stat_summary(fun = 'median', geom = 'line') + 
+    geom_point(alpha = 0.3) +
+    facet_grid(human_source~.) + 
+    scale_color_manual(values = donor_colors) + 
+    guides(color = 'none') + 
+    theme_bw() + 
+    labs(x = 'Day', y = 'Weight (Relative to initial)')
+```
+
+```{r}
 metadata %>% 
   filter(cdiff_strain == 431,
          day %in% c(2,10)) %>% 
@@ -384,43 +371,64 @@ metadata %>%
     guides(color = 'none')
 ```
 
+
 ```{r}
-metadata %>% 
-  filter(day == 0 | day == mouse_endpoint) %>% 
-  mutate(time_point = ifelse(day == 0, 'Initial', 'Endpoint'),
-         time_point = factor(time_point, levels = c('Initial', 'Endpoint'))) %>% 
-  left_join(nmds_df, by = c('group')) %>% 
-  left_join(donor_by_outcome, by = c('human_source')) %>% 
-  ggplot(aes(x = axis1, y = axis2, color = early_euth)) +
-    geom_point() + 
-    facet_grid(.~time_point) +
-    #scale_color_manual(values  = donor_colors) + 
-    theme_bw() + 
-    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = 'Moribund') + 
-    theme(legend.position = 'bottom')
-  
+#metadata %>% 
+#  filter(day == 0 | day == mouse_endpoint) %>% 
+#  mutate(time_point = ifelse(day == 0, 'Initial', 'Endpoint'),
+#         time_point = factor(time_point, levels = c('Initial', 'Endpoint'))) %>% 
+#  left_join(nmds_df, by = c('group')) %>% 
+#  ggplot(aes(x = axis1, y = axis2, color = early_euth)) +
+#    geom_point() + 
+#    facet_grid(.~time_point) +
+#    #scale_color_manual(values  = donor_colors) + 
+#    theme_bw() + 
+#    labs(x = 'NMDS axis 1', y = 'NMDS axis 2', color = 'Moribund') + 
+#    theme(legend.position = 'bottom')
+#
+# not sure if this adds to this figure
 
 ```
 
 > NAs on Day 0 for DA01134, DA10034, DA00884  
 > Last samples for moribund mice is from cecum  
-> Switch to cage color?  
-> Recalc nmds?  
+ 
 
 # Figure 3 - Difference in severity
 
 ```{r histology}
+mouse_by_outcome <- histology %>% 
+  mutate(mouse_id = paste0(cage_id, '_', ear_tag)) %>% 
+  select(mouse_id, human_source, epithelial_damage, summary_score) %>% 
+  left_join(unique(select(metadata, mouse_id, early_euth, cdiff_strain),
+            by = c('mouse_id'))) %>% 
+  filter(cdiff_strain == 431) %>% 
+  group_by(human_source) %>% 
+  mutate(severity = mean(epithelial_damage) < 1) %>% 
+# using epithelial damage
+  mutate(outcome = case_when(early_euth == T ~ 'moribund',
+                             severity == T ~ 'mild',
+                             severity == F ~ 'severe',
+                             T ~ 'NA')) %>% 
+# using summary score
+#    mutate(outcome_ss = case_when(early_euth == T ~ 'moribund',
+#                             summary_score < 4.4 ~ 'mild', # mean = 4.4, median = 5
+#                             summary_score > 4.4 ~ 'severe',
+#                             T ~ 'NA')) %>% 
+  mutate(outcome = factor(outcome, levels = c('mild', 'severe', 'moribund'))) %>% 
+  select(mouse_id, outcome)
 
 histology %>% 
   left_join(distinct(select(metadata, mouse_id, early_euth)), by = 'mouse_id') %>% 
   filter(!is.na(early_euth)) %>% 
-  mutate(early_euth = ifelse(early_euth, 'Moribund', 'Colonized')) %>% 
-  left_join(donor_by_outcome, by = c('human_source')) %>% 
-  #filter(outcome == 'mild', epithelial_damage > 0)
+  mutate(early_euth = ifelse(early_euth, 'Moribund', 'Colonized'),
+         mouse_id = paste0(cage_id, '_', ear_tag)) %>% 
+  inner_join(mouse_by_outcome, by = c('mouse_id')) %>%
   pivot_longer(cols = c(edema_tissue, inflammation_tissue, epithelial_damage, summary_score),
                names_to = 'histology', values_to = 'score') %>% 
-  ggplot(aes(x = histology, y = score, fill = outcome)) +
-    geom_boxplot() + 
+  ggplot(aes(x = histology, y = score, color = outcome)) +
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), position = position_dodge(width = 0.4)) +
+    #geom_boxplot() + 
     #geom_point(position = position_jitterdodge(), alpha = 0.5) + 
     theme_bw() + 
     labs(x = NULL, y = 'Histology Score', fill = 'Outcome') +
@@ -428,44 +436,109 @@ histology %>%
     facet_grid(.~early_euth)
 ```
 
-Mice were challenged with a strain isolated that matched Clostridioides difficile ribotype 027  
 
-> what is published about histology of 027 in C57/B6 mice?  
+> **Splitting by mean epithelial damage for donor < 1 = 12 mild, 15 severe, 17 moribund**  
+> Splitting of median summary score of 5 =  10 mild, 11 severe, 17 moribund  
+>        (6 have a summary score of 5)  
+> Splitting of mean summary score of 4.4 =  10 mild, 17 severe, 17 moribund  
 
+
+
+
+ What is toxin distribution by outcome?
 
 ```{r toxin}
-
 toxin %>% 
-  filter(!is.na(ear_tag),
-         !is.na(toxin_sample_day)) %>% 
-  left_join(select(metadata, group, human_source), by = c('group')) %>% 
-  left_join(donor_by_outcome, by = c('human_source')) %>% 
+  inner_join(select(metadata, group, human_source), by = c('group')) %>% 
+  left_join(mouse_by_outcome, by = c('human_source')) %>% 
   filter(!is.na(outcome)) %>% 
   mutate(day = as.numeric(toxin_sample_day)) %>% 
-  ggplot(aes(x = day, y = Log_repiricoal_dilution, fill = outcome)) + 
+  ggplot(aes(x = day, y = Log_repiricoal_dilution, color = outcome)) + 
 #    geom_line(aes(color = outcome, group = mouse_id)) + 
-    geom_boxplot(aes(group = interaction(day, outcome))) +
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), position = position_dodge(width = 0.4)) +
     labs(x = 'Day', y = 'Toxin activity') + 
 #    facet_grid(outcome~.) + 
     theme_bw()
-# check for correlation between toxin and cfu
-#toxin %>% 
-#  filter(!is.na(ear_tag),
-#         !is.na(toxin_sample_day)) %>% 
-#  left_join(select(metadata, group, cdiff_cfu), by = 'group') %>% 
-#  ggplot(aes(x = log10(cdiff_cfu + 0.01), y = Log_repiricoal_dilution)) + 
-#    geom_point(alpha = 0.2) +
-#    labs(x = 'CFU', y = 'Toxin activity') + 
-#    theme_bw()
-# does this matter? 
+```
 
-# how many samples tested are positive for toxin per mouse?
-#toxin %>% 
-#  group_by(mouse_id) %>% 
-#  summarise(n_samples = length(toxin_sample_day),
-#            n_positive = sum(Log_repiricoal_dilution > 1))
+## Can we use toxin to split severity?
+do mice split into +/- toxin based on outcome of moribund/mild/severe?
+
+```{r}
+toxin %>% 
+  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+  group_by(mouse_id) %>% 
+  summarise(max_toxin = max(Log_repiricoal_dilution),
+            mean_toxin = mean(Log_repiricoal_dilution)) %>% 
+  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+  filter(!is.na(human_source)) %>% 
+  pivot_longer(c(max_toxin, mean_toxin)) %>% 
+  ggplot(aes(x = outcome, y = value)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+    geom_jitter(alpha = 0.3, width = 0.3) + 
+    facet_wrap(.~name, scales = 'free_y') + 
+    labs(x = NULL, y = 'Log reciprocal toxin') + 
+    theme_bw()
+```
+
+## Does toxin explain histological findings?
+
+```{r}
+toxin %>% 
+  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+  group_by(mouse_id) %>% 
+  mutate(last_sample = max(toxin_sample_day)) %>% 
+  filter(toxin_sample_day == last_sample) %>% 
+  left_join(select(histology, mouse_id, summary_score), by = c('mouse_id')) %>% 
+  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+  filter(!is.na(summary_score)) %>% 
+  ggplot(aes(y = Log_repiricoal_dilution, x = summary_score)) + 
+    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
+                 aes(fill = as.factor(summary_score))) + 
+    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+    #             aes(color = as.factor(summary_score))) +
+    #geom_jitter(width = 0.25, alpha = 0.5) + 
+    scale_color_manual(values = donor_colors) + 
+    scale_fill_manual(values = donor_colors) + 
+    theme_bw() + 
+    scale_x_continuous(breaks = 0:10) + 
+    guides(color = 'none', fill = 'none')
+
+toxin %>% 
+  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+  group_by(mouse_id) %>% 
+  mutate(last_sample = max(toxin_sample_day)) %>% 
+  filter(toxin_sample_day == last_sample) %>% 
+  left_join(select(histology, mouse_id, epithelial_damage), by = c('mouse_id')) %>% 
+  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+  filter(!is.na(epithelial_damage)) %>% 
+  ggplot(aes(y = Log_repiricoal_dilution, x = epithelial_damage, 
+             color = as.factor(epithelial_damage))) + 
+    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
+                 aes(fill = as.factor(epithelial_damage))) + 
+    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+    #geom_jitter(width = 0.25, alpha = 0.5) + 
+    scale_color_manual(values = donor_colors) + 
+    scale_fill_manual(values = donor_colors) + 
+    theme_bw() + 
+    scale_x_continuous(breaks = 0:10) + 
+    guides(color = 'none', fill = 'none')
+
 # is this relevant?
 ```
+
+
+
+Mice were challenged with a strain isolated that matched Clostridioides difficile ribotype 027  
+
+> what is published about histology of 027 in C57/B6 mice?   
+> how much variation is there in individual isolates of RT027?
+> RT027/BI/NAP1, toxinotype III
+> VPI 10463 is ribotype 087, toxinotype 0
+
 
 ```{r, individual cfu plots}
 #metadata %>% 
@@ -479,6 +552,200 @@ toxin %>%
 #  geom_line() + 
 #  facet_wrap(outcome~., ncol = 1) +
 #  theme_bw()
+
+shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
+         col_types = cols(.default = col_double(),
+                          Group = col_character())) %>% 
+  mutate(Group = ifelse(grepl('_D|DA', Group), Group,
+      gsub('D', '_D', Group))) %>% 
+  select(-label, -numOtus) %>% 
+  pivot_longer(-Group, names_to = 'otu', values_to = 'counts') %>% 
+  mutate(relative_abundance = counts/2107 * 100)
+
+
+# correlations
+# toxin to otu
+toxin_otu_corr <- metadata %>% 
+  inner_join(toxin, by = 'group') %>% 
+  filter(cdiff_strain == 431) %>% 
+  select(Group = group, Log_repiricoal_dilution) %>% 
+  left_join(shared, by = c('Group')) %>% 
+  left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
+  filter(!is.na(otu)) %>% 
+  group_by(Group, Genus, Log_repiricoal_dilution) %>%
+  summarise(counts = sum(counts),
+            relative_abundance = sum(relative_abundance)) %>% 
+  group_by(Genus) %>% 
+  mutate(otu = Genus,
+        sd = sd(counts)) %>% 
+  filter(sd != 0) %>% 
+  nest() %>% 
+	mutate(spearman_p = map(.x = data, .f = ~ cor.test(.x$counts, .x$Log_repiricoal_dilution, 
+	                                                   method = 'spearman', exact = F)$p.value),
+	       spearman_rho = map(.x = data, .f = ~ cor.test(.x$counts, .x$Log_repiricoal_dilution, 
+	                                                     method = 'spearman', exact = F)$estimate)) %>% # compare cleared vs colonized
+	unnest(c(spearman_p, spearman_rho)) %>% 
+	mutate(pvalue = p.adjust(spearman_p, method = 'BH', n = nrow(.))) %>% # correct p values
+	filter(pvalue < 0.05) %>% # select only those above 0.05 after pvalue correction
+	unnest(data)  
+
+toxin_otu_corr %>% 
+  filter(spearman_rho < -0.35 | spearman_rho > 0.35) %>% 
+  mutate(relative_abundance = ifelse(relative_abundance == 0, 0.045, relative_abundance)) %>% 
+  ggplot(aes(x = relative_abundance, y = Log_repiricoal_dilution, color = otu)) + 
+    geom_point(alpha = 0.3) + 
+    theme_bw() + 
+    facet_wrap(otu~.) + 
+    scale_x_log10() + 
+    guides(color = 'none') + 
+    geom_smooth(method = 'lm', se=F) + 
+    labs(x = 'Relative Abundance', y = 'Toxin (log reciprocal dilution)')
+
 ```
 
 
+```{r}
+# correlation of histology to otu
+plot_hist_corr <- function(i){
+  metadata %>% 
+    filter(cdiff_strain == 431,
+           day == mouse_endpoint) %>% 
+    inner_join(histology, by = 'mouse_id') %>% 
+    filter(early_euth == F) %>% 
+    select(Group = group, test = .data[[i]]) %>% 
+    left_join(shared, by = c('Group')) %>% 
+    group_by(otu) %>%
+    mutate(sd = sd(counts)) %>% 
+    filter(!is.na(otu),
+           sd != 0) %>% 
+    nest() %>% 
+  	mutate(spearman_p = map(.x = data, .f = ~ cor.test(.x$counts, .x$test, 
+  	                                                   method = 'spearman', exact = F)$p.value),
+  	       spearman_rho = map(.x = data, .f = ~ cor.test(.x$counts, .x$test, 
+  	                                                     method = 'spearman', exact = F)$estimate)) %>% # compare cleared vs colonized
+  	unnest(c(spearman_p, spearman_rho)) %>% 
+  	mutate(pvalue = p.adjust(spearman_p, method = 'BH', n = nrow(.))) %>% # correct p values
+  	filter(pvalue < 0.05) %>% # select only those above 0.05 after pvalue correction
+  	unnest(data) %>% 
+    left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
+    mutate(tax_otu_label = gsub(' \\(', '\n\\(', tax_otu_label)) %>% 
+    ggplot(aes(x = relative_abundance, y = test, color = tax_otu_label)) + 
+      geom_point(alpha = 0.3) +
+      geom_smooth(method = 'lm', se = F) +
+      facet_wrap(tax_otu_label ~ .) + 
+      theme_bw() + 
+      labs(x = 'Relative Abundance', y = i, title = i) + 
+      guides(color = 'none')
+}
+
+plot_hist_corr('summary_score')
+plot_hist_corr('edema_tissue')
+plot_hist_corr('inflammation_tissue')
+plot_hist_corr('epithelial_damage')
+```
+```{r}
+# correlation of histology to otu
+plot_hist_corr <- function(i){
+  metadata %>% 
+    filter(cdiff_strain == 431,
+           day == mouse_endpoint) %>% 
+    inner_join(histology, by = 'mouse_id') %>% 
+    filter(early_euth == F) %>% 
+    select(Group = group, test = .data[[i]]) %>% 
+    left_join(shared, by = c('Group')) %>% 
+    group_by(otu) %>%
+    mutate(sd = sd(counts)) %>% 
+    filter(!is.na(otu),
+           sd != 0) %>% 
+    nest() %>% 
+  	mutate(spearman_p = map(.x = data, .f = ~ cor.test(.x$counts, .x$test, 
+  	                                                   method = 'spearman', exact = F)$p.value),
+  	       spearman_rho = map(.x = data, .f = ~ cor.test(.x$counts, .x$test, 
+  	                                                     method = 'spearman', exact = F)$estimate)) %>% # compare cleared vs colonized
+  	unnest(c(spearman_p, spearman_rho)) %>% 
+  	mutate(pvalue = p.adjust(spearman_p, method = 'BH', n = nrow(.))) %>% # correct p values
+  	filter(pvalue < 0.05) %>% # select only those above 0.05 after pvalue correction
+  	unnest(data) %>% 
+    left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
+    mutate(tax_otu_label = gsub(' \\(', '\n\\(', tax_otu_label)) %>% 
+    ggplot(aes(x = relative_abundance, y = test, color = tax_otu_label)) + 
+      geom_point(alpha = 0.3) +
+      geom_smooth(method = 'lm', se = F) +
+      facet_wrap(tax_otu_label ~ .) + 
+      theme_bw() + 
+      labs(x = 'Relative Abundance', y = i, title = i) + 
+      guides(color = 'none')
+}
+
+plot_hist_corr('summary_score')
+plot_hist_corr('edema_tissue')
+plot_hist_corr('inflammation_tissue')
+plot_hist_corr('epithelial_damage')
+```
+
+
+```{r}
+metadata <- read_tsv('../../../data/process/metadata_tidy.tsv',
+		col_type = 'cccccDddddDcdddddcdl') 
+shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
+		col_types = cols(.default = col_double(),
+			Group = col_character())) %>% 
+	mutate(Group = ifelse(grepl('_D|DA', Group), Group,
+		gsub('D', '_D', Group)))
+taxonomy <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
+                     col_types = cols(.default = col_character()))
+
+
+lefse_df <- data.table::fread(paste0('../../../data/process/severe_disease_Genus.0.03.lefse_summary'),
+		fill = T) %>% 
+	filter(!is.na(LDA)) %>% 
+	top_n(20, LDA) %>% 
+	mutate(order = LDA + 10 * as.logical(Class),
+		tax_otu_label = OTU)
+
+lefse_plot <- lefse_df %>% 
+	ggplot(aes(y = LDA, fill = Class, 
+			x = reorder(tax_otu_label, order))) +
+		geom_col() + 
+		theme_bw() + 
+		coord_flip() + 
+		guides(fill = 'none') + 
+		scale_fill_manual(values = c(1,2),
+			limits = c(TRUE, FALSE),
+			labels = c('Severe', 'Non-severe')) + 
+		labs(x = NULL, y = 'LDA Score (log 10)')
+
+abundance_plot <- metadata %>% 
+	filter(cdiff_strain == 431,
+		day == 0) %>% 
+	left_join(shared, by = c('group' = 'Group')) %>% 
+	gather(OTU, abundance, matches('Otu\\d*')) %>% 
+	left_join(taxonomy, by = 'OTU') %>% 
+	right_join(lefse_df, by = c('Genus' = 'OTU')) %>% 
+	group_by(group, Genus, order, early_euth) %>% 
+	summarise(abundance = sum(abundance)) %>% 
+	mutate(tax_otu_label = Genus) %>% 
+	mutate(abundance = abundance / 21.07,
+		abundance = ifelse(abundance == 0, 0.045, abundance)) %>% 
+	ggplot(aes(x = reorder(tax_otu_label, order), 
+			y = abundance, color = as.factor(early_euth))) + 
+		geom_jitter(position = position_jitterdodge(dodge.width = 0.5), alpha = 0.25) + 
+		stat_summary(fun.data = 'median_hilow', aes(group = early_euth),
+			fun.args = (conf.int=0.5), position = position_dodge(width = 0.5)) +
+		theme_bw() + labs(x = NULL, y = 'Relative Abundance', color = NULL) + 
+		scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100),
+			labels=c("0","0.1","1","10","100")) +
+		scale_color_manual(values = c(1,2),
+						   limits = c(TRUE, FALSE),
+						   labels = c('Severe', 'Non-severe')) + 
+		geom_hline(yintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
+		theme(panel.grid.major.y = element_blank(), 
+			panel.grid.minor = element_blank(),
+			axis.ticks.y = element_blank(),
+			axis.text.y = element_blank(),
+			legend.position = 'right') + 
+		coord_flip()
+
+cowplot::plot_grid(lefse_plot, abundance_plot, nrow = 1)
+
+```

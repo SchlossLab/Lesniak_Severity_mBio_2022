@@ -18,14 +18,8 @@ counts error rate for the data was 0.19%
 
 Sampled spread of diverse donors for inoculating germ-free mice
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
-
-> recalc nmds with just these samples?
-
 Unique communities without conserved structure
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
-
-> does outcome matter at this point? in this figure?
 
 Donor communities colonize mice and shift community, ~~but
 consistently~~
@@ -38,24 +32,64 @@ consistently~~
 
 # Figure 2 - Mice were colonized without any perturbation
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+DA00581 is made up of 4 cages, and at day 1 we see 1 cage at \~10^7.5, 2
+cages just above 10^5 and 1 cage at 0. For the cage at 0 there are three
+mice, one remains at 0, the other two have transient low appearance of
+cdiff as seen below
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Points are added to allow identification of individuals. Here we see one
+mouse has low cfu on days 6 and 7, another mouse on day 10.
+
+# Figure supplemental - weight loss
 
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
 > NAs on Day 0 for DA01134, DA10034, DA00884  
-> Last samples for moribund mice is from cecum  
-> Switch to cage color?  
-> Recalc nmds?
+> Last samples for moribund mice is from cecum
 
 # Figure 3 - Difference in severity
 
 ![](initial_analysis_notebook_files/figure-gfm/histology-1.png)<!-- -->
 
+> **Splitting by mean epithelial damage for donor \< 1 = 12 mild, 15
+> severe, 17 moribund**  
+> Splitting of median summary score of 5 = 10 mild, 11 severe, 17
+> moribund  
+> (6 have a summary score of 5)  
+> Splitting of mean summary score of 4.4 = 10 mild, 17 severe, 17
+> moribund
+
+What is toxin distribution by outcome?
+
+![](initial_analysis_notebook_files/figure-gfm/toxin-1.png)<!-- -->
+
+## Can we use toxin to split severity?
+
+do mice split into +/- toxin based on outcome of moribund/mild/severe?
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+## Does toxin explain histological findings?
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+
 Mice were challenged with a strain isolated that matched Clostridioides
 difficile ribotype 027
 
-> what is published about histology of 027 in C57/B6 mice?
+> what is published about histology of 027 in C57/B6 mice?  
+> how much variation is there in individual isolates of RT027?
+> RT027/BI/NAP1, toxinotype III VPI 10463 is ribotype 087, toxinotype 0
 
-![](initial_analysis_notebook_files/figure-gfm/toxin-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/individual%20cfu%20plots-1.png)<!-- -->
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-4.png)<!-- -->
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
