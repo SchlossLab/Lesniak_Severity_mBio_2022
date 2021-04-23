@@ -9,6 +9,8 @@ tail.batch
 data/*
 !data/raw
 
+code/mothur 
+
 *.fastq
 *.qsub*
 mothur*logfile

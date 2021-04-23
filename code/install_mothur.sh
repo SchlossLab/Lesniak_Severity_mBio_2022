@@ -7,8 +7,8 @@
 # The zip archive contains a director called "mothur" so we can extract it directly
 # to code/
 
-wget -P code/mothur/ -nc https://github.com/mothur/mothur/releases/download/v1.44.3/Mothur.linux.zip
-unzip -n -d code/ code/mothur/Mothur.linux.zip
+wget -P code/mothur/ -nc https://github.com/mothur/mothur/releases/download/v1.45.2/Mothur.OSX-10.14.zip
+unzip -n -d code/ code/mothur/Mothur.OSX-10.14.zip
 
 if [[ $? -eq 0 ]]
 then
