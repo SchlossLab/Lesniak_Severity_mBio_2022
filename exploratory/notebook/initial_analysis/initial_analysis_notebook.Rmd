@@ -2,7 +2,9 @@
 title: "initial_analysis_notebook"
 author: "Nick Lesniak"
 date: "4/13/2021"
-output: rmarkdown::github_document
+always_allow_html: true
+output: 
+  html_document: default
 ---
 
 ```{r setup, echo=FALSE}
@@ -685,6 +687,7 @@ plot_hist_corr('epithelial_damage')
 
 
 ```{r}
+library(plotly)
 metadata <- read_tsv('../../../data/process/metadata_tidy.tsv',
 		col_type = 'cccccDddddDcdddddcdl') 
 shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
@@ -710,7 +713,7 @@ lefse_plot <- lefse_df %>%
 		theme_bw() + 
 		coord_flip() + 
 		guides(fill = 'none') + 
-		scale_fill_manual(values = c(1,2),
+		scale_fill_manual(values = c('#8de4d3','#f75b5f'),
 			limits = c(TRUE, FALSE),
 			labels = c('Severe', 'Non-severe')) + 
 		labs(x = NULL, y = 'LDA Score (log 10)')
@@ -722,30 +725,40 @@ abundance_plot <- metadata %>%
 	gather(OTU, abundance, matches('Otu\\d*')) %>% 
 	left_join(taxonomy, by = 'OTU') %>% 
 	right_join(lefse_df, by = c('Genus' = 'OTU')) %>% 
-	group_by(group, Genus, order, early_euth) %>% 
+	group_by(mouse_id, group, Genus, order, early_euth) %>% 
 	summarise(abundance = sum(abundance)) %>% 
 	mutate(tax_otu_label = Genus) %>% 
 	mutate(abundance = abundance / 21.07,
 		abundance = ifelse(abundance == 0, 0.045, abundance)) %>% 
+  highlight_key(~mouse_id) %>% 
 	ggplot(aes(x = reorder(tax_otu_label, order), 
-			y = abundance, color = as.factor(early_euth))) + 
-		geom_jitter(position = position_jitterdodge(dodge.width = 0.5), alpha = 0.25) + 
+			y = abundance, color = as.factor(early_euth), shape = mouse_id)) + 
 		stat_summary(fun.data = 'median_hilow', aes(group = early_euth),
 			fun.args = (conf.int=0.5), position = position_dodge(width = 0.5)) +
 		theme_bw() + labs(x = NULL, y = 'Relative Abundance', color = NULL) + 
 		scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100),
 			labels=c("0","0.1","1","10","100")) +
-		scale_color_manual(values = c(1,2),
+		scale_color_manual(values = c('#8de4d3','#f75b5f'),
 						   limits = c(TRUE, FALSE),
 						   labels = c('Severe', 'Non-severe')) + 
+    scale_shape_manual(values = rep(16, 54)) + 
 		geom_hline(yintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
 		theme(panel.grid.major.y = element_blank(), 
 			panel.grid.minor = element_blank(),
-			axis.ticks.y = element_blank(),
-			axis.text.y = element_blank(),
 			legend.position = 'right') + 
-		coord_flip()
+		coord_flip() + 
+    guides(shape = 'none')
 
-cowplot::plot_grid(lefse_plot, abundance_plot, nrow = 1)
+cowplot::plot_grid(lefse_plot, 
+                   abundance_plot + 
+                     geom_jitter(position = position_jitterdodge(dodge.width = 0.5), alpha = 0.25) + 
+                     theme(axis.ticks.y = element_blank(),
+                           axis.text.y = element_blank()), 
+                   nrow = 1)
 
+gg <- ggplotly(abundance_plot + geom_jitter(position = position_jitterdodge(dodge.width = 0.5)), tooltip = c('mouse_id'))
+highlight(hide_legend(gg), on = "plotly_click", off = "plotly_doubleclick", 
+           color = "black", selectize = T, opacityDim = .2,
+           selected = attrs_selected(showlegend = F, marker = list(symbol = 'X')))
+str(gg)
 ```

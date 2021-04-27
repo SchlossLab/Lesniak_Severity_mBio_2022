@@ -92,4 +92,4 @@ difficile ribotype 027
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-4.png)<!-- -->
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
