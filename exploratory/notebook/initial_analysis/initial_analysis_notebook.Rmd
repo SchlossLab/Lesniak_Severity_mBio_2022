@@ -2,9 +2,7 @@
 title: "initial_analysis_notebook"
 author: "Nick Lesniak"
 date: "4/13/2021"
-always_allow_html: true
-output: 
-  html_document: default
+output: rmarkdown::github_document
 ---
 
 ```{r setup, echo=FALSE}
