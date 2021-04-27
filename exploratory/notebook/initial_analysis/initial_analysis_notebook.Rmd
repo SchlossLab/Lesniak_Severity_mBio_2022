@@ -488,52 +488,52 @@ toxin %>%
     theme_bw()
 ```
 
-## Does toxin explain histological findings?
 
 ```{r}
-toxin %>% 
-  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
-                           gsub('C$', '', mouse_id), mouse_id)) %>% 
-  group_by(mouse_id) %>% 
-  mutate(last_sample = max(toxin_sample_day)) %>% 
-  filter(toxin_sample_day == last_sample) %>% 
-  left_join(select(histology, mouse_id, summary_score), by = c('mouse_id')) %>% 
-  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
-  filter(!is.na(summary_score)) %>% 
-  ggplot(aes(y = Log_repiricoal_dilution, x = summary_score)) + 
-    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
-                 aes(fill = as.factor(summary_score))) + 
-    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
-    #             aes(color = as.factor(summary_score))) +
-    #geom_jitter(width = 0.25, alpha = 0.5) + 
-    scale_color_manual(values = donor_colors) + 
-    scale_fill_manual(values = donor_colors) + 
-    theme_bw() + 
-    scale_x_continuous(breaks = 0:10) + 
-    guides(color = 'none', fill = 'none')
-
-toxin %>% 
-  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
-                           gsub('C$', '', mouse_id), mouse_id)) %>% 
-  group_by(mouse_id) %>% 
-  mutate(last_sample = max(toxin_sample_day)) %>% 
-  filter(toxin_sample_day == last_sample) %>% 
-  left_join(select(histology, mouse_id, epithelial_damage), by = c('mouse_id')) %>% 
-  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
-  filter(!is.na(epithelial_damage)) %>% 
-  ggplot(aes(y = Log_repiricoal_dilution, x = epithelial_damage, 
-             color = as.factor(epithelial_damage))) + 
-    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
-                 aes(fill = as.factor(epithelial_damage))) + 
-    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(width = 0.25, alpha = 0.5) + 
-    scale_color_manual(values = donor_colors) + 
-    scale_fill_manual(values = donor_colors) + 
-    theme_bw() + 
-    scale_x_continuous(breaks = 0:10) + 
-    guides(color = 'none', fill = 'none')
-
-# is this relevant?
+## Does toxin explain histological findings?
+#toxin %>% 
+#  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+#                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+#  group_by(mouse_id) %>% 
+#  mutate(last_sample = max(toxin_sample_day)) %>% 
+#  filter(toxin_sample_day == last_sample) %>% 
+#  left_join(select(histology, mouse_id, summary_score), by = c('mouse_id')) %>% 
+#  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+#  filter(!is.na(summary_score)) %>% 
+#  ggplot(aes(y = Log_repiricoal_dilution, x = summary_score)) + 
+#    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
+#                 aes(fill = as.factor(summary_score))) + 
+#    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+#    #             aes(color = as.factor(summary_score))) +
+#    #geom_jitter(width = 0.25, alpha = 0.5) + 
+#    scale_color_manual(values = donor_colors) + 
+#    scale_fill_manual(values = donor_colors) + 
+#    theme_bw() + 
+#    scale_x_continuous(breaks = 0:10) + 
+#    guides(color = 'none', fill = 'none')
+#
+#toxin %>% 
+#  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+#                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+#  group_by(mouse_id) %>% 
+#  mutate(last_sample = max(toxin_sample_day)) %>% 
+#  filter(toxin_sample_day == last_sample) %>% 
+#  left_join(select(histology, mouse_id, epithelial_damage), by = c('mouse_id')) %>% 
+#  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+#  filter(!is.na(epithelial_damage)) %>% 
+#  ggplot(aes(y = Log_repiricoal_dilution, x = epithelial_damage, 
+#             color = as.factor(epithelial_damage))) + 
+#    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5,
+#                 aes(fill = as.factor(epithelial_damage))) + 
+#    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+#    #geom_jitter(width = 0.25, alpha = 0.5) + 
+#    scale_color_manual(values = donor_colors) + 
+#    scale_fill_manual(values = donor_colors) + 
+#    theme_bw() + 
+#    scale_x_continuous(breaks = 0:10) + 
+#    guides(color = 'none', fill = 'none')
+#
+# not applicable to our story
 ```
 
 
