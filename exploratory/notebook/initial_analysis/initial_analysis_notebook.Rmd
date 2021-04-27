@@ -284,7 +284,7 @@ corecipient %>%
 
 # Figure 2 - Mice were colonized without any perturbation
 
-```{r fig.height = 14}
+```{r}
 metadata %>% 
   filter(cdiff_strain == 431) %>% 
   mutate(human_source = factor(human_source, levels = 
@@ -294,7 +294,6 @@ metadata %>%
   ggplot(aes(x = day, y = log10(cdiff_cfu + 60), color = human_source)) +
     stat_summary(fun = 'median', geom = 'line') + 
     geom_point(alpha = 0.3) +
-    facet_grid(human_source~.) + 
     scale_color_manual(values = donor_colors) + 
     guides(color = 'none') + 
     theme_bw() + 
@@ -340,7 +339,7 @@ Points are added to allow identification of individuals. Here we see one mouse h
 
 # Figure supplemental - weight loss
 
-```{r fig.height = 14}
+```{r}
 metadata %>% 
   filter(cdiff_strain == 431) %>% 
   mutate(human_source = factor(human_source, levels = 
@@ -350,7 +349,6 @@ metadata %>%
   ggplot(aes(x = day, y = percent_weightLoss, color = human_source)) +
     stat_summary(fun = 'median', geom = 'line') + 
     geom_point(alpha = 0.3) +
-    facet_grid(human_source~.) + 
     scale_color_manual(values = donor_colors) + 
     guides(color = 'none') + 
     theme_bw() + 
