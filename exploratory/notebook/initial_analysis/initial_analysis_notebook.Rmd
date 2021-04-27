@@ -428,14 +428,16 @@ histology %>%
   inner_join(mouse_by_outcome, by = c('mouse_id')) %>%
   pivot_longer(cols = c(edema_tissue, inflammation_tissue, epithelial_damage, summary_score),
                names_to = 'histology', values_to = 'score') %>% 
-  ggplot(aes(x = histology, y = score, color = outcome)) +
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), position = position_dodge(width = 0.4)) +
-    #geom_boxplot() + 
-    #geom_point(position = position_jitterdodge(), alpha = 0.5) + 
+  ggplot(aes(x = early_euth, y = score, , color = early_euth, fill = early_euth)) +
+    #stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), position = position_dodge(width = 0.4)) +
+    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5) + 
+    #geom_point(position = position_jitterdodge(jitter.width = 0.3), alpha = 0.5) + 
     theme_bw() + 
     labs(x = NULL, y = 'Histology Score', fill = 'Outcome') +
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~early_euth)
+    facet_grid(.~histology) + 
+    guides(color = 'none') + 
+    theme(legend.position = 'bottom')
 ```
 
 
@@ -454,13 +456,15 @@ toxin %>%
   inner_join(select(metadata, group, human_source), by = c('group')) %>% 
   left_join(mouse_by_outcome, by = c('human_source')) %>% 
   filter(!is.na(outcome)) %>% 
-  mutate(day = as.numeric(toxin_sample_day)) %>% 
-  ggplot(aes(x = day, y = Log_repiricoal_dilution, color = outcome)) + 
-#    geom_line(aes(color = outcome, group = mouse_id)) + 
+  mutate(day = as.numeric(toxin_sample_day),
+         outcome = ifelse(outcome == 'moribund', as.character(outcome), 'colonized')) %>% 
+  ggplot(aes(x = outcome, y = Log_repiricoal_dilution, fill = outcome, color = outcome)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), position = position_dodge(width = 0.4)) +
+    geom_jitter(width= 0.3, height = 0, alpha = 0.3) + 
     labs(x = 'Day', y = 'Toxin activity') + 
-#    facet_grid(outcome~.) + 
-    theme_bw()
+    facet_grid(.~day) + 
+    theme_bw() +
+    theme(legend.position = 'bottom')
 ```
 
 ## Can we use toxin to split severity?
