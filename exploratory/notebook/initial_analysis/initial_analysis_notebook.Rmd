@@ -104,8 +104,8 @@ human_source_list <- shared %>%
   
   
 Unique communities without conserved structure
-```{r}
-shared %>% 
+```{r, fig.height= 6, fig.width=6}
+donor_plot <- shared %>% 
   filter(grepl('DA', Group)) %>% 
   left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
   rename(taxa_level = Class) %>% 
@@ -123,24 +123,24 @@ shared %>%
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~Group, scales = 'free_x')
-```
-  
+    facet_grid(.~Group, scales = 'free_x') + 
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = 'none')
 
-  
-Donor communities colonize mice and shift community, ~~but consistently~~
-
-```{r fig.width = 10}
-shared %>% 
-  filter(grepl('D0', Group)) %>% 
-  left_join(select(metadata, group, human_source, mouse_id), by = c('Group' = 'group')) %>% 
+day_0_plot <- metadata %>% 
+  filter(day == 0,
+         cdiff_strain == 431) %>% 
+  select(group, human_source, mouse_id) %>% 
+  left_join(shared, by = c('group' = 'Group')) %>% 
   left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
   rename(taxa_level = Class) %>% 
-  group_by(Group, taxa_level, human_source) %>% 
+  group_by(group, taxa_level, human_source) %>% 
   summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
   group_by(taxa_level) %>% 
   mutate(median_ra = median(relative_abundance)) %>% 
-  ggplot(aes(x = Group, 
+  filter(!is.na(taxa_level)) %>% 
+  ggplot(aes(x = group, 
              y = reorder(taxa_level, median_ra), 
              fill = relative_abundance)) + 
     geom_tile() + 
@@ -152,9 +152,13 @@ shared %>%
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
     facet_grid(.~human_source, scales = 'free_x') + 
     theme(axis.ticks.x = element_blank(),
-          axis.text.x = element_blank())
+          axis.text.x = element_blank(),
+          legend.position = 'bottom')
 
 
+cowplot::plot_grid(
+  cowplot::plot_grid(NULL, donor_plot, nrow = 1, rel_widths = c(.95,13)),
+  day_0_plot, ncol = 1, rel_heights = c(8,9))
 ```
 
 ```{r}
