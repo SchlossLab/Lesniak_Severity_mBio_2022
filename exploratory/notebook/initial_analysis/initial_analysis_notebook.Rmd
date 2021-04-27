@@ -691,7 +691,7 @@ plot_hist_corr('epithelial_damage')
 
 
 ```{r}
-library(plotly)
+
 metadata <- read_tsv('../../../data/process/metadata_tidy.tsv',
 		col_type = 'cccccDddddDcdddddcdl') 
 shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
@@ -759,10 +759,15 @@ cowplot::plot_grid(lefse_plot,
                      theme(axis.ticks.y = element_blank(),
                            axis.text.y = element_blank()), 
                    nrow = 1)
+#library(plotly)
+#gg <- ggplotly(abundance_plot + geom_jitter(position = position_jitterdodge(dodge.width = 0.5)), tooltip = c('mouse_id'))
+#highlight(hide_legend(gg), on = "plotly_click", off = "plotly_doubleclick", 
+#           color = "black", selectize = T, opacityDim = .2,
+#           selected = attrs_selected(showlegend = F, marker = list(symbol = 'X')))
 
-gg <- ggplotly(abundance_plot + geom_jitter(position = position_jitterdodge(dodge.width = 0.5)), tooltip = c('mouse_id'))
-highlight(hide_legend(gg), on = "plotly_click", off = "plotly_doubleclick", 
-           color = "black", selectize = T, opacityDim = .2,
-           selected = attrs_selected(showlegend = F, marker = list(symbol = 'X')))
-str(gg)
+```
+## Severe disease
+```{r}
+plot_lefse_data('severe_disease')
+```
 ```
