@@ -9,12 +9,26 @@ shared <- read_tsv('data/mothur/sample.final.0.03.subsample.shared',
 			Group = col_character())) %>% 
 	mutate(Group = ifelse(grepl('_D|DA', Group), Group,
 		gsub('D', '_D', Group)))
+toxin <- read_tsv('data/process/toxin_tidy.tsv',
+                  col_type = 'cccccdc')
+histology <- read_tsv('data/process/histology_tidy.tsv',
+                      col_type = 'ccccdddcdcc') %>% 
+	             mutate(mouse_id = paste0(cage_id, '_', ear_tag))
 taxonomy <- read_tsv('data/process/final.taxonomy.tidy.tsv',
                      col_types = cols(.default = col_character()))
 
 run_lefse <- function(sample_df_name, tax_level){
 	i <- sample_df_name
 	current_df <- get(i)
+
+	cfu_by_day <- metadata %>% 
+		select(Group = mouse_id, day, cdiff_cfu) %>% 
+		mutate(cdiff_cfu = ifelse(cdiff_cfu == 0, log10(60), log10(cdiff_cfu)),
+			cdiff_cfu = 2107 * ((cdiff_cfu - min(cdiff_cfu, na.rm = T)) / 
+								(max(cdiff_cfu, na.rm = T) - min(cdiff_cfu, na.rm = T))),
+			day = paste0('cfu_day_', day),
+			Group = paste0(Group, '_D0')) %>% 
+		pivot_wider(names_from = day, values_from = 'cdiff_cfu', values_fn = mean) 		
 
 	current_shared <- shared %>% 
 		filter(Group %in% current_df$Group) %>% 
@@ -24,11 +38,14 @@ run_lefse <- function(sample_df_name, tax_level){
 		group_by(label, Group, numOtus, .data[[tax_level]]) %>% 
 		summarise(value = sum(value)) %>% 
 		pivot_wider(names_from = .data[[tax_level]], values_from = value) %>% 
-		ungroup
+		ungroup %>% 
+	# add cdifficile cfu
+		left_join(cfu_by_day, by = c('Group'))
+
 	# remove otus that either have 0 or only present in 5 or fewer samples
 	present_otus <- current_shared %>% 
 		select(-label, -Group, -numOtus) %>% 
-		map_dbl(~ sum(. > 0)) %>% 
+		map_dbl(~ sum(. > 0, na.rm = T)) %>% 
 		which(x = (. > 5)) %>% 
 		names
 	current_shared <- current_shared %>% 
@@ -36,9 +53,9 @@ run_lefse <- function(sample_df_name, tax_level){
 		mutate(numOtus = length(present_otus))
 
 	# write files to be used in mothur for lefse analysis
-	write_tsv(path = paste0('data/process/', i, '_', tax_level, '.shared'), 
+	write_tsv(file = paste0('data/process/', i, '_', tax_level, '.shared'), 
 		x = filter(current_shared, Group %in% current_df$Group))
-	write_tsv(path = paste0('data/process/', i, '_', tax_level, '.design'), 
+	write_tsv(file = paste0('data/process/', i, '_', tax_level, '.design'), 
 		x = filter(current_df, Group %in% current_shared$Group))
 	print(tax_level)
 	# run lefse
@@ -52,6 +69,30 @@ severe_disease <- metadata %>%
 		day == 0) %>% 
 	select(Group = group, early_euth)
 
+toxin_presence <- metadata %>% 
+	filter(cdiff_strain == 431) %>% 
+	inner_join(toxin, by = 'group') %>% 
+	mutate(toxin = Log_repiricoal_dilution >1) %>% 
+	select(Group = group, toxin)
+
+histology_df <- metadata %>% 
+	filter(cdiff_strain == 431,
+		day == 10) %>% 
+	inner_join(histology, by = c('mouse_id'))
+
+summary_score_hilo <- histology_df %>% 
+	mutate(summary_score = case_when(summary_score > 5 ~ 'high',
+									 summary_score < 5 ~ 'low',	
+									 T ~ 'NA')) %>% 
+	filter(summary_score != 'NA') %>% 
+	select(Group = group, summary_score)
+
+epithelial_damage_presence <- histology_df %>% 
+	mutate(epithelial_damage = epithelial_damage > 0) %>% 
+	select(Group = group, epithelial_damage)
+
 run_lefse('severe_disease', 'OTU')
 run_lefse('severe_disease', 'Genus')
-
+run_lefse('toxin_presence', 'Genus')
+run_lefse('summary_score_hilo', 'Genus')
+run_lefse('epithelial_damage_presence', 'Genus')
