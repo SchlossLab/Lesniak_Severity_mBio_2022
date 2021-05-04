@@ -21,15 +21,6 @@ run_lefse <- function(sample_df_name, tax_level){
 	i <- sample_df_name
 	current_df <- get(i)
 
-	cfu_by_day <- metadata %>% 
-		select(Group = mouse_id, day, cdiff_cfu) %>% 
-		mutate(cdiff_cfu = ifelse(cdiff_cfu == 0, log10(60), log10(cdiff_cfu)),
-			cdiff_cfu = 2107 * ((cdiff_cfu - min(cdiff_cfu, na.rm = T)) / 
-								(max(cdiff_cfu, na.rm = T) - min(cdiff_cfu, na.rm = T))),
-			day = paste0('cfu_day_', day),
-			Group = paste0(Group, '_D0')) %>% 
-		pivot_wider(names_from = day, values_from = 'cdiff_cfu', values_fn = mean) 		
-
 	current_shared <- shared %>% 
 		filter(Group %in% current_df$Group) %>% 
 		pivot_longer(cols = -c('label', 'Group', 'numOtus'),
@@ -38,14 +29,12 @@ run_lefse <- function(sample_df_name, tax_level){
 		group_by(label, Group, numOtus, .data[[tax_level]]) %>% 
 		summarise(value = sum(value)) %>% 
 		pivot_wider(names_from = .data[[tax_level]], values_from = value) %>% 
-		ungroup %>% 
-	# add cdifficile cfu
-		left_join(cfu_by_day, by = c('Group'))
+		ungroup
 
 	# remove otus that either have 0 or only present in 5 or fewer samples
 	present_otus <- current_shared %>% 
 		select(-label, -Group, -numOtus) %>% 
-		map_dbl(~ sum(. > 0, na.rm = T)) %>% 
+		map_dbl(~ sum(. > 0)) %>% 
 		which(x = (. > 5)) %>% 
 		names
 	current_shared <- current_shared %>% 
@@ -72,7 +61,24 @@ severe_disease <- metadata %>%
 toxin_presence <- metadata %>% 
 	filter(cdiff_strain == 431) %>% 
 	inner_join(toxin, by = 'group') %>% 
-	mutate(toxin = Log_repiricoal_dilution >1) %>% 
+	mutate(toxin = Log_repiricoal_dilution >1)
+
+toxin_moribund <- toxin_presence %>% 
+	filter(early_euth == T) %>% 
+	select(Group = group, toxin)
+
+toxin_mild <-  toxin_presence %>% 
+	filter(early_euth == F) %>% 
+	select(Group = group, toxin)
+
+toxin_severity <- toxin_presence %>% 
+	mutate(toxin_outcome = case_when(early_euth == T & toxin == T ~ 'toxin_moribund',
+									early_euth == T & toxin == F ~ 'no_toxin_moribund',
+									early_euth == F & toxin == T ~ 'toxin_mild',
+									early_euth == F & toxin == F ~ 'no_toxin_mild')) %>% 
+	select(Group = group, toxin_outcome)
+
+toxin_presence <- toxin_presence %>% 
 	select(Group = group, toxin)
 
 histology_df <- metadata %>% 
@@ -94,5 +100,8 @@ epithelial_damage_presence <- histology_df %>%
 run_lefse('severe_disease', 'OTU')
 run_lefse('severe_disease', 'Genus')
 run_lefse('toxin_presence', 'Genus')
+run_lefse('toxin_moribund', 'Genus')
+run_lefse('toxin_mild', 'Genus')
+run_lefse('toxin_severity', 'Genus')
 run_lefse('summary_score_hilo', 'Genus')
 run_lefse('epithelial_damage_presence', 'Genus')
