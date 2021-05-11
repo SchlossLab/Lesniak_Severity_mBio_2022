@@ -69,6 +69,11 @@ shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
   mutate(relative_abundance = counts/2107 * 100)
 taxonomy <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
                      col_types = cols(.default = col_character()))
+alpha_df <- read_tsv('../../../data/mothur/sample.final.groups.ave-std.summary',
+         col_types ='dccdddddd') %>% 
+  filter(method == 'ave') %>% 
+  mutate(group = ifelse(grepl('_D|DA', group), group,
+                        gsub('D', '_D', group)))
 nmds_df <- read_tsv('../../../data/mothur/sample.final.thetayc.0.03.lt.ave.nmds.axes',
          col_types ='cdd') %>% 
     mutate(group = ifelse(grepl('_D|DA', group), group,
@@ -162,6 +167,36 @@ cowplot::plot_grid(
 ```
 
 ```{r}
+alpha_df <- alpha_df %>% 
+  select(group, sobs, invsimpson) %>% 
+  left_join(bind_rows(metadata, 
+                      tibble(group = unique(metadata$human_source),
+                             human_source = unique(metadata$human_source),
+                             sample_type = 'donor')),
+            by = c('group')) %>% 
+  mutate(sample = case_when(sample_type == 'donor' ~ 'Donor',
+                            day %in% c(0:10) ~ paste('Day', day),
+                            day == mouse_endpoint ~ 'Endpoint',
+                            T ~ 'NA'),
+         sample = factor(sample, levels = c('Donor', 'Day 0', 'Day 1', 'Day 2', 'Day 3', 
+                                            'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'))) %>% 
+  filter(sample != 'NA')
+
+alpha_df %>% 
+  ggplot(aes(x = sample, y = invsimpson, color = human_source)) + 
+    geom_point(alpha = 0.3) + 
+    theme_bw() + 
+    facet_wrap(human_source~.) + 
+    guides(color = 'none')
+
+alpha_df %>% 
+  ggplot(aes(x = sample, y = sobs, color = human_source)) + 
+    geom_point(alpha = 0.3) + 
+    theme_bw() + 
+    facet_wrap(human_source~.) + 
+    guides(color = 'none')
+
+
 nmds_df %>% 
   left_join(filter(select(metadata, group, human_source, day), day %in% c(0, 10)), by = c('group')) %>% 
   mutate(human_source = case_when(!is.na(human_source) ~ human_source,
