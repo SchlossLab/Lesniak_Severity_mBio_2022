@@ -586,8 +586,57 @@ Mice were challenged with a strain isolated that matched Clostridioides difficil
 > RT027/BI/NAP1, toxinotype III
 > VPI 10463 is ribotype 087, toxinotype 0
 
+```{r}
+#does cdiff correlate with toxin or histology?
 
-```{r, individual cfu plots}
+metadata %>% 
+  inner_join(toxin, by = 'group') %>% 
+  filter(cdiff_strain == 431,
+         cdiff_cfu != 0) %>% 
+  mutate(cfu = log10(cdiff_cfu)) %>% 
+	mutate(spearman_p = cor.test(cfu, Log_repiricoal_dilution, 
+	                             method = 'spearman', exact = F)$p.value,
+	       spearman_rho = cor.test(cfu, Log_repiricoal_dilution, 
+	                               method = 'spearman', exact = F)$estimate)  %>% 
+  ggplot(aes(x = cfu, y = Log_repiricoal_dilution)) + 
+    geom_point(alpha = 0.3) + 
+    theme_bw() + 
+    guides(color = 'none') + 
+    geom_smooth(method = 'lm', se=F) + 
+    labs(x = 'C. difficile CFU (log 10)', y = 'Toxin (log reciprocal dilution)')
+
+metadata %>% 
+  filter(day == mouse_endpoint,
+         cdiff_strain == 431) %>% 
+  left_join(histology, by = c('mouse_id')) %>% 
+  mutate(cfu = log10(cdiff_cfu)) %>% 
+  pivot_longer(cols = c(edema_tissue, inflammation_tissue, epithelial_damage, summary_score),
+               names_to = 'hist_score', values_to = 'score') %>% 
+  group_by(hist_score) %>% 
+  nest() %>% 
+	mutate(spearman_p = map(.x = data, .f = ~ cor.test(.x$cfu, .x$score, 
+	                                                   method = 'spearman', exact = F)$p.value),
+	       spearman_rho = map(.x = data, .f = ~ cor.test(.x$cfu, .x$score, 
+	                                                     method = 'spearman', exact = F)$estimate)) %>%
+	unnest(c(spearman_p, spearman_rho)) %>% 
+	mutate(pvalue = p.adjust(spearman_p, method = 'BH', n = 5)) %>% 
+	unnest(data) %>% 
+  ggplot(aes(x = cfu, y = score)) + 
+    geom_point(alpha = 0.3) + 
+    theme_bw() + 
+    guides(color = 'none') + 
+    geom_smooth(method = 'lm', se=F) + 
+    labs(x = 'C. difficile CFU (log 10)', y = 'Histology Score') + 
+    facet_wrap(hist_score~., scale = 'free_y')
+
+  
+
+```
+ 
+ 
+Correlations between CFU and histology score not significant after BH correction.
+
+```{r}
 #metadata %>% 
 #  left_join(mutate(histology, mouse_id = paste0(cage_ID, '_', mouse_ID)) %>% select(-day),
 #            by = c('mouse_id')) %>% 
@@ -630,9 +679,10 @@ toxin_otu_corr <- metadata %>%
 	mutate(spearman_p = map(.x = data, .f = ~ cor.test(.x$counts, .x$Log_repiricoal_dilution, 
 	                                                   method = 'spearman', exact = F)$p.value),
 	       spearman_rho = map(.x = data, .f = ~ cor.test(.x$counts, .x$Log_repiricoal_dilution, 
-	                                                     method = 'spearman', exact = F)$estimate)) %>% # compare cleared vs colonized
+	                                                     method = 'spearman', exact = F)$estimate)) %>%
 	unnest(c(spearman_p, spearman_rho)) %>% 
-	mutate(pvalue = p.adjust(spearman_p, method = 'BH', n = nrow(.))) %>% # correct p values
+	mutate(ncomparisons = nrow(.),
+  	  pvalue = p.adjust(spearman_p, method = 'BH', n = ncomparisons)) %>% # correct p values
 	filter(pvalue < 0.05) %>% # select only those above 0.05 after pvalue correction
 	unnest(data)  
 
@@ -642,7 +692,7 @@ toxin_otu_corr %>%
   ggplot(aes(x = relative_abundance, y = Log_repiricoal_dilution, color = otu)) + 
     geom_point(alpha = 0.3) + 
     theme_bw() + 
-    facet_wrap(otu~.) + 
+    facet_wrap(otu~., scales = 'free_x') + 
     scale_x_log10() + 
     guides(color = 'none') + 
     geom_smooth(method = 'lm', se=F) + 
