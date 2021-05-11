@@ -473,13 +473,17 @@ histology %>%
     facet_grid(.~histology) + 
     guides(color = 'none') + 
     theme(legend.position = 'bottom')
+
+#if trying to split colonized
+#> **Splitting by mean epithelial damage for donor < 1 = 12 mild, 15 severe, 17 moribund**  
+#> Splitting of median summary score of 5 =  10 mild, 11 severe, 17 moribund  
+#>        (6 have a summary score of 5)  
+#> Splitting of mean summary score of 4.4 =  10 mild, 17 severe, 17 moribund  
+
+
+
+
 ```
-
-
-> **Splitting by mean epithelial damage for donor < 1 = 12 mild, 15 severe, 17 moribund**  
-> Splitting of median summary score of 5 =  10 mild, 11 severe, 17 moribund  
->        (6 have a summary score of 5)  
-> Splitting of mean summary score of 4.4 =  10 mild, 17 severe, 17 moribund  
 
 
 
@@ -502,25 +506,27 @@ toxin %>%
     theme(legend.position = 'bottom')
 ```
 
-## Can we use toxin to split severity?
-do mice split into +/- toxin based on outcome of moribund/mild/severe?
 
 ```{r}
-toxin %>% 
-  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
-                           gsub('C$', '', mouse_id), mouse_id)) %>% 
-  group_by(mouse_id) %>% 
-  summarise(max_toxin = max(Log_repiricoal_dilution),
-            mean_toxin = mean(Log_repiricoal_dilution)) %>% 
-  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
-  filter(!is.na(human_source)) %>% 
-  pivot_longer(c(max_toxin, mean_toxin)) %>% 
-  ggplot(aes(x = outcome, y = value)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    geom_jitter(alpha = 0.3, width = 0.3) + 
-    facet_wrap(.~name, scales = 'free_y') + 
-    labs(x = NULL, y = 'Log reciprocal toxin') + 
-    theme_bw()
+## Can we use toxin to split severity?
+#do mice split into +/- toxin based on outcome of moribund/mild/severe?
+
+
+#toxin %>% 
+#  mutate(mouse_id = ifelse(toxin_sample_type == 'cecalcon', 
+#                           gsub('C$', '', mouse_id), mouse_id)) %>% 
+#  group_by(mouse_id) %>% 
+#  summarise(max_toxin = max(Log_repiricoal_dilution),
+#            mean_toxin = mean(Log_repiricoal_dilution)) %>% 
+#  left_join(mouse_by_outcome, by = c('mouse_id')) %>% 
+#  filter(!is.na(human_source)) %>% 
+#  pivot_longer(c(max_toxin, mean_toxin)) %>% 
+#  ggplot(aes(x = outcome, y = value)) + 
+#    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+#    geom_jitter(alpha = 0.3, width = 0.3) + 
+#    facet_wrap(.~name, scales = 'free_y') + 
+#    labs(x = NULL, y = 'Log reciprocal toxin') + 
+#    theme_bw()
 ```
 
 
