@@ -805,21 +805,11 @@ plot_lefse_data <- function(file_name){
   	mutate(order = LDA + 10 * as.logical(Class),
   		tax_otu_label = OTU)
   
-  lefse_plot <- lefse_df %>% 
-  	ggplot(aes(y = LDA, fill = Class, 
-  			x = reorder(tax_otu_label, order))) +
-  		geom_col() + 
-  		theme_bw() + 
-  		coord_flip() + 
-  		guides(fill = 'none') + 
-  		scale_fill_manual(values = c('#8de4d3','#f75b5f')) + 
-  		labs(x = NULL, y = 'LDA Score (log 10)')
-  
-  abundance_plot <- shared %>% 
+  shared %>% 
   	gather(OTU, abundance, matches('Otu\\d*')) %>% 
   	left_join(taxonomy, by = 'OTU') %>% 
   	right_join(lefse_df, by = c('Genus' = 'OTU')) %>% 
-    left_join(lefse_design, by = c('Group')) %>% 
+    right_join(lefse_design, by = c('Group')) %>% 
   	group_by(Group, Genus, order, class) %>% # removed mouse_id from interactive plot
   	summarise(abundance = sum(abundance)) %>% 
   	mutate(tax_otu_label = Genus) %>% 
@@ -828,26 +818,19 @@ plot_lefse_data <- function(file_name){
     #highlight_key(~mouse_id) %>% 
   	ggplot(aes(x = reorder(tax_otu_label, order), 
   			y = abundance, color = class)) + # , shape = mouse_id remove mouse_id from interactive plot
-  		stat_summary(fun.data = 'median_hilow', aes(group = class),
+  		geom_hline(yintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
+      stat_summary(fun.data = 'median_hilow', aes(group = class),
   			fun.args = (conf.int=0.5), position = position_dodge(width = 0.5)) +
-  		theme_bw() + labs(x = NULL, y = 'Relative Abundance', color = NULL) + 
+  		theme_bw() + 
+      labs(x = NULL, y = 'Relative Abundance', color = NULL) + 
   		scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100),
   			labels=c("0","0.1","1","10","100")) +
-  		scale_color_manual(values = c('#8de4d3','#f75b5f')) + 
-      scale_shape_manual(values = rep(16, 54)) + 
-  		geom_hline(yintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
-  		theme(panel.grid.major.y = element_blank(), 
+  		#scale_color_manual(values = c('#8de4d3','#f75b5f')) + 
+      theme(panel.grid.major.y = element_blank(), 
   			panel.grid.minor = element_blank(),
-  			legend.position = 'right') + 
+  			legend.position = 'bottom') + 
   		coord_flip() + 
-      guides(shape = 'none')
-  
-  cowplot::plot_grid(lefse_plot, 
-                     abundance_plot + 
-                       geom_jitter(position = position_jitterdodge(dodge.width = 0.5), alpha = 0.25) + 
-                       theme(axis.ticks.y = element_blank(),
-                             axis.text.y = element_blank()), 
-                     nrow = 1)
+      geom_jitter(position = position_jitterdodge(dodge.width = 0.5), alpha = 0.2)
 }
 
 #library(plotly)
@@ -865,6 +848,26 @@ plot_lefse_data('severe_disease')
 ## Toxin presence
 ```{r}
 plot_lefse_data('toxin_presence')
+```
+
+
+## Toxin presence for mild outcome
+```{r}
+plot_lefse_data('toxin_mild')
+```
+
+
+
+## Toxin presence for severe outcome
+```{r fig.height = 4}
+plot_lefse_data('toxin_moribund')
+```
+
+
+
+## Toxin presence and outcome severity
+```{r, fig.height = 12}
+plot_lefse_data('toxin_severity')
 ```
 
 
