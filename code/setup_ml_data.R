@@ -60,7 +60,7 @@ write_tsv(same_day_toxin_df, 'data/process/ml/same_day_toxin.tsv')
 #	from day 0?
 day_0_predict_future_toxin_df <- toxin %>% 
 	group_by(mouse_id) %>% 
-	summarise(toxin = max(Log_repiricoal_dilution) > 1) %>% 
+	summarise(toxin = ifelse(max(Log_repiricoal_dilution) > 1, 'present', 'absent')) %>% 
 	left_join(select(metadata, mouse_id, day, group), 
 			  by = c('mouse_id')) %>% 
 	filter(day == 0) %>% 
