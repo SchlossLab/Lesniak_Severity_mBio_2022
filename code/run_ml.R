@@ -55,6 +55,7 @@ day_10_histology <- preprocess_data(day_10_histology,
 # run logistic regression
 new_hp <- list(alpha = 0,
 			   lambda = c(1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e1))
+print('Running Logistic Regression on same day toxin presence')
 same_day_toxin_lr <- run_ml(same_day_toxin,
 	   'glmnet',
        outcome_colname = 'toxin',
@@ -62,6 +63,7 @@ same_day_toxin_lr <- run_ml(same_day_toxin,
        #hyperparameters = new_hp,
        find_feature_importance = TRUE,
        seed = current_seed)
+print('Running Logistic Regression on day 0 to predict toxin production')
 day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
 	   'glmnet',
        outcome_colname = 'toxin',
@@ -71,12 +73,14 @@ day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
 
 new_hp <- list(alpha = 0,
 			   lambda = c(1e-7, 0.000001, 0.00001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 0.2))
+print('Running Logistic Regression on day 0 to predict severity')
 day_0_moribund_lr <- run_ml(day_0_moribund,
 	   'glmnet',
        outcome_colname = 'early_euth',
 	   #hyperparameters = new_hp,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
+print('Running Logistic Regression on day 10 to classify histological severity')
 day_10_histology_lr <- run_ml(day_10_histology,
 	   'glmnet',
        outcome_colname = 'hist_score',
@@ -90,6 +94,7 @@ ml_output <- bind_rows(
 # run random forest
 
 new_hp <- list(mtry = c(1:100))
+print('Running Random Forest on same day toxin presence')
 same_day_toxin_rf <- run_ml(same_day_toxin,
 	   'rf',
        outcome_colname = 'toxin',
@@ -97,18 +102,21 @@ same_day_toxin_rf <- run_ml(same_day_toxin,
        #hyperparameters = new_hp,
        find_feature_importance = TRUE,
        seed = current_seed)
+print('Running Random Forest on day 0 to predict toxin production')
 day_0_predict_future_toxin_rf <- run_ml(day_0_predict_future_toxin,
 	   'rf',
        outcome_colname = 'toxin',
 	   #hyperparameters = new_hp,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
+print('Running Random Forest on day 0 to predict severity')
 day_0_moribund_rf <- run_ml(day_0_moribund,
 	   'rf',
        outcome_colname = 'early_euth',
 	   #hyperparameters = new_hp,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
+print('Running Random Forest on day 10 to classify histological severity')
 day_10_histology_rf <- run_ml(day_10_histology,
 	   'rf',
        outcome_colname = 'hist_score',
@@ -116,7 +124,7 @@ day_10_histology_rf <- run_ml(day_10_histology,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
 
-
+print('Modeling complete, saving data')
 # 
 ml_performance <- bind_rows(
 	mutate(same_day_toxin_lr$performance, dataset = 'same_day_toxin'),
