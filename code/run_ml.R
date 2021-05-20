@@ -6,10 +6,10 @@
 # 	outputs
 #
 # Dependencies...
-# * data/process/ml_data/same_day_toxin.tsv
-# * data/process/ml_data/day_0_predict_future_toxin.tsv
-# * data/process/ml_data/day_0_moribund.tsv
-# * data/process/ml_data/day_10_histology.tsv
+# * data/process/ml/same_day_toxin.tsv
+# * data/process/ml/day_0_predict_future_toxin.tsv
+# * data/process/ml/day_0_moribund.tsv
+# * data/process/ml/day_10_histology.tsv
 #
 # Output...
 #
@@ -37,7 +37,8 @@ day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   col_type = cols(.default = col_double(),
 						   				   hist_score = col_character(), 
-						   				   toxin_presence = col_logical()))
+						   				   toxin_presence = col_logical())) %>% 
+	filter(hist_score != 'mid')
 
 # preprocess data
 same_day_toxin <- preprocess_data(same_day_toxin,
@@ -47,8 +48,7 @@ day_0_predict_future_toxin <- preprocess_data(day_0_predict_future_toxin,
 day_0_moribund <- preprocess_data(day_0_moribund,
 								  outcome_colname = 'early_euth')$dat_transformed
 day_10_histology <- preprocess_data(day_10_histology,
-								  outcome_colname = 'hist_score')$dat_transformed %>% 
-	filter(hist_score != 'mid')
+								  outcome_colname = 'hist_score')$dat_transformed
 
 
 
