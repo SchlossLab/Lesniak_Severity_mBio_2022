@@ -55,7 +55,7 @@ same_day_toxin_df <- toxin %>%
 	inner_join(shared, by = c('group' = 'Group')) %>% 
 	left_join(select(metadata, group, cdiff_cfu), by = c('group')) %>% 
 	select(-group)
-write_tsv(same_day_toxin_df, 'data/process/ml_data/same_day_toxin.tsv')	
+write_tsv(same_day_toxin_df, 'data/process/ml/same_day_toxin.tsv')	
 
 #	from day 0?
 day_0_predict_future_toxin_df <- toxin %>% 
@@ -66,7 +66,7 @@ day_0_predict_future_toxin_df <- toxin %>%
 	filter(day == 0) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
 	select(-mouse_id, -day, -group)
-write_tsv(day_0_predict_future_toxin_df, 'data/process/ml_data/day_0_predict_future_toxin.tsv')	
+write_tsv(day_0_predict_future_toxin_df, 'data/process/ml/day_0_predict_future_toxin.tsv')	
 
 # setup data to predict moribunidty (microbiome, cdiff, toxin)
 toxin_summary <- toxin %>% 
@@ -87,7 +87,7 @@ day_0_moribund <- metadata %>%
 	mutate(early_euth = ifelse(early_euth, 'severe', 'mild')) %>% 
 	select(-mouse_id, -day, -group) %>% 
 	relocate(early_euth)
-write_tsv(day_0_moribund, 'data/process/ml_data/day_0_moribund.tsv')	
+write_tsv(day_0_moribund, 'data/process/ml/day_0_moribund.tsv')	
 
 # setup data to predict histology severity of colonized mice (microbiome, cdiff, toxin)
 day_10_histology_df <- metadata %>% 
@@ -101,4 +101,4 @@ day_10_histology_df <- metadata %>%
 	inner_join(select(histology, mouse_id, hist_score), by = c('mouse_id')) %>% 
 	select(-mouse_id, -group) %>% 
 	relocate(hist_score)
-write_tsv(day_10_histology_df, 'data/process/ml_data/day_10_histology.tsv')	
+write_tsv(day_10_histology_df, 'data/process/ml/day_10_histology.tsv')	
