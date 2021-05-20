@@ -24,6 +24,7 @@ current_seed <- as.numeric(commandArgs(TRUE))
 set.seed <- current_seed
 
 # read in data
+print('Reading in data')
 same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   toxin = col_character()))
@@ -41,6 +42,7 @@ day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 	filter(hist_score != 'mid')
 
 # preprocess data
+print('Preprocessing data')
 same_day_toxin <- preprocess_data(same_day_toxin,
 								  outcome_colname = 'toxin')$dat_transformed
 day_0_predict_future_toxin <- preprocess_data(day_0_predict_future_toxin,
@@ -61,7 +63,7 @@ same_day_toxin_lr <- run_ml(same_day_toxin,
        outcome_colname = 'toxin',
 	   #training_frac = 0.8,
        #hyperparameters = new_hp,
-       find_feature_importance = TRUE,
+       #find_feature_importance = TRUE,
        seed = current_seed)
 print('Running Logistic Regression on day 0 to predict toxin production')
 day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
@@ -88,11 +90,7 @@ day_10_histology_lr <- run_ml(day_10_histology,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
 
-ml_output <- bind_rows(
-	mutate(same_day_toxin_lr, ))
-
 # run random forest
-
 new_hp <- list(mtry = c(1:100))
 print('Running Random Forest on same day toxin presence')
 same_day_toxin_rf <- run_ml(same_day_toxin,
