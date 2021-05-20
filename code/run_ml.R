@@ -24,17 +24,17 @@ current_seed <- as.numeric(commandArgs(TRUE))
 set.seed <- current_seed
 
 # read in data
-same_day_toxin <- read_tsv('data/process/ml_data/same_day_toxin.tsv',
+same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   toxin = col_character()))
-day_0_predict_future_toxin <- read_tsv('data/process/ml_data/day_0_predict_future_toxin.tsv',
+day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_toxin.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   toxin = col_character()))
-day_0_moribund <- read_tsv('data/process/ml_data/day_0_moribund.tsv',
+day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   early_euth = col_character(),
 						   				   toxin_presence = col_logical()))
-day_10_histology <- read_tsv('data/process/ml_data/day_10_histology.tsv',
+day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   col_type = cols(.default = col_double(),
 						   				   hist_score = col_character(), 
 						   				   toxin_presence = col_logical()))
