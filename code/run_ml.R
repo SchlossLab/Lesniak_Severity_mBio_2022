@@ -124,67 +124,48 @@ day_10_histology_rf <- run_ml(day_10_histology,
 
 print('Modeling complete, saving data')
 # 
-ml_performance <- bind_rows(
-	mutate(same_day_toxin_lr$performance, dataset = 'same_day_toxin'),
-	mutate(day_0_predict_future_toxin_lr$performance, dataset = 'day_0_predict_future_toxin'),
-	mutate(day_0_moribund_lr$performance, dataset = 'day_0_moribund'),
-	mutate(day_10_histology_lr$performance, dataset = 'day_10_histology'),
-	mutate(same_day_toxin_rf$performance, dataset = 'same_day_toxin'),
-	mutate(day_0_predict_future_toxin_rf$performance, dataset = 'day_0_predict_future_toxin'),
-	mutate(day_0_moribund_rf$performance, dataset = 'day_0_moribund'),
-	mutate(day_10_histology_rf$performance, dataset = 'day_10_histology'))
+
+model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 
+		   'day_10_histology_lr', 'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 
+		   'day_0_moribund_rf', 'day_10_histology_rf')
+
+ml_performance <- map_dfr(model_list, function(df_name){
+	i <- get(df_name)
+	i$performance <- i$performance %>% 
+		# convert to numeric in case model results in NA/NaN which defaults as character
+		mutate_at(vars("cv_metric_AUC", "logLoss", "AUC", "prAUC", "Accuracy", 
+					   "Kappa", "F1", "Sensitivity", "Specificity", 
+					   "Pos_Pred_Value", "Neg_Pred_Value", "Precision", "Recall", 
+					   "Detection_Rate", "Balanced_Accuracy", "seed"), 
+			as.numeric) %>% 
+		mutate_at(vars('method'), as.character) %>% 
+		mutate(dataset = gsub('(_rf|_lr)', '', df_name))
+})
 write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv')	
 
-ml_feature_imp <- bind_rows(
-	mutate(same_day_toxin_lr$feature_importance, dataset = 'same_day_toxin'),
-	mutate(day_0_predict_future_toxin_lr$feature_importance, dataset = 'day_0_predict_future_toxin'),
-	mutate(day_0_moribund_lr$feature_importance, dataset = 'day_0_moribund'),
-	mutate(day_10_histology_lr$feature_importance, dataset = 'day_10_histology'),
-	mutate(same_day_toxin_rf$feature_importance, dataset = 'same_day_toxin'),
-	mutate(day_0_predict_future_toxin_rf$feature_importance, dataset = 'day_0_predict_future_toxin'),
-	mutate(day_0_moribund_rf$feature_importance, dataset = 'day_0_moribund'),
-	mutate(day_10_histology_rf$feature_importance, dataset = 'day_10_histology'))
-write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv')
+#ml_feature_imp <- map_dfr(model_list, function(df_name){
+#	i <- get(df_name)
+#	i$feature_importance <- i$feature_importance %>% 
+#		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
+#				seed = current_seed)
+#})
+#write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv')
 
-ml_hp_performance <- bind_rows(
-	same_day_toxin_lr$trained_model$results %>% 
-		select(value = lambda, AUC) %>% 
-		mutate(model = 'glmnet',
-			dataset = 'same_day_toxin',
-			params = 'lambda'),
-	day_0_predict_future_toxin_lr$trained_model$results %>% 
-		select(value = lambda, AUC) %>% 
-		mutate(model = 'glmnet',
-			dataset = 'day_0_predict_future_toxin',
-			params = 'lambda'),
-	day_0_moribund_lr$trained_model$results %>% 
-		select(value = lambda, AUC) %>% 
-		mutate(model = 'glmnet',
-			dataset = 'day_0_moribund',
-			params = 'lambda'),
-	day_10_histology_lr$trained_model$results %>% 
-		select(value = lambda, AUC) %>% 
-		mutate(model = 'glmnet',
-			dataset = 'day_10_histology',
-			params = 'lambda'),
-	same_day_toxin_rf$trained_model$results %>% 
-		select(value = mtry, AUC) %>% 
-		mutate(model = 'rf',
-			dataset = 'same_day_toxin',
-			params = 'mtry'),
-	day_0_predict_future_toxin_rf$trained_model$results %>% 
-		select(value = mtry, AUC) %>% 
-		mutate(model = 'rf',
-			dataset = 'day_0_predict_future_toxin',
-			params = 'mtry'),
-	day_0_moribund_rf$trained_model$results %>% 
-		select(value = mtry, AUC) %>% 
-		mutate(model = 'rf',
-			dataset = 'day_0_moribund',
-			params = 'mtry'),
-	day_10_histology$trained_model$results %>% 
-		select(value = mtry, AUC) %>% 
-		mutate(model = 'rf',
-			dataset = 'day_10_histology',
-			params = 'mtry'))
+ml_hp_performance <- map_dfr(model_list, function(df_name){
+	i <- get(df_name)$trained_model$results %>% 
+		mutate(dataset = gsub('(_rf|_lr)', '', df_name,
+			   seed = current_seed))
+	if(any(colnames(i) %in% 'lambda')){
+		i %>% 
+			select(value = lambda, AUC, dataset, seed) %>% 
+			mutate(model = 'glmnet',
+				params = 'lambda')
+	
+		} else if(any(colnames(i) %in% 'mtry')){
+		i %>% 
+			select(value = mtry, AUC, dataset, seed) %>% 
+			mutate(model = 'rf',
+				params = 'mtry')
+		}
+	})
 write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', current_seed, '.tsv')
