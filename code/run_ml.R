@@ -141,7 +141,7 @@ ml_performance <- map_dfr(model_list, function(df_name){
 		mutate_at(vars('method'), as.character) %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name))
 })
-write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv')	
+write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv'))	
 
 #ml_feature_imp <- map_dfr(model_list, function(df_name){
 #	i <- get(df_name)
@@ -149,12 +149,12 @@ write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current
 #		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
 #				seed = current_seed)
 #})
-#write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv')
+#write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv'))
 
 ml_hp_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)$trained_model$results %>% 
-		mutate(dataset = gsub('(_rf|_lr)', '', df_name,
-			   seed = current_seed))
+		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
+			   seed = current_seed)
 	if(any(colnames(i) %in% 'lambda')){
 		i %>% 
 			select(value = lambda, AUC, dataset, seed) %>% 
@@ -168,4 +168,4 @@ ml_hp_performance <- map_dfr(model_list, function(df_name){
 				params = 'mtry')
 		}
 	})
-write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', current_seed, '.tsv')
+write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', current_seed, '.tsv'))
