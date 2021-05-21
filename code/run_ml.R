@@ -133,6 +133,7 @@ ml_performance <- bind_rows(
 	mutate(day_0_predict_future_toxin_rf$performance, dataset = 'day_0_predict_future_toxin'),
 	mutate(day_0_moribund_rf$performance, dataset = 'day_0_moribund'),
 	mutate(day_10_histology_rf$performance, dataset = 'day_10_histology'))
+write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv')	
 
 ml_feature_imp <- bind_rows(
 	mutate(same_day_toxin_lr$feature_importance, dataset = 'same_day_toxin'),
@@ -143,6 +144,7 @@ ml_feature_imp <- bind_rows(
 	mutate(day_0_predict_future_toxin_rf$feature_importance, dataset = 'day_0_predict_future_toxin'),
 	mutate(day_0_moribund_rf$feature_importance, dataset = 'day_0_moribund'),
 	mutate(day_10_histology_rf$feature_importance, dataset = 'day_10_histology'))
+write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv')
 
 ml_hp_performance <- bind_rows(
 	same_day_toxin_lr$trained_model$results %>% 
@@ -185,7 +187,4 @@ ml_hp_performance <- bind_rows(
 		mutate(model = 'rf',
 			dataset = 'day_10_histology',
 			params = 'mtry'))
-
-write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv')	
-write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv')
 write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', current_seed, '.tsv')
