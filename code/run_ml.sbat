@@ -45,15 +45,3 @@ seed=$SLURM_ARRAY_TASK_ID
 
 
 Rscript code/run_ml.R $seed
-
-SEARCH_DIR=data/process/ml/temp
-FINAL_DIR=data/process/ml
-# Keep the first line of File1 and remove the first line of all the others and combine
-
-head -1 $SEARCH_DIR/ml_performance_1.tsv  > $SEARCH_DIR/combined_ml_performance.tsv; tail -n +2 -q $SEARCH_DIR/ml_performance_*.tsv >> $SEARCH_DIR/combined_ml_performance.tsv
-#head -1 $SEARCH_DIR/ml_feature_imp_1.tsv  > $SEARCH_DIR/combined_ml_feature_imp.tsv; tail -n +2 -q $SEARCH_DIR/ml_feature_imp_*.tsv >> $SEARCH_DIR/combined_ml_feature_imp.tsv
-head -1 $SEARCH_DIR/ml_hp_performance_1.tsv  > $SEARCH_DIR/combined_ml_hp_performance.tsv; tail -n +2 -q $SEARCH_DIR/ml_hp_performance_*.tsv >> $SEARCH_DIR/combined_ml_hp_performance.tsv
-
-mv $SEARCH_DIR/combined_ml_performance.tsv $FINAL_DIR/combined_ml_performance.tsv
-#mv $SEARCH_DIR/combined_ml_feature_imp.tsv $FINAL_DIR/combined_ml_feature_imp.tsv
-mv $SEARCH_DIR/combined_ml_hp_performance.tsv $FINAL_DIR/combined_ml_hp_performance.tsv

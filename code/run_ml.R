@@ -56,7 +56,7 @@ day_10_histology <- preprocess_data(day_10_histology,
 
 # run logistic regression
 new_hp <- list(alpha = 0,
-			   lambda = c(1e-10, 1e-5, 1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
+			   lambda = c(1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
 print('Running Logistic Regression on same day toxin presence')
 same_day_toxin_lr <- run_ml(same_day_toxin,
 	   'glmnet',
@@ -66,7 +66,7 @@ same_day_toxin_lr <- run_ml(same_day_toxin,
        #find_feature_importance = TRUE,
        seed = current_seed)
 new_hp <- list(alpha = 0,
-			   lambda = c(1e-10, 1e-5, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
 print('Running Logistic Regression on day 0 to predict toxin production')
 day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
 	   'glmnet',
@@ -76,7 +76,7 @@ day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
        seed = current_seed)
 
 new_hp <- list(alpha = 0,
-			   lambda = c(1e-10, 1e-5, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
 print('Running Logistic Regression on day 0 to predict severity')
 day_0_moribund_lr <- run_ml(day_0_moribund,
 	   'glmnet',
@@ -85,7 +85,7 @@ day_0_moribund_lr <- run_ml(day_0_moribund,
 	   #find_feature_importance = TRUE,
        seed = current_seed)
 new_hp <- list(alpha = 0,
-			   lambda = c(1e-10, 1e-5, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+			   lambda = c(1e-1, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
 print('Running Logistic Regression on day 10 to classify histological severity')
 day_10_histology_lr <- run_ml(day_10_histology,
 	   'glmnet',
@@ -95,7 +95,7 @@ day_10_histology_lr <- run_ml(day_10_histology,
        seed = current_seed)
 
 # run random forest
-new_hp <- list(mtry = c(1:10, 20, 30, 40, 50, 75, 100, 150))
+new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
 print('Running Random Forest on same day toxin presence')
 same_day_toxin_rf <- run_ml(same_day_toxin,
 	   'rf',
