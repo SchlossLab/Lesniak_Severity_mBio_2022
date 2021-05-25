@@ -63,7 +63,7 @@ same_day_toxin_lr <- run_ml(same_day_toxin,
        outcome_colname = 'toxin',
 	   #training_frac = 0.8,
        hyperparameters = new_hp,
-       #find_feature_importance = TRUE,
+       find_feature_importance = TRUE,
        seed = current_seed)
 new_hp <- list(alpha = 0,
 			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
@@ -72,7 +72,7 @@ day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
 	   'glmnet',
        outcome_colname = 'toxin',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 
 new_hp <- list(alpha = 0,
@@ -82,7 +82,7 @@ day_0_moribund_lr <- run_ml(day_0_moribund,
 	   'glmnet',
        outcome_colname = 'early_euth',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 new_hp <- list(alpha = 0,
 			   lambda = c(1e-1, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
@@ -91,7 +91,7 @@ day_10_histology_lr <- run_ml(day_10_histology,
 	   'glmnet',
        outcome_colname = 'hist_score',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 
 # run random forest
@@ -100,7 +100,7 @@ print('Running Random Forest on same day toxin presence')
 same_day_toxin_rf <- run_ml(same_day_toxin,
 	   'rf',
        outcome_colname = 'toxin',
-	   #training_frac = 0.8,
+	   training_frac = 0.8,
        hyperparameters = new_hp,
        find_feature_importance = TRUE,
        seed = current_seed)
@@ -109,21 +109,21 @@ day_0_predict_future_toxin_rf <- run_ml(day_0_predict_future_toxin,
 	   'rf',
        outcome_colname = 'toxin',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 print('Running Random Forest on day 0 to predict severity')
 day_0_moribund_rf <- run_ml(day_0_moribund,
 	   'rf',
        outcome_colname = 'early_euth',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 print('Running Random Forest on day 10 to classify histological severity')
 day_10_histology_rf <- run_ml(day_10_histology,
 	   'rf',
        outcome_colname = 'hist_score',
 	   hyperparameters = new_hp,
-	   #find_feature_importance = TRUE,
+	   find_feature_importance = TRUE,
        seed = current_seed)
 
 print('Modeling complete, saving data')
