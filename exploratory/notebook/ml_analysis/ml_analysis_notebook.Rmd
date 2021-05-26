@@ -1,0 +1,105 @@
+---
+title: "ml_output_notebook"
+author: "Nick Lesniak"
+date: "5/21/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+#knitr::opts_knit$set(root.dir = '../../..')
+```
+
+
+```{r read in data}
+library(tidyverse)
+
+# load in data
+performance_df <- read_tsv('../../../data/process/ml/combined_ml_performance.tsv',
+                     col_type = 'dddddddddddddddcdc') 
+features_df <- read_tsv('../../../data/process/ml/combined_ml_feature_imp.tsv',
+                     col_type = 'cccccDddddDcdddddcdl') 
+hyperparameter_df <- read_tsv('../../../data/process/ml/combined_ml_hp_performance.tsv',
+                     col_type = 'ddcdcc') 
+
+training_frac_df <- map_dfr(c(50, 60, 70, 80, 90), function(x){
+  read_tsv(
+      paste0('../../../data/process/ml/combined_ml_performance_', x, '.tsv'),
+      col_type = 'dddddddddddddddcdc') %>% 
+    mutate(training_frac = x/100)
+})
+```
+
+
+## Model Performance
+
+```{r}
+performance_df %>% 
+  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC) %>% 
+  pivot_longer(cols = c(cv_auc, test_auc), 
+               names_to = 'metric', 
+               values_to = 'Performance') %>% 
+  ggplot(aes(x = method, y = Performance, color = metric)) + 
+    geom_boxplot() + 
+    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
+    facet_wrap(dataset~.) + 
+    theme_bw() + 
+    coord_flip()
+
+```
+
+
+```{r}
+training_frac_df %>% 
+  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, training_frac) %>% 
+  pivot_longer(cols = c(cv_auc, test_auc), 
+               names_to = 'metric', 
+               values_to = 'Performance') %>% 
+  ggplot(aes(x = method, y = Performance, color = metric)) + 
+    geom_boxplot() + 
+    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
+    facet_grid(dataset~training_frac) + 
+    theme_bw() + 
+    coord_flip()
+
+
+```
+
+## Hyperparameter Performance
+
+```{r}
+hyperparameter_df %>% 
+  #filter(model == 'glmnet', dataset == 'same_day_toxin') %>% 
+  #filter(model == 'glmnet', dataset == 'day_0_predict_future_toxin') %>% 
+  #filter(model == 'glmnet', dataset == 'day_0_moribund') %>% 
+  #filter(model == 'glmnet', dataset == 'day_10_histology') %>% 
+  filter(model == 'glmnet') %>% 
+    ggplot(aes(x = value, y = AUC, color = params)) + 
+    geom_point(alpha = 0.25)+ 
+    stat_summary(fun = median, geom = 'line') + 
+    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
+    facet_grid(model~dataset, scales = 'free_x') + 
+    theme_bw() + 
+    scale_x_log10()
+
+hyperparameter_df %>% 
+  #filter(model == 'rf', dataset == 'same_day_toxin') %>% 
+  #filter(model == 'rf', dataset == 'day_0_predict_future_toxin') %>% 
+  #filter(model == 'rf', dataset == 'day_0_moribund') %>% 
+  #filter(model == 'rf', dataset == 'day_10_histology') %>% 
+  filter(model == 'rf') %>% 
+  ggplot(aes(x = value, y = AUC, color = params)) + 
+    geom_point(alpha = 0.25)+ 
+    stat_summary(fun = median, geom = 'line') + 
+    ylim(c(0.5,1)) + 
+    facet_grid(dataset~model, scales = 'free') + 
+    theme_bw()
+
+
+hyperparameter_df %>% 
+  filter(model == 'glmnet') %>% 
+  pull(value) %>% 
+  unique()
+```
