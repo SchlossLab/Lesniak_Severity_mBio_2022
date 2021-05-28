@@ -71,7 +71,7 @@ write_tsv(day_0_predict_future_toxin_df, 'data/process/ml/day_0_predict_future_t
 # setup data to predict moribunidty (microbiome, cdiff, toxin)
 toxin_summary <- toxin %>% 
 	group_by(mouse_id) %>% 
-	summarise(toxin_presence = max(Log_repiricoal_dilution) > 1,
+	summarise(toxin_presence = ifelse(max(Log_repiricoal_dilution) > 1, 'present', 'absent'),
 			  max_toxin = max(Log_repiricoal_dilution),
 			  median_toxin = median(Log_repiricoal_dilution))
 cfu_summary <- metadata %>% 
