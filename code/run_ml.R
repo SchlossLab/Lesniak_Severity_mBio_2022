@@ -39,8 +39,8 @@ day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   col_type = cols(.default = col_double(),
 						   				   hist_score = col_character(), 
-						   				   toxin_presence = col_logical())) %>% 
-	filter(hist_score != 'mid')
+						   				   toxin_presence = col_logical()))# %>% 
+	#filter(hist_score != 'mid')
 
 # preprocess data
 print('Preprocessing data')
@@ -56,41 +56,41 @@ day_10_histology <- preprocess_data(day_10_histology,
 
 
 # run logistic regression
-new_hp <- list(alpha = 0,
-			   lambda = c(1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
-print('Running Logistic Regression on same day toxin presence')
-same_day_toxin_lr <- run_ml(same_day_toxin,
-	   'glmnet',
-       outcome_colname = 'toxin',
-	   training_frac = fraction,
-       hyperparameters = new_hp,
-       find_feature_importance = TRUE,
-       seed = current_seed)
-new_hp <- list(alpha = 0,
-			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
-print('Running Logistic Regression on day 0 to predict toxin production')
-day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
-	   'glmnet',
-       outcome_colname = 'toxin',
-       training_frac = fraction,
-	   hyperparameters = new_hp,
-	   find_feature_importance = TRUE,
-       seed = current_seed)
-
-new_hp <- list(alpha = 0,
-			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
-print('Running Logistic Regression on day 0 to predict severity')
-day_0_moribund_lr <- run_ml(day_0_moribund,
-	   'glmnet',
-       outcome_colname = 'early_euth',
-       training_frac = fraction,
-	   hyperparameters = new_hp,
-	   find_feature_importance = TRUE,
-       seed = current_seed)
+#new_hp <- list(alpha = 0,
+#			   lambda = c(1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
+#print('Running Logistic Regression on same day toxin presence')
+#same_day_toxin_lr <- run_ml(same_day_toxin,
+#	   'glmnet',
+#       outcome_colname = 'toxin',
+#	   training_frac = fraction,
+#       hyperparameters = new_hp,
+#       find_feature_importance = TRUE,
+#       seed = current_seed)
+#new_hp <- list(alpha = 0,
+#			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+#print('Running Logistic Regression on day 0 to predict toxin production')
+#day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
+#	   'glmnet',
+#       outcome_colname = 'toxin',
+#       training_frac = fraction,
+#	   hyperparameters = new_hp,
+#	   find_feature_importance = TRUE,
+#       seed = current_seed)
+#
+#new_hp <- list(alpha = 0,
+#			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+#print('Running Logistic Regression on day 0 to predict severity')
+#day_0_moribund_lr <- run_ml(day_0_moribund,
+#	   'glmnet',
+#       outcome_colname = 'early_euth',
+#       training_frac = fraction,
+#	   hyperparameters = new_hp,
+#	   find_feature_importance = TRUE,
+#       seed = current_seed)
 new_hp <- list(alpha = 0,
 			   lambda = c(1e-1, 1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
 print('Running Logistic Regression on day 10 to classify histological severity')
-day_10_histology_lr <- run_ml(day_10_histology,
+day_10_histology_lr_hml <- run_ml(day_10_histology,
 	   'glmnet',
        outcome_colname = 'hist_score',
        training_frac = fraction,
@@ -124,30 +124,32 @@ new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
 #	   hyperparameters = new_hp,
 #	   find_feature_importance = TRUE,
 #       seed = current_seed)
-#print('Running Random Forest on day 10 to classify histological severity')
-#day_10_histology_rf_hml <- run_ml(day_10_histology,
-#	   'rf',
-#       outcome_colname = 'hist_score',
-#       training_frac = fraction,
-#	   hyperparameters = new_hp,
-#	   find_feature_importance = TRUE,
-#       seed = current_seed)
+print('Running Random Forest on day 10 to classify histological severity')
+day_10_histology_rf_hml <- run_ml(day_10_histology,
+	   'rf',
+       outcome_colname = 'hist_score',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
 
 print('Modeling complete, saving data')
 # 
 
 model_list <- c(
-		   'same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_10_histology_lr', 
-		   #'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_10_histology_rf')
+		   #'same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 
+		   'day_10_histology_lr_hml', 
+		   #'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 
+		   'day_10_histology_rf_hml')
 
 ml_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
 	i$performance <- i$performance %>% 
 		# convert to numeric in case model results in NA/NaN which defaults as character
-		mutate_at(vars("cv_metric_AUC", "logLoss", "AUC", "prAUC", "Accuracy", 
-					   "Kappa", "F1", "Sensitivity", "Specificity", 
-					   "Pos_Pred_Value", "Neg_Pred_Value", "Precision", "Recall", 
-					   "Detection_Rate", "Balanced_Accuracy", "seed"), 
+		mutate_at(vars("cv_metric_logLoss", "logLoss", "AUC", "prAUC", "Accuracy", 
+					   "Kappa", "Mean_F1", "Mean_Sensitivity", "Mean_Specificity", 
+					   "Mean_Pos_Pred_Value", "Mean_Neg_Pred_Value", "Mean_Precision", "Mean_Recall", 
+					   "Mean_Detection_Rate", "Mean_Balanced_Accuracy", "seed"), 
 			as.numeric) %>% 
 		mutate_at(vars('method'), as.character) %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name))
@@ -168,13 +170,13 @@ ml_hp_performance <- map_dfr(model_list, function(df_name){
 			   seed = current_seed)
 	if(any(colnames(i) %in% 'lambda')){
 		i %>% 
-			select(value = lambda, AUC, dataset, seed) %>% 
+			select(value = lambda, AUC, logLoss, dataset, seed) %>% 
 			mutate(model = 'glmnet',
 				params = 'lambda')
 	
 		} else if(any(colnames(i) %in% 'mtry')){
 		i %>% 
-			select(value = mtry, AUC, dataset, seed) %>% 
+			select(value = mtry, AUC, logLoss, dataset, seed) %>% 
 			mutate(model = 'rf',
 				params = 'mtry')
 		}
