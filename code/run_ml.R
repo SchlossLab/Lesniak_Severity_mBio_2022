@@ -154,7 +154,7 @@ ml_performance <- map_dfr(model_list, function(df_name){
 		mutate_at(vars('method'), as.character) %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name))
 })
-write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_logit_', current_seed, '.tsv'))	
+write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_hml_', current_seed, '.tsv'))	
 
 ml_feature_imp <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
@@ -162,7 +162,7 @@ ml_feature_imp <- map_dfr(model_list, function(df_name){
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
 				seed = current_seed)
 })
-write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_logit_', current_seed, '.tsv'))
+write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_hml_', current_seed, '.tsv'))
 
 ml_hp_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)$trained_model$results %>% 
@@ -181,4 +181,4 @@ ml_hp_performance <- map_dfr(model_list, function(df_name){
 				params = 'mtry')
 		}
 	})
-write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_logit_', current_seed, '.tsv'))
+write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_hml_', current_seed, '.tsv'))
