@@ -35,11 +35,11 @@ day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_tox
 day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   early_euth = col_character(),
-						   				   toxin_presence = col_logical()))
+						   				   toxin_presence = col_character()))
 day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   col_type = cols(.default = col_double(),
 						   				   hist_score = col_character(), 
-						   				   toxin_presence = col_logical())) %>% 
+						   				   toxin_presence = col_character())) %>% 
 	filter(hist_score != 'mid')
 
 # remove features present in fewer than one cage (3-4 mice/cage)
