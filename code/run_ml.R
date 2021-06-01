@@ -43,10 +43,10 @@ day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 	filter(hist_score != 'mid')
 
 # remove features present in fewer than one cage (3-4 mice/cage)
-same_day_toxin <- remove_singleton_columns(same_day_toxin, threshold = 4)
-day_0_predict_future_toxin <- remove_singleton_columns(day_0_predict_future_toxin, threshold = 4)
-day_0_moribund <- remove_singleton_columns(day_0_moribund, threshold = 4)
-day_10_histology <- remove_singleton_columns(day_10_histology, threshold = 4)
+same_day_toxin <- remove_singleton_columns(same_day_toxin, threshold = 4)$dat
+day_0_predict_future_toxin <- remove_singleton_columns(day_0_predict_future_toxin, threshold = 4)$dat
+day_0_moribund <- remove_singleton_columns(day_0_moribund, threshold = 4)$dat
+day_10_histology <- remove_singleton_columns(day_10_histology, threshold = 4)$dat
 
 # preprocess data
 print('Preprocessing data')
