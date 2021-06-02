@@ -131,7 +131,7 @@ day_0_moribund_rf <- run_ml(day_0_moribund,
 	   find_feature_importance = TRUE,
        seed = current_seed)
 print('Running Random Forest on day 10 to classify histological severity')
-day_10_histology_rf_hml <- run_ml(day_10_histology,
+day_10_histology_rf <- run_ml(day_10_histology,
 	   'rf',
        outcome_colname = 'hist_score',
        training_frac = fraction,
