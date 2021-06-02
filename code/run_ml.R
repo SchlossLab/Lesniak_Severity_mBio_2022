@@ -20,7 +20,8 @@ library('tidyverse')
 library('mikropml')
 
 # get seed
-current_seed <- as.numeric(commandArgs(TRUE))
+current_seed <- as.numeric(commandArgs(TRUE)[1])
+taxonomic_level <- as.character(commandArgs(TRUE)[2])
 set.seed <- current_seed
 fraction <- 0.6
 
@@ -41,24 +42,38 @@ day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   				   hist_score = col_character(), 
 						   				   toxin_presence = col_character())) %>% 
 	filter(hist_score != 'mid')
-
-# remove features present in fewer than one cage (3-4 mice/cage)
-same_day_toxin <- remove_singleton_columns(same_day_toxin, threshold = 4)$dat
-day_0_predict_future_toxin <- remove_singleton_columns(day_0_predict_future_toxin, threshold = 4)$dat
-day_0_moribund <- remove_singleton_columns(day_0_moribund, threshold = 4)$dat
-day_10_histology <- remove_singleton_columns(day_10_histology, threshold = 4)$dat
+taxonomy_df <- read_tsv('data/process/final.taxonomy.tidy.tsv',
+                        col_type = cols(.default = col_character()))
 
 # preprocess data
 print('Preprocessing data')
-same_day_toxin <- preprocess_data(same_day_toxin,
-								  outcome_colname = 'toxin')$dat_transformed
-day_0_predict_future_toxin <- preprocess_data(day_0_predict_future_toxin,
-								  outcome_colname = 'toxin')$dat_transformed
-day_0_moribund <- preprocess_data(day_0_moribund,
-								  outcome_colname = 'early_euth')$dat_transformed
-day_10_histology <- preprocess_data(day_10_histology,
-								  outcome_colname = 'hist_score')$dat_transformed
+setup_ml_df <- function(input_df, outcome_column){
+	tax_df <- taxonomy_df %>% 
+		mutate(tax_level = get(taxonomic_level)) %>% 
+		select(OTU, tax_level)
+	input_df %>% 
+	# select taxonomic level to be used 
+		mutate(row = rownames(.)) %>% 
+		pivot_longer(cols = contains('Otu'), names_to = 'OTU', values_to = 'value') %>% 
+		left_join(tax_df, by = c('OTU' = 'OTU')) %>% 
+		group_by(across(c(-OTU, -value))) %>% 
+		summarise(value = sum(value)) %>% 
+		ungroup() %>% 
+		pivot_wider(names_from = tax_level, values_from = value) %>% 
+		arrange(as.numeric(row)) %>% 
+		select(-row) %>% 
+	# remove features present in fewer than one cage (3-4 mice/cage)
+		remove_singleton_columns(., threshold = 4) %>% 
+		.$dat %>% 
+	# remove near zero variance, correlated otus, center feature values
+		preprocess_data(., outcome_colname = outcome_column) %>% 
+		.$dat_transformed
+	}
 
+same_day_toxin <- setup_ml_df(same_day_toxin, 'toxin')
+day_0_predict_future_toxin <- setup_ml_df(day_0_predict_future_toxin, 'toxin')
+day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
+day_10_histology <- setup_ml_df(day_10_histology, 'hist_score')
 
 
 # run logistic regression
@@ -158,16 +173,18 @@ ml_performance <- map_dfr(model_list, function(df_name){
 			as.numeric) %>% 
 		mutate_at(vars('method'), as.character) %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name))
-})
-write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', current_seed, '.tsv'))	
+	}) %>% 
+	mutate(taxonomic_level = taxonomic_level)
+write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', taxonomic_level, '_', current_seed, '.tsv'))	
 
 ml_feature_imp <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
 	i$feature_importance <- i$feature_importance %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
 				seed = current_seed)
-})
-write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', current_seed, '.tsv'))
+	}) %>% 
+	mutate(taxonomic_level = taxonomic_level)
+write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', taxonomic_level, '_', current_seed, '.tsv'))
 
 ml_hp_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)$trained_model$results %>% 
@@ -185,5 +202,6 @@ ml_hp_performance <- map_dfr(model_list, function(df_name){
 			mutate(model = 'rf',
 				params = 'mtry')
 		}
-	})
-write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', current_seed, '.tsv'))
+	}) %>% 
+	mutate(taxonomic_level = taxonomic_level)
+write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', taxonomic_level, '_', current_seed, '.tsv'))
