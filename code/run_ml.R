@@ -27,21 +27,25 @@ fraction <- 0.6
 
 # read in data
 print('Reading in data')
-same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
-						   col_type = cols(.default = col_double(), 
-						   				   toxin = col_character()))
-day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_toxin.tsv',
-						   col_type = cols(.default = col_double(), 
-						   				   toxin = col_character()))
-day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
-						   col_type = cols(.default = col_double(), 
-						   				   early_euth = col_character(),
-						   				   toxin_presence = col_character()))
+#same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
+#						   col_type = cols(.default = col_double(), 
+#						   				   toxin = col_character())) %>% 
+#	select(toxin, starts_with('Otu'))
+#day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_toxin.tsv',
+#						   col_type = cols(.default = col_double(), 
+#						   				   toxin = col_character())) %>% 
+#	select(toxin, starts_with('Otu'))
+#day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
+#						   col_type = cols(.default = col_double(), 
+#						   				   early_euth = col_character(),
+#						   				   toxin_presence = col_character())) %>% 
+#	select(early_euth, starts_with('Otu'))
 day_10_histology <- read_tsv('data/process/ml/day_10_histology.tsv',
 						   col_type = cols(.default = col_double(),
 						   				   hist_score = col_character(), 
 						   				   toxin_presence = col_character())) %>% 
 	filter(hist_score != 'mid')
+	select(hist_score, starts_with('Otu'))
 taxonomy_df <- read_tsv('data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
 
