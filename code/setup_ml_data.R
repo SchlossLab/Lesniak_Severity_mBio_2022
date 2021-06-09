@@ -53,7 +53,7 @@ shared <- read_tsv('data/mothur/sample.final.0.03.subsample.shared',
 same_day_toxin_df <- toxin %>% 
 	select(group, toxin) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
-	left_join(select(metadata, group, cdiff_cfu), by = c('group')) %>% 
+	left_join(select(metadata, group, C_difficile_CFU = cdiff_cfu), by = c('group')) %>% 
 	select(-group)
 write_tsv(same_day_toxin_df, 'data/process/ml/same_day_toxin.tsv')	
 
@@ -70,14 +70,13 @@ write_tsv(day_0_predict_future_toxin_df, 'data/process/ml/day_0_predict_future_t
 
 # setup data to predict moribunidty (microbiome, cdiff, toxin)
 toxin_summary <- toxin %>% 
+	filter(toxin_sample_day  %in% c(1,2)) %>% 
 	group_by(mouse_id) %>% 
-	summarise(toxin_presence = ifelse(max(Log_repiricoal_dilution) > 1, 'present', 'absent'),
-			  max_toxin = max(Log_repiricoal_dilution),
-			  median_toxin = median(Log_repiricoal_dilution))
+	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
 cfu_summary <- metadata %>% 
+	filter(day %in% c(1,2)) %>% 
 	group_by(mouse_id, early_euth) %>% 
-	summarise(max_cfu = max(cdiff_cfu),
-			  median_cfu = median(cdiff_cfu))
+	summarise(median_CFU = median(cdiff_cfu))
 day_0_moribund <- metadata %>% 
 	select(group, mouse_id, day) %>% 
 	filter(day == 0) %>% 
@@ -93,8 +92,7 @@ write_tsv(day_0_moribund, 'data/process/ml/day_0_moribund.tsv')
 day_10_histology_df <- metadata %>% 
 	filter(day == 10,
 		early_euth == F) %>% 
-	select(group, cdiff_cfu, mouse_id) %>% 
-	left_join(toxin_summary, by = c('mouse_id')) %>% 
+	select(group, C_difficile_CFU = cdiff_cfu, mouse_id) %>% 
 	left_join(select(toxin, group, toxin_level = Log_repiricoal_dilution),
 		by = c('group')) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
