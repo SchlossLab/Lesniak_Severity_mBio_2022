@@ -25,7 +25,7 @@
 # Logs
 #SBATCH --mail-user=nlesniak@umich.edu
 #SBATCH --mail-type=END,FAIL
-#SBATCH -o scratch/slurm/ml.output.%a.out
+#SBATCH -o scratch/slurm/ml_mc.output.%a.out
 
 # Environment
 #SBATCH --export=ALL
