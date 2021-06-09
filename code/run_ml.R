@@ -27,15 +27,15 @@ fraction <- 0.6
 
 # read in data
 print('Reading in data')
-#same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
-#						   col_type = cols(.default = col_double(), 
-#						   				   toxin = col_character()))
-#day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_toxin.tsv',
-#						   col_type = cols(.default = col_double(), 
-#						   				   toxin = col_character()))
-#day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
-#						   col_type = cols(.default = col_double(), 
-#						   				   early_euth = col_character())) 
+same_day_toxin <- read_tsv('data/process/ml/same_day_toxin.tsv',
+						   col_type = cols(.default = col_double(), 
+						   				   toxin = col_character()))
+day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_toxin.tsv',
+						   col_type = cols(.default = col_double(), 
+						   				   toxin = col_character()))
+day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
+						   col_type = cols(.default = col_double(), 
+						   				   early_euth = col_character())) 
 taxonomy_df <- read_tsv('data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
 
@@ -64,74 +64,73 @@ setup_ml_df <- function(input_df, outcome_column){
 		.$dat_transformed
 	}
 
-#same_day_toxin <- setup_ml_df(same_day_toxin, 'toxin')
-#day_0_predict_future_toxin <- setup_ml_df(day_0_predict_future_toxin, 'toxin')
-#day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
+same_day_toxin <- setup_ml_df(same_day_toxin, 'toxin')
+day_0_predict_future_toxin <- setup_ml_df(day_0_predict_future_toxin, 'toxin')
+day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
 
 
 # run logistic regression
-#new_hp <- list(alpha = 0,
-#			   lambda = c(1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
-#print('Running Logistic Regression on same day toxin presence')
-#same_day_toxin_lr <- run_ml(same_day_toxin,
-#	   'glmnet',
-#       outcome_colname = 'toxin',
-#	   training_frac = fraction,
-#       hyperparameters = new_hp,
-#       find_feature_importance = TRUE,
-#       seed = current_seed)
-#new_hp <- list(alpha = 0,
-#			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
-#print('Running Logistic Regression on day 0 to predict toxin production')
-#day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
-#	   'glmnet',
-#       outcome_colname = 'toxin',
-#       training_frac = fraction,
-#	   hyperparameters = new_hp,
-#	   find_feature_importance = TRUE,
-#       seed = current_seed)
-#
-#new_hp <- list(alpha = 0,
-#			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
-#print('Running Logistic Regression on day 0 to predict severity')
-#day_0_moribund_lr <- run_ml(day_0_moribund,
-#	   'glmnet',
-#       outcome_colname = 'early_euth',
-#       training_frac = fraction,
-#	   hyperparameters = new_hp,
-#	   find_feature_importance = TRUE,
-#       seed = current_seed)
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-2, 1e-1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1e0, 1e1, 1e2))
+print('Running Logistic Regression on same day toxin presence')
+same_day_toxin_lr <- run_ml(same_day_toxin,
+	   'glmnet',
+       outcome_colname = 'toxin',
+	   training_frac = fraction,
+       hyperparameters = new_hp,
+       find_feature_importance = TRUE,
+       seed = current_seed)
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict toxin production')
+day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
+	   'glmnet',
+       outcome_colname = 'toxin',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
+
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict severity')
+day_0_moribund_lr <- run_ml(day_0_moribund,
+	   'glmnet',
+       outcome_colname = 'early_euth',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
 
 # run random forest
 new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
-#print('Running Random Forest on same day toxin presence')
-#same_day_toxin_rf <- run_ml(same_day_toxin,
-#	   'rf',
-#       outcome_colname = 'toxin',
-#       training_frac = fraction,
-#       hyperparameters = new_hp,
-#       find_feature_importance = TRUE,
-#       seed = current_seed)
-#print('Running Random Forest on day 0 to predict toxin production')
-#day_0_predict_future_toxin_rf <- run_ml(day_0_predict_future_toxin,
-#	   'rf',
-#       outcome_colname = 'toxin',
-#       training_frac = fraction,
-#	   hyperparameters = new_hp,
-#	   find_feature_importance = TRUE,
-#       seed = current_seed)
-#print('Running Random Forest on day 0 to predict severity')
-#day_0_moribund_rf <- run_ml(day_0_moribund,
-#	   'rf',
-#       outcome_colname = 'early_euth',
-#       training_frac = fraction,
-#	   hyperparameters = new_hp,
-#	   find_feature_importance = TRUE,
-#       seed = current_seed)
+print('Running Random Forest on same day toxin presence')
+same_day_toxin_rf <- run_ml(same_day_toxin,
+	   'rf',
+       outcome_colname = 'toxin',
+       training_frac = fraction,
+       hyperparameters = new_hp,
+       find_feature_importance = TRUE,
+       seed = current_seed)
+print('Running Random Forest on day 0 to predict toxin production')
+day_0_predict_future_toxin_rf <- run_ml(day_0_predict_future_toxin,
+	   'rf',
+       outcome_colname = 'toxin',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
+print('Running Random Forest on day 0 to predict severity')
+day_0_moribund_rf <- run_ml(day_0_moribund,
+	   'rf',
+       outcome_colname = 'early_euth',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
 
 
-print('Modeling complete, saving data')
-# 
+print('Modeling complete, saving data') 
 
 model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 
 		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf')
