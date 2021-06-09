@@ -86,16 +86,21 @@ training_frac_hp_df %>%
 Features  
 -  same day toxin presence - CFU, taxonomic abundances  
 -  day 0 future toxin presence - taxonomic abundances  
--  day 0 future moribund - max cfu, median cfu, max toxin, median toxin, toxin presence, taxonomic abundances  
--  day 10 histology (high/low) - cfu, max toxin, median toxin, toxin level, toxin presence, taxonomic abundances  
+-  day 0 future moribund - median cfu, day w/toxin presence (prior to day 3), taxonomic abundances  
+      to avoid duplicating similar data, i sumarized cfu/toxin to be a single feature to represent the amount or presence over the first two days of challenge since all mice were present for at least 2 days
+-  day 10 histology (high/mid/low) - cfu, toxin level, taxonomic abundances  
 
 ```{r}
 
-performance_df <- read_tsv('../../../data/process/ml/all_taxa_levels_all_features_ml_performance.tsv',
-                     col_type = 'dddddddddddddddcdcc') 
-features_df <- read_tsv('../../../data/process/ml/all_taxa_levels_all_features_ml_feature_imp.tsv',
+performance_df <- read_tsv('../../../data/process/ml/ml_performance.tsv',
+                     col_type = 'dddddddddddddddcdcc') %>% 
+  mutate(dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
+                                     'day_0_moribund', 'day_10_histology')),
+         taxonomic_level = factor(taxonomic_level, 
+                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum')))  
+features_df <- read_tsv('../../../data/process/ml/ml_feature_imp.tsv',
                      col_type = 'ddcccdcc') 
-hyperparameter_df <- read_tsv('../../../data/process/ml/all_taxa_levels_all_features_ml_hp_performance.tsv',
+hyperparameter_df <- read_tsv('../../../data/process/ml/ml_hp_performance.tsv',
                      col_type = 'ddcdccc') 
 taxonomy_df <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
@@ -105,10 +110,6 @@ performance_df %>%
   pivot_longer(cols = c(cv_auc, test_auc), 
                names_to = 'metric', 
                values_to = 'Performance') %>% 
-  mutate(dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
-                                     'day_0_moribund', 'day_10_histology')),
-         taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
   ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
     geom_boxplot() + 
     geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
@@ -116,15 +117,9 @@ performance_df %>%
     theme_bw() 
 ```
   
-*day 10 histology is only predicting the high/low histology scores
-
 ```{r}
 hyperparameter_df %>% 
   filter(model == 'glmnet') %>% 
-  mutate(dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
-                                     'day_0_moribund', 'day_10_histology')),
-         taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
   ggplot(aes(x = value, y = AUC, color = taxonomic_level)) + 
     geom_point(alpha = 0.25) + 
     stat_summary(fun = median, geom = 'line') + 
@@ -140,10 +135,6 @@ hyperparameter_df %>%
 ```{r}
 hyperparameter_df %>% 
   filter(model == 'rf') %>% 
-  mutate(dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
-                                     'day_0_moribund', 'day_10_histology')),
-         taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
   ggplot(aes(x = value, y = AUC, color = taxonomic_level)) + 
     geom_point(alpha = 0.25) + 
     stat_summary(fun = median, geom = 'line') + 
@@ -156,47 +147,8 @@ hyperparameter_df %>%
 
 ## Models and features
 
-```{r}
-performance_df %>% 
-  filter(dataset == 'same_day_toxin') %>% 
-  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
-  pivot_longer(cols = c(cv_auc, test_auc), 
-               names_to = 'metric', 
-               values_to = 'Performance') %>% 
-  mutate(taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.7, ymax = 0.95, method = 'glmnet', taxonomic_level = 6, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA)
-```
 
-
-Using Logistic regression at the Phylum level the features with median differences greater than 0 are:
-
-
-```{r}
-
-features_df %>% 
-  filter(dataset == 'same_day_toxin',
-         method == 'glmnet',
-         taxonomic_level == 'Family') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>%   
-  ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    coord_flip() + 
-    facet_grid(method~dataset) + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
-    theme_bw()
-
-```
+#### Modeling future production of toxin based on initial community  
 
 ```{r}
 performance_df %>% 
@@ -242,6 +194,50 @@ features_df %>%
 ```
 
 
+#### Modeling production of toxin with the community and CFU data from that same day
+
+```{r}
+performance_df %>% 
+  filter(dataset == 'same_day_toxin') %>% 
+  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
+  pivot_longer(cols = c(cv_auc, test_auc), 
+               names_to = 'metric', 
+               values_to = 'Performance') %>% 
+  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
+    geom_boxplot() + 
+    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
+    facet_grid(dataset~method, scales = 'free_y') + 
+    theme_bw() +
+    geom_rect(data = data.frame(ymin = 0.7, ymax = 0.95, method = 'glmnet', taxonomic_level = 6, Performance = 1),
+              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
+              fill = NA)
+```
+
+
+Using Logistic regression at the Phylum level the features with median differences greater than 0 are:
+
+
+```{r}
+
+features_df %>% 
+  filter(dataset == 'same_day_toxin',
+         method == 'glmnet',
+         taxonomic_level == 'Phylum') %>% 
+  group_by(names) %>% 
+  mutate(median_diff = median(perf_metric_diff)) %>% 
+  ungroup() %>% 
+  filter(median_diff > 0) %>%   
+  ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
+    coord_flip() + 
+    facet_grid(method~dataset) + 
+    labs(x = NULL, y = 'AUC Diff with feature permuted') +
+    theme_bw()
+
+```
+
+
+#### Modeling severe disease (moribund) from the initial community
 
 ```{r}
 performance_df %>% 
@@ -285,207 +281,13 @@ features_df %>%
 ```
 
 
-## Using only OTUs
-
-
-```{r}
-
-performance_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_ml_performance.tsv',
-                     col_type = 'dddddddddddddddcdcc') 
-features_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_ml_feature_imp.tsv',
-                     col_type = 'ddcccdcc') 
-hyperparameter_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_ml_hp_performance.tsv',
-                     col_type = 'ddcdccc') 
-
-performance_df %>% 
-  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
-  pivot_longer(cols = c(cv_auc, test_auc), 
-               names_to = 'metric', 
-               values_to = 'Performance') %>% 
-  mutate(dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
-                                     'day_0_moribund', 'day_10_histology')),
-         taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw() 
-```
-
-```{r}
-performance_df %>% 
-  filter(dataset == 'same_day_toxin') %>% 
-  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
-  pivot_longer(cols = c(cv_auc, test_auc), 
-               names_to = 'metric', 
-               values_to = 'Performance') %>% 
-  mutate(taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw()  +
-    geom_rect(data = data.frame(ymin = 0.71, ymax = 0.94, taxonomic_level = 3, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA)
-
-```
-
-
-Using either Logistic regression or RF at the Family level the features with median differences greater than 0 are:
-
-
-```{r}
-
-features_df %>% 
-  filter(dataset == 'same_day_toxin',
-         method == 'glmnet',
-         taxonomic_level == 'Family') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>%   
-  ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    coord_flip() + 
-    facet_grid(method~dataset) + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
-    theme_bw()
-
-
-features_df %>% 
-  filter(dataset == 'same_day_toxin',
-         method == 'rf',
-         taxonomic_level == 'Family') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>%   
-  ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    coord_flip() + 
-    facet_grid(method~dataset) + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
-    theme_bw()
-
-```
-
-
-```{r}
-performance_df %>% 
-  filter(dataset == 'day_0_predict_future_toxin') %>% 
-  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
-  pivot_longer(cols = c(cv_auc, test_auc), 
-               names_to = 'metric', 
-               values_to = 'Performance') %>% 
-  mutate(taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw()  +
-    geom_rect(data = data.frame(ymin = 0.38, ymax = 0.97, method = 'glmnet', taxonomic_level = 2, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA) +
-    geom_rect(data = data.frame(ymin = 0.48, ymax = 0.99, method = 'rf', taxonomic_level = 6, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA)
-
-
-```
-
-
-Using Logistic regression at the Genus level or RF at the Phylum level the features with median differences greater than 0 are:
-
-
-```{r}
-features_df %>% 
-  filter(dataset == 'day_0_predict_future_toxin',
-         (method == 'rf' & taxonomic_level == 'Phylum') | (method == 'glmnet' & taxonomic_level == 'Genus')) %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>% 
-  ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    facet_grid(method~dataset, scales= 'free_y', space = 'free_y') + 
-    labs(x = NULL, y = 'Decrease AUC') +
-    theme_bw()
-```
-
-
-```{r}
-performance_df %>% 
-  filter(dataset == 'day_0_moribund') %>% 
-  select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
-  pivot_longer(cols = c(cv_auc, test_auc), 
-               names_to = 'metric', 
-               values_to = 'Performance') %>% 
-  mutate(taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum'))) %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw()  +
-    geom_rect(data = data.frame(ymin = 0.63, ymax = 1.01, taxonomic_level = 5, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA)
-```
-
-
-Using Logistic regression or RF at the Class level features with median differences greater than 0 are:
-
-
-```{r}
-features_df %>% 
-  filter(dataset == 'day_0_moribund',
-         method == 'glmnet',
-         taxonomic_level == 'Class') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>% 
-  ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    facet_grid(method~dataset) + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
-    theme_bw()
-
-features_df %>% 
-  filter(dataset == 'day_0_moribund',
-         method == 'rf',
-         taxonomic_level == 'Class') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0) %>% 
-  ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    facet_grid(method~dataset) + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
-    theme_bw()
-```
-
-## Use multiclass for endpoint histology scores  
-  
+#### Modeling endpoint histology scores
   
     
 ```{r}
-hist_performance_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_hist_ml_performance.tsv')  %>% 
-  mutate(taxonomic_level = factor(taxonomic_level, 
-                                  levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum')))
-hist_features_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_hist_ml_feature_imp.tsv') 
-hist_hyperparameter_df <- read_tsv('../../../data/process/ml/otu_only_all_taxa_levels_hist_ml_hp_performance.tsv') 
+hist_performance_df <- read_tsv('../../../data/process/ml/hist_ml_performance.tsv')
+hist_features_df <- read_tsv('../../../data/process/ml/hist_ml_feature_imp.tsv') 
+hist_hyperparameter_df <- read_tsv('../../../data/process/ml/hist_ml_hp_performance.tsv') 
 
 hist_performance_df %>% 
   select(method, seed, dataset, training =cv_metric_logLoss, test = logLoss, taxonomic_level, null_model) %>% 
@@ -499,6 +301,7 @@ hist_performance_df %>%
     facet_grid(.~method, scales = 'free_y') + 
     theme_bw() + 
     coord_cartesian(ylim = c(0,2)) +
+    labs(x = NULL, y = 'Performance - logLoss') + 
     geom_rect(data = data.frame(ymin = 0.1, ymax = 0.93, method = 'rf', taxonomic_level = 6, Performance = 1),
               aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
               fill = NA)
