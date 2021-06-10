@@ -105,6 +105,74 @@ hyperparameter_df <- read_tsv('../../../data/process/ml/ml_hp_performance.tsv',
 taxonomy_df <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
 
+metadata <- read_tsv('../../../data/process/metadata_tidy.tsv',
+					 col_type = 'cccccDddddDcdddddcdl') %>% 
+	filter(cdiff_strain == 431) %>% 
+	mutate(cdiff_cfu = ifelse(cdiff_cfu == 0, log10(60), log10(cdiff_cfu)))
+
+toxin <- read_tsv('../../../data/process/toxin_tidy.tsv',
+				  col_type = 'cccccdc') %>% 
+	mutate(toxin = ifelse(Log_repiricoal_dilution > 1, 'present', 'absent'))
+
+histology <- read_tsv('../../../data/process/histology_tidy.tsv',
+					  col_type = 'ccccdddcdcc') %>% 
+	mutate(hist_score = case_when(summary_score < 5 ~ 'low',
+								  summary_score > 5 ~ 'high',
+								  summary_score == 5 ~ 'mid',
+								  T ~ 'NA'))
+
+shared <- read_tsv('../../../data/mothur/sample.final.0.03.subsample.shared',
+         col_types = cols(.default = col_double(),
+                          Group = col_character())) %>% 
+  mutate(Group = ifelse(grepl('_D|DA', Group), Group,
+      gsub('D', '_D', Group))) %>% 
+  select(-label, -numOtus)
+
+same_day_toxin_df <- toxin %>% 
+	select(group, toxin) %>% 
+	inner_join(shared, by = c('group' = 'Group')) %>% 
+	left_join(select(metadata, group, C_difficile_CFU = cdiff_cfu), by = c('group'))
+
+#	from day 0?
+day_0_predict_future_toxin_df <- toxin %>% 
+	group_by(mouse_id) %>% 
+	summarise(toxin = ifelse(max(Log_repiricoal_dilution) > 1, 'present', 'absent')) %>% 
+	left_join(select(metadata, mouse_id, day, group), 
+			  by = c('mouse_id')) %>% 
+	filter(day == 0) %>% 
+	inner_join(shared, by = c('group' = 'Group'))
+
+# setup data to predict moribunidty (microbiome, cdiff, toxin)
+toxin_summary <- toxin %>% 
+	filter(toxin_sample_day  %in% c(1,2)) %>% 
+	group_by(mouse_id) %>% 
+	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
+cfu_summary <- metadata %>% 
+	filter(day %in% c(1,2)) %>% 
+	group_by(mouse_id, early_euth) %>% 
+	summarise(median_CFU = median(cdiff_cfu))
+day_0_moribund <- metadata %>% 
+	select(group, mouse_id, day) %>% 
+	filter(day == 0) %>% 
+	left_join(cfu_summary, by = c('mouse_id')) %>% 
+	left_join(toxin_summary, by = c('mouse_id')) %>% 
+	inner_join(shared, by = c('group' = 'Group')) %>% 
+	mutate(early_euth = ifelse(early_euth, 'severe', 'mild'))
+
+# setup data to predict histology severity of colonized mice (microbiome, cdiff, toxin)
+day_10_histology_df <- metadata %>% 
+	filter(day == 10,
+		early_euth == F) %>% 
+	select(group, C_difficile_CFU = cdiff_cfu, mouse_id) %>% 
+	left_join(select(toxin, group, toxin_level = Log_repiricoal_dilution),
+		by = c('group')) %>% 
+	inner_join(shared, by = c('group' = 'Group')) %>% 
+	inner_join(select(histology, mouse_id, hist_score), by = c('mouse_id')) 
+```
+
+
+
+```{r}
 performance_df %>% 
   select(method, seed, dataset, cv_auc = cv_metric_AUC, test_auc = AUC, taxonomic_level) %>% 
   pivot_longer(cols = c(cv_auc, test_auc), 
@@ -177,13 +245,15 @@ Using Logistic regression at the Genus level or RF at the Phylum level the featu
 
 
 ```{r}
-features_df %>% 
+day_0_toxin_production <- features_df %>% 
   filter(dataset == 'day_0_predict_future_toxin',
-         (method == 'rf' & taxonomic_level == 'Phylum') | (method == 'glmnet' & taxonomic_level == 'Genus')) %>% 
+         (method == 'rf' & taxonomic_level == 'Phylum')# | (method == 'glmnet' & taxonomic_level == 'Genus')
+         ) %>% 
   group_by(names) %>% 
   mutate(median_diff = median(perf_metric_diff)) %>% 
   ungroup() %>% 
-  filter(median_diff > 0) %>% 
+  filter(median_diff > 0) 
+day_0_toxin_production %>%
   ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     #geom_jitter(alpha = 0.1, width = 0.1) + 
@@ -193,6 +263,35 @@ features_df %>%
     theme_bw()
 ```
 
+
+```{r}
+day_0_toxin_features <- day_0_toxin_production %>% 
+  select(names, median_diff) %>% 
+  unique %>% 
+  arrange(median_diff) %>% 
+  pull(names)
+
+day_0_predict_future_toxin_df %>% 
+  pivot_longer(cols = starts_with('Otu'), names_to = 'OTU', values_to = 'counts') %>% 
+  left_join(taxonomy_df, by = "OTU") %>% 
+  filter(Phylum %in% day_0_toxin_features) %>% 
+  group_by(group, toxin, Phylum) %>% 
+  summarise(counts = sum(counts)/21.07) %>% 
+  mutate(Phylum = factor(Phylum, day_0_toxin_features)) %>% 
+  ggplot(aes(x = Phylum, y = counts, color = toxin)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+                 position = position_dodge(width = 0.7)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+                alpha = 0.2) + 
+    scale_y_log10() + 
+    theme_bw() + 
+    coord_flip() + 
+    scale_color_manual(values = c('red', 'black'),
+                       breaks = c('absent', 'present'), 
+                       labels = c('False', 'True')) + 
+    labs(x = NULL, y = 'Relative Abundance (%)', color  = 'Toxin Detected')
+  
+```
 
 #### Modeling production of toxin with the community and CFU data from that same day
 
@@ -219,14 +318,15 @@ Using Logistic regression at the Phylum level the features with median differenc
 
 ```{r}
 
-features_df %>% 
+same_day_toxin <- features_df %>% 
   filter(dataset == 'same_day_toxin',
          method == 'glmnet',
          taxonomic_level == 'Phylum') %>% 
   group_by(names) %>% 
   mutate(median_diff = median(perf_metric_diff)) %>% 
   ungroup() %>% 
-  filter(median_diff > 0) %>%   
+  filter(median_diff > 0) 
+same_day_toxin %>%   
   ggplot(aes(x = reorder(names, median_diff), y = perf_metric_diff)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     coord_flip() + 
@@ -236,6 +336,51 @@ features_df %>%
 
 ```
 
+
+
+```{r}
+same_day_toxin_features <- same_day_toxin %>% 
+  select(names, median_diff) %>% 
+  unique %>% 
+  arrange(median_diff) %>% 
+  pull(names)
+
+same_day_toxin_df %>% 
+  ggplot(aes(x = toxin, y = C_difficile_CFU, color = toxin)) + 
+    geom_jitter(alpha = 0.2, width  = 0.3) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+                 position = position_dodge(width = 0.7)) +
+    coord_flip() + 
+    theme_bw() + 
+    labs(x = NULL, y = 'C. difficile CFU', color  = 'Toxin Detected')
+```
+
+
+
+
+
+```{r}
+same_day_toxin_df %>% 
+  pivot_longer(cols = starts_with('Otu'), names_to = 'OTU', values_to = 'counts') %>% 
+  left_join(taxonomy_df, by = "OTU") %>% 
+  filter(Phylum %in% same_day_toxin_features) %>% 
+  group_by(group, toxin, Phylum) %>% 
+  summarise(counts = sum(counts)/21.07) %>% 
+  mutate(Phylum = factor(Phylum, same_day_toxin_features)) %>% 
+  ggplot(aes(x = Phylum, y = counts, color = toxin)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+                 position = position_dodge(width = 0.7)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+                alpha = 0.05) + 
+    scale_y_log10() + 
+    theme_bw() + 
+    coord_flip() + 
+    scale_color_manual(values = c('red', 'black'),
+                       breaks = c('absent', 'present'), 
+                       labels = c('False', 'True')) + 
+    labs(x = NULL, y = 'Relative Abundance (%)', color  = 'Toxin Detected')
+  
+```
 
 #### Modeling severe disease (moribund) from the initial community
 
@@ -263,14 +408,15 @@ Using Logistic regression at the Class level the features with median difference
 
 
 ```{r}
-features_df %>% 
+day_0_moribund_plot_df <- features_df %>% 
   filter(dataset == 'day_0_moribund',
          method == 'glmnet',
          taxonomic_level == 'Class') %>% 
   group_by(names) %>% 
   mutate(median_diff = median(perf_metric_diff)) %>% 
   ungroup() %>% 
-  filter(median_diff > 0) %>% 
+  filter(median_diff > 0) 
+day_0_moribund_plot_df %>% 
   ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     #geom_jitter(alpha = 0.1, width = 0.1) + 
@@ -279,6 +425,37 @@ features_df %>%
     labs(x = NULL, y = 'AUC Diff with feature permuted') +
     theme_bw()
 ```
+
+
+```{r}
+day_0_moribund_features <- day_0_moribund_plot_df %>% 
+  select(names, median_diff) %>% 
+  unique %>% 
+  arrange(median_diff) %>% 
+  pull(names)
+
+day_0_moribund %>% 
+  pivot_longer(cols = starts_with('Otu'), names_to = 'OTU', values_to = 'counts') %>% 
+  left_join(taxonomy_df, by = "OTU") %>% 
+  filter(Class %in% day_0_moribund_features) %>% 
+  group_by(group, early_euth, Class) %>% 
+  summarise(counts = sum(counts)/21.07) %>% 
+  mutate(Phylum = factor(Class, day_0_moribund_features)) %>% 
+  ggplot(aes(x = Phylum, y = counts, color = early_euth)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+                 position = position_dodge(width = 0.7)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+                alpha = 0.2) + 
+    scale_y_log10() + 
+    theme_bw() + 
+    coord_flip() + 
+#    scale_color_manual(values = c('red', 'black'),
+ #                      breaks = c('absent', 'present'), 
+  #                     labels = c('False', 'True')) + 
+    labs(x = NULL, y = 'Relative Abundance (%)', color  = 'Disease Severity')
+  
+```
+
 
 
 #### Modeling endpoint histology scores
@@ -312,14 +489,15 @@ Using multiclass RF at the Phylum level the features with median differences gre
 
  
 ```{r}
-hist_features_df %>% 
+hist_features_plot_df <- hist_features_df %>% 
   filter(dataset == 'day_10_histology',
          method == 'rf',
          taxonomic_level == 'Phylum') %>% 
   group_by(names) %>% 
   mutate(median_diff = median(perf_metric_diff)) %>% 
   ungroup() %>% 
-  filter(median_diff > 0) %>% 
+  filter(median_diff > 0)
+hist_features_plot_df %>% 
   ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     geom_jitter(alpha = 0.1, width = 0.1) + 
@@ -328,4 +506,35 @@ hist_features_df %>%
     labs(x = NULL, y = 'AUC Diff with feature permuted') + 
     theme_bw()
     
+```
+
+
+```{r}
+hist_features <- hist_features_plot_df %>% 
+  select(names, median_diff) %>% 
+  unique %>% 
+  arrange(median_diff) %>% 
+  pull(names)
+
+day_10_histology_df %>% 
+  pivot_longer(cols = starts_with('Otu'), names_to = 'OTU', values_to = 'counts') %>% 
+  left_join(taxonomy_df, by = "OTU") %>% 
+  filter(Phylum %in% hist_features) %>% 
+  group_by(group, hist_score, Phylum) %>% 
+  summarise(counts = sum(counts)/21.07) %>% 
+  mutate(Phylum = factor(Phylum, hist_features),
+         hist_score = factor(hist_score, c('low', 'mid', 'high'))) %>% 
+  ggplot(aes(x = Phylum, y = counts, color = hist_score)) + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
+                 position = position_dodge(width = 0.7)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 0.9, jitter.width = 0.3), 
+                alpha = 0.2) + 
+    scale_y_log10() + 
+    theme_bw() + 
+    coord_flip() + 
+#    scale_color_manual(values = c('red', 'black'),
+ #                      breaks = c('absent', 'present'), 
+  #                     labels = c('False', 'True')) + 
+    labs(x = NULL, y = 'Relative Abundance (%)', color  = 'Histology Score')
+  
 ```
