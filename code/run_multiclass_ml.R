@@ -22,7 +22,7 @@ library('mikropml')
 # get seed
 current_seed <- as.numeric(commandArgs(TRUE)[1])
 taxonomic_level <- as.character(commandArgs(TRUE)[2])
-set.seed <- current_seed
+set.seed(current_seed)
 fraction <- 0.6
 
 # read in data
