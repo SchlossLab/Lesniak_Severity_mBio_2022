@@ -124,7 +124,16 @@ write_tsv(ml_performance, paste0('data/process/ml/temp/hist_ml_performance_', ta
 
 ml_feature_imp <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
+	if(grepl('lr', df_name)){
+		feature_coef <- coef(i$trained_model$finalModel, i$trained_model$bestTune$lambda)
+		feature_coef <- data.frame(names = gsub('`', '', rownames(feature_coef)),
+				coefficient = feature_coef@x)
+	} else {
+		feature_coef <- data.frame(names = i$feature_importance$names,
+				coefficient = NA)
+	}
 	i$feature_importance <- i$feature_importance %>% 
+		left_join(feature_coef, by = c('names')) %>% 
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
 				seed = current_seed,
 				taxonomic_level = taxonomic_level,
