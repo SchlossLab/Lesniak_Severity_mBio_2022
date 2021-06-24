@@ -127,11 +127,11 @@ ml_feature_imp <- map_dfr(model_list, function(df_name){
 	if(grepl('lr', df_name)){
 		feature_coef <- coef(i$trained_model$finalModel, i$trained_model$bestTune$lambda)
 		feature_coef_hi <- data.frame(names = gsub('`', '', rownames(feature_coef$high)),
-				coefficient_high = feature_coef$high@x)
+				coefficient_high = as.vector(as.matrix(feature_coef$high)))
 		feature_coef_mid <- data.frame(names = gsub('`', '', rownames(feature_coef$mid)),
-				coefficient_mid = feature_coef$mid@x)
+				coefficient_mid = as.vector(as.matrix(feature_coef$mid)))
 		feature_coef_low <- data.frame(names = gsub('`', '', rownames(feature_coef$low)),
-				coefficient_low = feature_coef$low@x)
+				coefficient_low = as.vector(as.matrix(feature_coef$low)))
 		feature_coef <- feature_coef_hi %>% 
 			full_join(feature_coef_mid, by = c('names')) %>% 
 			full_join(feature_coef_low, by = c('names'))

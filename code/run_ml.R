@@ -155,7 +155,7 @@ ml_feature_imp <- map_dfr(model_list, function(df_name){
 	if(grepl('lr', df_name)){
 		feature_coef <- coef(i$trained_model$finalModel, i$trained_model$bestTune$lambda)
 		feature_coef <- data.frame(names = gsub('`', '', rownames(feature_coef)),
-				coefficient = feature_coef@x)
+				coefficient = as.vector(as.matrix(feature_coef)))
 	} else {
 		feature_coef <- data.frame(names = i$feature_importance$names,
 				coefficient = NA)
