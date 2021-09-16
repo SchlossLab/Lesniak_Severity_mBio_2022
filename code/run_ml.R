@@ -36,6 +36,9 @@ day_0_predict_future_toxin <- read_tsv('data/process/ml/day_0_predict_future_tox
 day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   early_euth = col_character())) 
+day_0_histology <- read_tsv('data/process/ml/day_0_histology.tsv',
+						   col_type = cols(.default = col_double(), 
+						   				   hist_score = col_character())) 
 taxonomy_df <- read_tsv('data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
 
@@ -67,6 +70,7 @@ setup_ml_df <- function(input_df, outcome_column){
 same_day_toxin <- setup_ml_df(same_day_toxin, 'toxin')
 day_0_predict_future_toxin <- setup_ml_df(day_0_predict_future_toxin, 'toxin')
 day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
+day_0_histology <- setup_ml_df(day_0_histology, 'hist_score')
 
 
 # run logistic regression
@@ -101,6 +105,17 @@ day_0_moribund_lr <- run_ml(day_0_moribund,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict day 10 severity')
+day_0_histology_lr <- run_ml(day_0_histology,
+	   'glmnet',
+       outcome_colname = 'hist_score',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
+
 
 # run random forest
 new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
@@ -128,12 +143,19 @@ day_0_moribund_rf <- run_ml(day_0_moribund,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
-
+print('Running Random Forest on day 0 to predict day 10 severity')
+day_0_histology_rf <- run_ml(day_0_histology,
+	   'rf',
+       outcome_colname = 'hist_score',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+	   find_feature_importance = TRUE,
+       seed = current_seed)
 
 print('Modeling complete, saving data') 
 
-model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 
-		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf')
+model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr', 
+		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf')
 
 ml_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
