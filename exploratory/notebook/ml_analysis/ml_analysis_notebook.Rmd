@@ -482,6 +482,7 @@ hist_performance_df %>%
     geom_rect(data = data.frame(ymin = 0.1, ymax = 0.93, method = 'rf', taxonomic_level = 6, Performance = 1),
               aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
               fill = NA)
+# helpful logloss explanation https://stats.stackexchange.com/questions/276067/whats-considered-a-good-log-loss
 ```
 
   
