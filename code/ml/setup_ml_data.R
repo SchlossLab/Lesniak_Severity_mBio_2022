@@ -89,14 +89,19 @@ day_0_moribund <- metadata %>%
 write_tsv(day_0_moribund, 'data/process/ml/day_0_moribund.tsv')	
 
 # setup data to predict histology severity of colonized mice (microbiome, cdiff, toxin)
-day_10_histology_df <- metadata %>% 
-	filter(day == 10,
-		early_euth == F) %>% 
-	select(group, C_difficile_CFU = cdiff_cfu, mouse_id) %>% 
-	left_join(select(toxin, group, toxin_level = Log_repiricoal_dilution),
-		by = c('group')) %>% 
+toxin_summary <- toxin %>% 
+	group_by(mouse_id) %>% 
+	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
+day_0_histology_df <- metadata %>% 
+	select(group, mouse_id, day) %>% 
+	filter(day == 0) %>% 
+	left_join(cfu_summary, by = c('mouse_id')) %>% 
+	left_join(toxin_summary, by = c('mouse_id')) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
+	ungroup %>% 
+	filter(early_euth == F) %>% 
 	inner_join(select(histology, mouse_id, hist_score), by = c('mouse_id')) %>% 
-	select(-mouse_id, -group) %>% 
+	select(-mouse_id, -group, -early_euth, -day) %>% 
+	filter(hist_score != 'mid') %>% 
 	relocate(hist_score)
-write_tsv(day_10_histology_df, 'data/process/ml/day_10_histology.tsv')	
+write_tsv(day_0_histology_df, 'data/process/ml/day_0_histology.tsv')	
