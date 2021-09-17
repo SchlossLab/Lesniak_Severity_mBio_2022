@@ -99,7 +99,7 @@ performance_df <- read_tsv('../../../data/process/ml/ml_performance.tsv',
          taxonomic_level = factor(taxonomic_level, 
                                   levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum')))  
 features_df <- read_tsv('../../../data/process/ml/ml_feature_imp.tsv',
-                     col_type = 'ddcccdcc') 
+                     col_type = 'ddcccddcc') 
 hyperparameter_df <- read_tsv('../../../data/process/ml/ml_hp_performance.tsv',
                      col_type = 'ddcdccc') 
 taxonomy_df <- read_tsv('../../../data/process/final.taxonomy.tidy.tsv',
