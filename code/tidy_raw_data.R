@@ -52,8 +52,10 @@ toxin_data <- read_xlsx(input_toxin, sheet = 'Sheet1',
 		col_types = c('text', 'text', 'text', 'numeric')) %>% 
 		rename(group = Cage_Mouse,
 			   toxin_sample_day = Experiment_day,
-			   toxin_sample_type = Sample_source) %>% 
+			   toxin_sample_type = Sample_source) %>%
 		separate(group, c('cage_id', 'ear_tag', 'day'), remove = F, fill = 'left') %>% 
+		mutate(ear_tag = ifelse(ear_tag == '986', '896', ear_tag), # fix ear tag typo
+			   ear_tag = gsub('C', '', ear_tag)) %>%  # remove C for cecal label from ear tag
 		mutate(mouse_id = paste0(cage_id, '_', ear_tag), # create unique mouse id
 			   group = gsub('-', '_', group), # adjust sample labels to be mothur friendly
 			   mouse_id = ifelse(mouse_id == 'NA_NA', group, mouse_id)) %>% # set mouse_id for inoculum
