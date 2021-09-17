@@ -46,9 +46,9 @@ seed=$SLURM_ARRAY_TASK_ID
 # tune_ml.R seed taxonomic_level training_fraction
 # taxonomic levels - Phylum, Class, Order, Family, Genus, OTU
 echo Running tune_ml with all taxonomic levels with training fraction of 0.9
-Rscript code/tune_ml.R $seed Phylum 0.9
-Rscript code/tune_ml.R $seed Class 0.9
-Rscript code/tune_ml.R $seed Order 0.9
-Rscript code/tune_ml.R $seed Family 0.9
-Rscript code/tune_ml.R $seed Genus 0.9
-Rscript code/tune_ml.R $seed OTU 0.9
+Rscript code/ml/tune_ml.R $seed Phylum 0.9
+Rscript code/ml/tune_ml.R $seed Class 0.9
+Rscript code/ml/tune_ml.R $seed Order 0.9
+Rscript code/ml/tune_ml.R $seed Family 0.9
+Rscript code/ml/tune_ml.R $seed Genus 0.9
+Rscript code/ml/tune_ml.R $seed OTU 0.9

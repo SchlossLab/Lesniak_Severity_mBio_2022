@@ -45,4 +45,4 @@ seed=$SLURM_ARRAY_TASK_ID
 
 # run_ml.R seed taxonomic_level
 # taxonomic levels - Phylum, Class, Order, Family, Genus, OTU
-Rscript code/run_ml.R $seed Order
+Rscript code/ml/run_ml.R $seed Order
