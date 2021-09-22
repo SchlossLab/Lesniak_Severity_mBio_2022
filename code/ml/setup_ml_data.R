@@ -78,7 +78,7 @@ write_tsv(day_0_predict_future_toxin_df, 'data/process/ml/day_0_predict_future_t
 #	group_by(mouse_id, early_euth) %>% 
 #	summarise(median_CFU = median(cdiff_cfu))
 day_0_moribund <- metadata %>% 
-	select(group, mouse_id, day) %>% 
+	select(group, mouse_id, day, early_euth) %>% 
 	filter(day == 0) %>% 
 #	left_join(cfu_summary, by = c('mouse_id')) %>% 
 #	left_join(toxin_summary, by = c('mouse_id')) %>% 
@@ -93,7 +93,7 @@ write_tsv(day_0_moribund, 'data/process/ml/day_0_moribund.tsv')
 #	group_by(mouse_id) %>% 
 #	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
 day_0_histology_df <- metadata %>% 
-	select(group, mouse_id, day) %>% 
+	select(group, mouse_id, day, early_euth) %>% 
 	filter(day == 0) %>% 
 #	left_join(cfu_summary, by = c('mouse_id')) %>% 
 #	left_join(toxin_summary, by = c('mouse_id')) %>% 
