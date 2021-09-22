@@ -117,4 +117,4 @@ endpoint_histology_df <- metadata %>%
 								  T ~ 'mid')) %>% 
 	filter(hist_score != 'mid') %>% 
 	relocate(hist_score)
-write_tsv(day_0_histology_df, 'data/process/ml/endpoint_histology.tsv')
+write_tsv(endpoint_histology_df, 'data/process/ml/endpoint_histology.tsv')
