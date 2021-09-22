@@ -69,19 +69,19 @@ day_0_predict_future_toxin_df <- toxin %>%
 write_tsv(day_0_predict_future_toxin_df, 'data/process/ml/day_0_predict_future_toxin.tsv')	
 
 # setup data to predict moribunidty (microbiome, cdiff, toxin)
-toxin_summary <- toxin %>% 
-	filter(toxin_sample_day  %in% c(1,2)) %>% 
-	group_by(mouse_id) %>% 
-	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
-cfu_summary <- metadata %>% 
-	filter(day %in% c(1,2)) %>% 
-	group_by(mouse_id, early_euth) %>% 
-	summarise(median_CFU = median(cdiff_cfu))
+#toxin_summary <- toxin %>% 
+#	filter(toxin_sample_day  %in% c(1,2)) %>% 
+#	group_by(mouse_id) %>% 
+#	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
+#cfu_summary <- metadata %>% 
+#	filter(day %in% c(1,2)) %>% 
+#	group_by(mouse_id, early_euth) %>% 
+#	summarise(median_CFU = median(cdiff_cfu))
 day_0_moribund <- metadata %>% 
 	select(group, mouse_id, day) %>% 
 	filter(day == 0) %>% 
-	left_join(cfu_summary, by = c('mouse_id')) %>% 
-	left_join(toxin_summary, by = c('mouse_id')) %>% 
+#	left_join(cfu_summary, by = c('mouse_id')) %>% 
+#	left_join(toxin_summary, by = c('mouse_id')) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
 	mutate(early_euth = ifelse(early_euth, 'severe', 'mild')) %>% 
 	select(-mouse_id, -day, -group) %>% 
@@ -89,19 +89,32 @@ day_0_moribund <- metadata %>%
 write_tsv(day_0_moribund, 'data/process/ml/day_0_moribund.tsv')	
 
 # setup data to predict histology severity of colonized mice (microbiome, cdiff, toxin)
-toxin_summary <- toxin %>% 
-	group_by(mouse_id) %>% 
-	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
+#toxin_summary <- toxin %>% 
+#	group_by(mouse_id) %>% 
+#	summarise(toxin_positive_days = sum(Log_repiricoal_dilution > 1))
 day_0_histology_df <- metadata %>% 
 	select(group, mouse_id, day) %>% 
 	filter(day == 0) %>% 
-	left_join(cfu_summary, by = c('mouse_id')) %>% 
-	left_join(toxin_summary, by = c('mouse_id')) %>% 
+#	left_join(cfu_summary, by = c('mouse_id')) %>% 
+#	left_join(toxin_summary, by = c('mouse_id')) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
-	ungroup %>% 
+	#ungroup %>% 
 	filter(early_euth == F) %>% 
 	inner_join(select(histology, mouse_id, hist_score), by = c('mouse_id')) %>% 
 	select(-mouse_id, -group, -early_euth, -day) %>% 
 	filter(hist_score != 'mid') %>% 
 	relocate(hist_score)
-write_tsv(day_0_histology_df, 'data/process/ml/day_0_histology.tsv')	
+write_tsv(day_0_histology_df, 'data/process/ml/day_0_histology.tsv')
+
+endpoint_histology_df <- metadata %>% 
+	filter(day == mouse_endpoint) %>% 
+	select(group, mouse_id) %>% 
+	inner_join(shared, by = c('group' = 'Group')) %>% 
+	inner_join(select(histology, mouse_id, summary_score), by = c('mouse_id')) %>% 
+	select(-mouse_id, -group) %>% 
+	mutate(hist_score = case_when(summary_score <= 5 ~ 'low',
+								  summary_score >= 9 ~ 'high',
+								  T ~ 'mid')) %>% 
+	filter(hist_score != 'mid') %>% 
+	relocate(hist_score)
+write_tsv(day_0_histology_df, 'data/process/ml/endpoint_histology.tsv')

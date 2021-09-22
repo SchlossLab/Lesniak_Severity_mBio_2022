@@ -71,6 +71,7 @@ same_day_toxin <- setup_ml_df(same_day_toxin, 'toxin')
 day_0_predict_future_toxin <- setup_ml_df(day_0_predict_future_toxin, 'toxin')
 day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
 day_0_histology <- setup_ml_df(day_0_histology, 'hist_score')
+end_histology <- setup_ml_df(endpoint_histology, 'hist_score')
 
 
 # run logistic regression
@@ -111,7 +112,13 @@ day_0_histology_lr <- run_ml(day_0_histology,
        training_frac = fraction,
 	   hyperparameters = new_hp,
        seed = current_seed)
-
+print('Running Logistic Regression on day 0 to predict endpoint clinical score')
+endpoint_histology_lr <- run_ml(endpoint_histology,
+	   'glmnet',
+       outcome_colname = 'hist_score',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+       seed = current_seed)
 
 # run random forest
 new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
@@ -143,11 +150,18 @@ day_0_histology_rf <- run_ml(day_0_histology,
        training_frac = fraction,
 	   hyperparameters = new_hp,
        seed = current_seed)
+print('Running Random Forest on day 0 to predict day 10 severity')
+endpoint_histology_rf <- run_ml(endpoint_histology,
+	   'rf',
+       outcome_colname = 'hist_score',
+       training_frac = fraction,
+	   hyperparameters = new_hp,
+       seed = current_seed)
 
 print('Modeling complete, saving data') 
 
-model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr', 
-		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf')
+model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr', 'endpoint_histology_lr', 
+		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf', 'endpoint_histology_rf')
 
 ml_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
