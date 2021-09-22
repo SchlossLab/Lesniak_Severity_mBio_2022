@@ -39,6 +39,9 @@ day_0_moribund <- read_tsv('data/process/ml/day_0_moribund.tsv',
 day_0_histology <- read_tsv('data/process/ml/day_0_histology.tsv',
 						   col_type = cols(.default = col_double(), 
 						   				   hist_score = col_character())) 
+endpoint_histology <- read_tsv('data/process/ml/endpoint_histology.tsv',
+						   col_type = cols(.default = col_double(), 
+						   				   hist_score = col_character())) 
 taxonomy_df <- read_tsv('data/process/final.taxonomy.tidy.tsv',
                         col_type = cols(.default = col_character()))
 
