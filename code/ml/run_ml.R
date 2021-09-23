@@ -143,14 +143,14 @@ day_0_moribund_rf <- run_ml(day_0_moribund,
 	   find_feature_importance = TRUE,
        seed = current_seed)
 print('Running Random Forest on day 0 to predict day 10 severity')
-day_0_histology_rf <- run_ml(day_0_histology,
+day_0_histology_rf_80 <- run_ml(day_0_histology,
 	   'rf',
        outcome_colname = 'hist_score',
        training_frac = 0.8,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
-print('Running Random Forest on day 0 to predict day 10 severity')
+day_0_histology_rf_50 <- run_ml(day_0_histology,
 	   'rf',
        outcome_colname = 'hist_score',
        training_frac = 0.5,
@@ -161,8 +161,8 @@ print('Running Random Forest on day 0 to predict day 10 severity')
 
 print('Modeling complete, saving data') 
 
-model_list <- c('same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr', 'endpoint_histology_lr', 
-		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf', 'endpoint_histology_rf')
+model_list <- c(#'same_day_toxin_lr', 'day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr', 
+		   		'same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf_50', 'day_0_histology_rf_80')
 
 ml_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
