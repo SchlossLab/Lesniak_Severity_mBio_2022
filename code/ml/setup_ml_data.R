@@ -105,16 +105,3 @@ day_0_histology_df <- metadata %>%
 	filter(hist_score != 'mid') %>% 
 	relocate(hist_score)
 write_tsv(day_0_histology_df, 'data/process/ml/day_0_histology.tsv')
-
-endpoint_histology_df <- metadata %>% 
-	filter(day == mouse_endpoint) %>% 
-	select(group, mouse_id) %>% 
-	inner_join(shared, by = c('group' = 'Group')) %>% 
-	inner_join(select(histology, mouse_id, summary_score), by = c('mouse_id')) %>% 
-	select(-mouse_id, -group) %>% 
-	mutate(hist_score = case_when(summary_score <= 5 ~ 'low',
-								  summary_score >= 9 ~ 'high',
-								  T ~ 'mid')) %>% 
-	filter(hist_score != 'mid') %>% 
-	relocate(hist_score)
-write_tsv(endpoint_histology_df, 'data/process/ml/endpoint_histology.tsv')
