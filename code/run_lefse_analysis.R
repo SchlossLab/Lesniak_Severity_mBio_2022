@@ -1,20 +1,22 @@
 
 
 library(tidyverse)
+library(here)
 
-metadata <- read_tsv('data/process/metadata_tidy.tsv',
+metadata <- read_tsv(here('data/process/metadata_tidy.tsv'),
 		col_type = 'cccccDddddDcdddddcdl') 
-shared <- read_tsv('data/mothur/sample.final.0.03.subsample.shared',
+shared <- read_tsv(here('data/mothur/sample.final.0.03.subsample.shared'),
 		col_types = cols(.default = col_double(),
 			Group = col_character())) %>% 
 	mutate(Group = ifelse(grepl('_D|DA', Group), Group,
 		gsub('D', '_D', Group)))
-toxin <- read_tsv('data/process/toxin_tidy.tsv',
-                  col_type = 'cccccdc')
-histology <- read_tsv('data/process/histology_tidy.tsv',
+toxin <- read_tsv(here('data/process/toxin_tidy.tsv'),
+                  col_type = 'cccccdc') %>% 
+  filter(mouse_id %in% metadata$mouse_id)
+histology <- read_tsv(here('data/process/histology_tidy.tsv'),
                       col_type = 'ccccdddcdcc') %>% 
 	             mutate(mouse_id = paste0(cage_id, '_', ear_tag))
-taxonomy <- read_tsv('data/process/final.taxonomy.tidy.tsv',
+taxonomy <- read_tsv(here('data/process/final.taxonomy.tidy.tsv'),
                      col_types = cols(.default = col_character()))
 
 run_lefse <- function(sample_df_name, tax_level){
@@ -51,66 +53,90 @@ run_lefse <- function(sample_df_name, tax_level){
 		mutate(numOtus = length(present_otus))
 
 	# write files to be used in mothur for lefse analysis
-	write_tsv(file = paste0('data/process/', i, '_', tax_level, '.shared'), 
+	write_tsv(file = paste0('data/process/lefse/', i, '_', tax_level, '.shared'), 
 		x = filter(current_shared, Group %in% current_df$Group))
-	write_tsv(file = paste0('data/process/', i, '_', tax_level, '.design'), 
+	write_tsv(file = paste0('data/process/lefse/', i, '_', tax_level, '.design'), 
 		x = filter(current_df, Group %in% current_shared$Group))
 	print(tax_level)
 	# run lefse
-	system(paste0('code/mothur/mothur "#set.dir(input=data/process, output=data/process);
+	system(paste0('code/mothur/mothur "#set.dir(input=data/process/lefse, output=data/process/lefse);
 		lefse(shared=', i, '_', tax_level, '.shared, design=', i, '_', tax_level, '.design)"'))
 }
 
 # lefse - severe disease by OTU
-#severe_disease <- metadata %>% 
-#	filter(cdiff_strain == 431,
-#		day == 0) %>% 
-#	select(Group = group, early_euth)
+severe_disease <- metadata %>% 
+	filter(cdiff_strain == 431,
+		day == 0) %>% 
+	select(Group = group, early_euth)
 
-toxin_presence <- metadata %>% 
-	filter(cdiff_strain == 431) %>% 
-	inner_join(toxin, by = 'group') %>% 
-	mutate(toxin = Log_repiricoal_dilution >1)
-
-#toxin_moribund <- toxin_presence %>% 
-#	filter(early_euth == T) %>% 
-#	select(Group = group, toxin)
-#
-#toxin_mild <-  toxin_presence %>% 
-#	filter(early_euth == F) %>% 
-#	select(Group = group, toxin)
+toxin_presence <- toxin %>% 
+  mutate(toxin = Log_repiricoal_dilution >1) %>%
+  right_join(filter(metadata, cdiff_strain == 431), 
+             by = 'group', suffix = c('.toxin', '')) %>% 
+  group_by(mouse_id) %>% 
+  mutate(toxin_production = any(toxin, na.rm =T)) %>% 
+  ungroup()
 
 toxin_severity <- toxin_presence %>% 
-	mutate(toxin_outcome = case_when(early_euth == T & toxin == T ~ 'toxin_moribund',
-									early_euth == T & toxin == F ~ 'no_toxin_moribund',
-									early_euth == F & toxin == T ~ 'toxin_mild',
-									early_euth == F & toxin == F ~ 'no_toxin_mild')) %>% 
-	select(Group = group, toxin_outcome)
+  filter(day == 0) %>% 
+  mutate(toxin_outcome = case_when(early_euth == T & toxin_production == T ~ 'toxin_moribund',
+                                   early_euth == T & toxin_production == F ~ 'no_toxin_moribund',
+                                   early_euth == F & toxin_production == T ~ 'toxin_mild',
+                                   early_euth == F & toxin_production == F ~ 'no_toxin_mild')) %>% 
+  select(Group = group, toxin_outcome) %>% 
+  data.frame
 
-#toxin_presence <- toxin_presence %>% 
-#	select(Group = group, toxin)
-#
-#histology_df <- metadata %>% 
-#	filter(cdiff_strain == 431,
-#		day == 10) %>% 
-#	inner_join(histology, by = c('mouse_id'))
-#
-#summary_score_hilo <- histology_df %>% 
-#	mutate(summary_score = case_when(summary_score > 5 ~ 'high',
-#									 summary_score < 5 ~ 'low',	
-#									 T ~ 'NA')) %>% 
-#	filter(summary_score != 'NA') %>% 
-#	select(Group = group, summary_score)
-#
-#epithelial_damage_presence <- histology_df %>% 
-#	mutate(epithelial_damage = epithelial_damage > 0) %>% 
-#	select(Group = group, epithelial_damage)
+day_0_toxin_production <- toxin %>%
+  group_by(mouse_id) %>% 
+  summarise(toxin_presence = max(Log_repiricoal_dilution) > 1) %>%
+  right_join(filter(metadata, cdiff_strain == 431), 
+             by = 'mouse_id', suffix = c('.toxin', '')) %>% 
+  filter(day == 0,
+         !is.na(toxin_presence)) %>% 
+  select(Group = group, toxin_presence)
 
-#run_lefse('severe_disease', 'OTU')
-#run_lefse('severe_disease', 'Genus')
-#run_lefse('toxin_presence', 'Genus')
-#run_lefse('toxin_moribund', 'Genus')
-#run_lefse('toxin_mild', 'Genus')
+toxin_presence <- toxin_presence %>% 
+  filter(toxin_sample_type == 'stool') %>% 
+	select(Group = group, toxin)
+
+summary_score_hilo_day10 <- metadata %>% 
+	filter(cdiff_strain == 431,
+		day == 10) %>% 
+	inner_join(histology, by = c('mouse_id')) %>% 
+	mutate(summary_score = case_when(summary_score > 5 ~ 'high',
+									 summary_score < 5 ~ 'low',	
+									 T ~ 'NA')) %>% 
+	filter(summary_score != 'NA') %>% 
+	select(Group = group, summary_score)
+
+summary_score_hilo_day0 <- metadata %>% 
+  filter(cdiff_strain == 431,
+         day == 0) %>% 
+  inner_join(histology, by = c('mouse_id')) %>% 
+  mutate(summary_score = case_when(summary_score > 5 ~ 'high',
+                                   summary_score < 5 ~ 'low',	
+                                   T ~ 'NA')) %>% 
+  filter(summary_score != 'NA') %>% 
+  select(Group = group, summary_score)
+
+day_0_severity <- metadata %>% 
+  filter(cdiff_strain == 431,
+         day == 0) %>% 
+  inner_join(histology, by = c('mouse_id')) %>% 
+  mutate(summary_score = case_when(early_euth == T ~ 'severe',
+                                   summary_score > 5 ~ 'moderate',
+                                   summary_score < 5 ~ 'mild',	
+                                   T ~ 'NA')) %>% 
+  filter(summary_score != 'NA') %>% 
+  select(Group = group, summary_score)
+
+
+
+run_lefse('severe_disease', 'OTU')
+run_lefse('severe_disease', 'Genus')
+run_lefse('toxin_presence', 'Genus')
 run_lefse('toxin_severity', 'Genus')
-#run_lefse('summary_score_hilo', 'Genus')
-#run_lefse('epithelial_damage_presence', 'Genus')
+run_lefse('summary_score_hilo_day10', 'Genus')
+run_lefse('summary_score_hilo_day0', 'Genus')
+run_lefse('day_0_severity', 'Genus')
+run_lefse('day_0_toxin_production', 'Genus')
