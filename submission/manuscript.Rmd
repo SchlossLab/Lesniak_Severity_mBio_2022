@@ -1,0 +1,214 @@
+---
+csl: mbio.csl
+fontsize: 12pt
+output:
+  word_document: default
+  pdf_document:
+    includes:
+      in_header: header.tex
+    keep_tex: yes
+bibliography: references.bib
+---
+
+
+```{r knitr_settings, eval=TRUE, echo=FALSE, cache=FALSE, warning=FALSE, message=FALSE}
+library(knitr)
+library(readr)
+
+opts_chunk$set("tidy" = TRUE)
+opts_chunk$set("echo" = FALSE)
+opts_chunk$set("eval" = TRUE)
+opts_chunk$set("warning" = FALSE)
+opts_chunk$set("cache" = FALSE)
+opts_chunk$set("message" = FALSE)
+
+```
+
+\pagenumbering{arabic}
+\linenumbers
+\doublespacing
+
+# Gut microbiota drives differences in Clostridiodes difficile infection severity.
+  
+
+
+\vspace{30mm}
+
+
+**Running title:** Microbiota drives *Clostridioides difficile* infection severity
+
+\vspace{20mm}
+
+Nicholas A. Lesniak$^1$, Alyxandria M. Schubert$^1$, Hamide Sinani$^1$, Patrick D. Schloss$^{1,\dagger}$
+
+\vspace{30mm}
+
+$\dagger$ To whom correspondence should be addressed: pschloss@umich.edu  
+1\. Department of Microbiology and Immunology, University of Michigan, Ann Arbor, MI  
+
+
+
+
+\newpage 
+
+
+## Abstract
+
+Clostridioides difficile infection has become more common and severe in the last few decades. Patient age, white blood cell count, creatinine levels as well as C. difficile ribotype and the presence of toxin genes have been associated with disease severity. However, models based on those data to identify patients with CDI that will develop severe disease have not been robust enough to be broadly applied. These models are input from our understanding of C. difficile interactions with the gut environment. The gut bacteria are a key determinant in C. difficile infection. CDI is dependent on perturbations in the bacterial community in order to colonize the gut. The gut microbiota also impairs C. difficile colonization through bile acid metabolism,  nutrient consumption and bacteriocin production. However, it is unclear if the gut bacteria affect the disease severity resulting from that colonization. Here we have shown gut bacterial communities contribute to disease severity variation. We created diverse gut communities by colonizing germ-free mice with human fecal communities. They were then infected with C. difficile which resulted in differed disease severities. The severity grouped by the human fecal community they received. Generally, facultative anaerobes with pathogenic potential, such as Escherichia, Helicobacter  and Klebsiella, were associated with more severe disease. Bacterial groups associated with dietary fiber degradation, such as Coprobacillus, were associated with reduced disease severity. Lastly, we showed communities that resulted in either low or high histopathologic scores or severe disease had the same outcome when infected with a different C. difficile isolate.
+
+## Importance
+
+Clostridioides difficile infection (CDI) causes a range of disease from asymptomatic to mild diarrhea to severe outcomes of recurrent infections and even death. Models that predict severity and treatment decisions are based on clinical factors and C. difficile capabilities. But currently the gut microbiome, the primary protector against CDI, has not been accounted for its effect on CDI disease severity. We demonstrated variation in the microbiome of mice colonized with human feces was sufficient to result in a range of disease severities. Our results show groups of bacteria contribute to the development of disease in C. difficile infections. Gut bacterial community data from patients with CDI could improve our ability to identify patients more at risk for severe disease and improve interventions which treat the gut bacteria to reduce host damage.
+
+
+
+\newpage
+
+
+## Introduction
+
+Clostridioides difficile infections (CDI) have been increasing in incidence and severity for the past two decades. *C. difficile*, first identified in 1931, wasn't categorized as a pathogen until the late 1970s after it was determined to be the driver of antibiotic-associated psuedomembranous colitis following the introduction of broad-spectrum antibiotics. In the early 2000s CDI became more problematic with increasing incidences, severity and death. People colonized with *C. difficile* can experience a range of disease severities from asymptomatic to mild diarhea to toxic megacolon and death. CDI is primarily treated with a course of antibiotics, either metronidazole or vancomycin depending on CDI severity, but can also be treated with cessation of other antibiotics for milder cases or with a fecal microbiota transplantion for CDI cases recalitrant to antibiotics. 
+
+The degree of CDI disease severity has been connected to aspects of C. difficile strain and host factors. Since the first identification of C. difficile, more virulent strains have emerged, such as ribotype 027. Virulence is increased by the presence of the genes for Toxin A/B or fluoroquinolon resistence. The binary toxin, while not sufficient on its own to allow virulence, has been associated with increased virulence in the presence of Toxin A/B. Mutations in tcd C, the negative regulator of of toxin transcription, also increased the virulence of the C. difficile strain. In addition to the virulent capability of the colonizing strain, the immune response of the person infected also affects the severity of the disease. The delayed or reduced production of antibodies IgG and IgA can result in more severe disease. Increased neutrophil inflitration can lead to worse outcomes. Beyond the immune response, increased density of the toxin receptor on the host cells can increase the severity of the infection. 
+
+There has been great interest in the interactions of *C. difficile* and the intestinal bacterial community in CDI. Indigenous bacteria of a healthy intestinal community provide a protective barrier preventing *C. difficile* from colonizing and causing infection. The disruption of this community from a range of pertubations, such as many classes of antibiotics, medications, or even dietary changes, allows C. difficile to colonize. We have shown that different pertubations lead to differences in community structure and the ability for C. difficile to maintain colonization. C. difficile has also been shown to modify its metabolism and expression of virulence genes in response to the nutritional environment. However, it is unclear if the bacterial community affect the disease severity of CDI. Here, we tested if variablity in the intestinal bacterial community can produce and explain variation in the disease severity caused by a single C. difficile strain, ribotype 027.
+
+
+## Results
+
+**Germ-free mice colonized with human fecal commmunities have diverse and unique structures.** Based on our previous observation mice with variation in their microbiota showed differences in colonization of *C. difficile*, we sought to explore the affect communties with greater variation had on *C. difficile* challenge. To produce communities with greater variation than mice with their indigenous communties, we used human fecal communities to establish the gut commuities in germ-free mice. We inoculated a cage of germ-free C57BL/6 mice (2 -4 mice per cage) with homogenized feces from one of 15 different human donors via oral gavage. The fecal community was allowed to colonize and stabilize for two weeks post inoculation. We then assessed the gut bacterial communities by sequencing the V4 region of the 16S rRNA gene extracted from fecal pellets. The communities established in the mice group most closely to other mice recieving the same donor than to either their respective donor or any mice who received stool from a different donor (Figure 1A). Most of the communities  highly abundant classes were *Clostridia*, *Bacteroidia*, *Erysipelotrichia*, *Bacilli*, and *Gammaproteobacteria*. However, each group of mice harbored unique combination of class abunadances in their gut bacterial communities.
+**Any alpha? compare to murine variation? Number of unique otus?**
+
+**C. difficile is able to colonize mice without perturbation.** Our goal is to test the effect of the variation in the microbiota on the effect of a *C. difficile* challenge. A typical mouse model of CDI requires pretreatment with antibiotics such as clindamycin to become susceptible to *C. difficile* colonization [CITATION]. However, we wanted to avoid modifying the communties with an antibiotic to maintain the community structures and differences. Since these communties came from human donor which may have become susceptible through their own exposures, we decided to test if *C. difficile* was able to colonize these communities without further treatment. We hypothesized that *C. difficile* would most likely be able to colonize the mice with communities that came from donors which had a history of antibiotic use, one of the primary risk factors for developing CDI (TABLE, CITATION). After two weeks post incoluation with human fecal communities, the mice were then challenged with 10^**XXXXX** *C. difficile* ribotype 027 spores (**Add schematic?**). The mice were followed for 10 days post challenge and their stool was collected and plated for *C. difficile* CFU to detect colonization level. Suprisingly, communities from all donors were colonized (Figure 2). The only two mice that were able to resist *C. difficile* colonization both recieved their community from the same donor. Therefore, the transplant communties were susceptible to colonization without further modification of the communities. 
+
+**Infection seveity varies by initial community structure.** After challenging the mice with *C. difficile*, we looked at the effects of the different communities on the outcome from the *C. difficile* challenge. We followed the mice for signs of disease as well as *C. difficile* colonization and toxin production for 10 days post challenge. Some mice were not initally colonized on the day after challenge and took a few days to become fully colonized (**SUPP FIG?**). There were a group of mice, all from a set of 6 donors, highly colonized one day post challenge that became moribund within 3 days post challenge. The remaining mice, except for one cage, maintained *C. difficile* colonization through the end of the experiment (Figure 2). After the  mice were humanely euthanised on the experiment endpoint, day 10 post challenge or earlier if they succumbed to the infection, their cecal tissue was collected and scored for histological signs of disease and fecal samples were assayed for toxin (Figure 3). Overall, there was greater toxin activity detected in the stool of the moribund mice (*P* = 0.003). However, when looking at each group of mice, we saw there was a range in toxin activity for both the mice with mild disease and moribund mice (Figure 3A). Some donor groups that maintained colonization without severe disease had similarlly high activity levels as was detected in the moribund mice. Additionally, some moribund mice did not have toxin activity detected in their stool. These oberserved variations in toxin activity and relation to disease severity have been previously characterized [@Akerlund2006, @Vitucci2020]. Next we examined the histological damage caused by the *C. difficile* infection. For mice that succumb to the infection prior to day 10 post challenge, we observed high levels of epithelial damage, tissue edema and inflammation, similar to previously reported histological findings for *C. difficile* ribotype 027 [CITATION, @Cowardin2016]. As observed with toxin activity, the moribund mice had higher disease clinical scores than the mice with mild disease (*P* = 3.0e-9). However, unlike the toxin activity, all moribund mice had consistently high clinical scores. The mice which maintained persistent level of colonization, we saw a range in tissue damage from no signs of disease to nearly the same level as the moribund mice, which grouped by community donor. Together, the toxin activity, clinical score, and moribundity showed variation across the donors but were largely consistent within each group of mice recieving the same human fecal community.
+
+**Populations of the microbial communities explain variation in disease severity.** Since the disease charateristics grouped by human fecal community donor, we next looked if the composition of the community could explain the variation we observed. First, we tested for associations between taxonomic groups and the outcomes of the *C. difficile* challenge. We used the linear discriminant analysis (LDA) effect size (LEfSe) method to identify the Genus level differences in the initial bacterial communities between the severity level and toxin production. We split the mice into groups by severity level based on their if they became moribund (severe), or if their clinical score was above 5 (moderate) or below 5 (mild). This analysis revealed 20 genera that were significantly different by the disease severity (Figure 4A). The presence of a group of populations of *Turicibacter*, *Streptococcus*, *Staphylococcus*, *Pseudomonas*, *Phocaeicola*, *Parabacteroides*, *Bacteroides*, and *Escherichia/Shigella* were detected at higher levels in the moribund group. Populations of *Anaerotignum*, *Coprobacillus*, *Enterocloster*, and *Murimonas* were increased in the group of mice that only had mild disease. There were many genera that did not have a correlation of relative abundance and disease severity, such as the populations of *Monoglobus* and *Hungatella*, which were decreased or increased, respectively, in only the group of mice with high clinical scores but did not succumb to the infection. To understand these cases better we used LEfSe to identify the genera differentiating the communities that we detected toxin in from those that did not (Figure 4B). There were many genera the were associated with toxin production as we would expect from their association with severe disease, such as populations of *Escherichia/Shigella* and *Bacteroides*. Likewise, there were genera such as *Anaerotignum*, *Enterocloster*, and *Murimonas* that were higher in communities that had mild disease and no toxin was produced. However, communities without a linear trend between relative abundance and disease severity can be better understood by their association with toxin production. Populations of *Hungatella* were increased in the group with moderate disease but not with the production of toxin. Lastly, we looked for associations between the clinical score and the genera populations at that same time (Figure 4C). The populatons of *Bacteroides* at the end matched the trend observed in the initial community, increased population correlated with increased clinical score. Populations of *Klebsiella* and *Prevotellaceae* positively correlated with clinic score and were increased in the group that produced toxin. These tests have shown which individual populations associated with the different outcomes.
+
+We next wanted to understand how the populations in the context of each other lead to the different outcomes from CDI. We trained random forest models with the intital bacterial community relative abundance data at each taxonomic rank to predict toxin production, moribundity or final clinical score. Overall for predicting toxin production, microbial populations aggregated by their phylum level classificiation performed as well as models using lower taxonomic ranks (AUROC = 0.83, Figure S2). The initial community prior to challenge, populations of *Verrucomicrobia*, *Campilobacterota* and *Proteobacteria* contributed the most to the correct prediction of toxin production (Figure 5A). *C. difficile* was more likely to produce toxin when the initial community had smaller populations of *Verrucomicrobia* and *Campilobacterota* and had larger popluations of *Proteobacteria*. Next, we looked at the ability of the community to predict moribundity. The community grouped at the class rank was sufficient to predict if the mouse would succumb to the infection before the end of the experiment (AUROC = 0.91, Figure S2). Groups of bacteria belonging to *Bacilli*, *Firmicutes*, and *Erysipelotrichia* contributed the most to the correct prediction. Larger populations of *Bacilli* and *Firmicutes* and reduced populations of *Erysipelotrichia* were more likely to result in moribundity (Figure 5B). Aside from *Erysipelotrichia*, the only other population decreased in moribund mice was *Clostridia*, all other features had increased populations in the moribund mice. Lastly, the initial community was able to predict if the mice would have a clinical score above or below 5 with the relative abundances from the genus rank (AUROC = 0.99, Figure S2). There were no genera with a significantly greater effect on the model performance than any others, indicating the model is reliant on many genera for the correct prediction. The model used some of the genera identified in the LEfSe analysis, such as populations of *Coprobacillus*, *Anaerostipes*, and *Hungatella*. Communities with greater populations of *Hungatella*, *Eggerthella*, *Bifidobacterium*, *Duncaniella* and *Neisseria* were more likely to have higher clinical scores. 
+
+**Disease severity consistent by donor community across strains/isolates.** We used a single *C. difficile* isolate to characterize the range of disease severity and the features of the bacterial community associated with severity. Based on these results, we hypothesized the community was responsible for the disease severity not the specific *C. difficile* isolate we used in our experiments. To test this hypothesis, we selected three communities based on the result from our analysis thus far to select one community we would expect to result in a low clinical score (< 5), a high clinical score (> 5), and one with a high clinical score which became moribund. Using genus level data to select the communities, we selected communities based on the relative abundance patterns of *Sellimonas* and *Anaerotignum* (higher abundance in mice with a low clinical score), *Lachnospiracea* (lower abundance in moribund mice), *Hungatella* and *Eisenbergiella* (higher abundance in moderate mice and lower in moribund mice), Clostridium sensu stricto (higher in moribund mice by both LEfSe analysis and RF model) and *Enterocloster* (lower in moribund mice and a negative linear trend with disease severity by LEfSe analysis). With this set of human fecal communities selected, we inoculated mice via oral gavage of the human fecal slurry and allowed two weeks for the a community to establish. We then challenged the mice with a different *C. difficile* [@Carlson2013]. The disease severity for this set of experiments closely matched that in our original set which were challenged with *C. difficile* isolate 431 (Figure 6). 
+
+
+## Discussion
+
+Challenging mice colonized with different human fecal communities with a single *C. difficile* isolate allowed us to identify the effect of microbiome variation on the disease severity caused by *C. difficile* infection. Our LEfSe analyses and random forest models revealed the relationships between the bacterial community members and the CDI disease severity. We used the relative abundance patterns of community members with strong associations with disease outcome to select communities to test if the predicted severity were *C. difficile* isolate specific. The disease outcome from the *C. difficile* chalenge with the new isolate matched the expected disease severities. Overall, these results have demonstrated that the bacterial community is capable of modulating the disease severity of a *C. difficile* infection.
+
+CDI severity can range from no symptoms, mild symptoms such as diarrhea, or critical symptoms such as pseudomembranous colitis, toxic megacolon or death. At the clinical level, physicians use prediction tools that identify patients most at risk of developing a severe infection using white blood cell counts, serum albumin level, or serum creatine level [@Lungulescu2011, @McDonald2018, @Zar2007]. Those levels are being driven by the activity in the intestine [@diMasi2018]. Research into the drivers of this variation have revealed factors that make *C. difficile* more virulent. Strains are categorized for their virulence by the presence and production toxin A and toxin B and the prevelance in outbreaks, such as 027 and 078 [@AbernathyClose2020, @Theriot2011, @Goorhuis2008, @OConnor2009, @Chen2008]. However, other studies have shown that virulence is not necessarily linked with toxin production [@Roa2015] or the strain [@Walk2012]. Furthermore, there is variation in the genome, growth rate, sporulation, germination, and toxin production in different isolates of a strain [@Carlson2013, @He2010]. These variations may help explain why the severe CDI prediction tools often miss identifying many patients with CDI that will develop severe disease [@Dieterle2020, @Butt2013, @Perry2021, @vanBeurden2017]. Therefore, it is necessary to gain a full understanding of all factors contributing to disease variation to improve our ability to predict severity.
+
+The state of the intestinal bacterial community determines the ability of *C. difficile* to colonize, persist and even cause recurrent infections. *C. difficile* is unable to colonize an unperturbed healthy gut community and is only able to entry after a perturbation [@Schubert2015]. Once colonized, the different communities lead to different metabolic responses and dynamics of the *C. difficile* population [@Jenior2017, Jenior2018, @Lesniak2021]. The gut bacteria metabolize primary bile acids into secondary bile acids [@Staley2016, @Long2017]. The concentration of these bile acids affect the germination, growth, toxin production and biofilm formation [@Sorg2008, @Sorg2010, @Thanissery2017, @Dubois2019]. Members of the bacterial community also affect other metabolites *C. difficile* utilizes. *Bacteroides thetaiotaomicron* produce sialidases which release sialic acid from the mucosa for *C. difficile* to utilize [@Ng2013, @Ferreyra2014]. The nutrient environemt affects toxin production [@MartinVerstraete2016]. Thus, many of the actions of the gut bacteria modulate *C. difficile* in ways that would affect the disease severity driven by CDI.
+
+The gut community has not been demostrated to modulate CDI disease severity. Myriad studies have explored the relationship between the microbiome and CDI but none have ventured into the variation of disease severity due to the microbiome. Most CDI studies employ either an *in vitro* or *in vivo* model using a homogenous bacterial community. Collins et al. used multiple human communities to colonize mice, however the communities were pooled prior to gavaging into germ-free mice [@Collins2015], resulting in a single community. Studies examining difference in disease often use different strains in mice with similar microbiota as a proxy for variation in disease, such as 630 for non-severe and 027 for severe [@AbernathyClose2020, @Theriot2011, @Lawley2012, @Chen2008]. There has been studies demonstrating vairation in severity, but by tapering antibiotic dosage [@Lesniak2021, @Schubert2015, @Reeves2011] or by reducing the amount of cells or spores used for the challenge [@Chen2008, @Reeves2011]. Our group has recently been uncovering the variation the microbiome affects CDI but was limited to *C. difficile* colonization [@Lesniak2021, @Tomkovich2020]. 
+
+With our recent observations that the initial community affects the ability of *C. difficile* to persist in an environment and the existing research describing the myriad ways the microbiome affects the lifestyle of *C. difficile*, we hypothesized that the microbiome directly and indirectly modulates the disease severity of CDI. Our data demostrate bacterial community member abundances associate with variation in toxin production, histological scoring of the intestine and severe disease. This anaylsis has revealed populations of *Akkermansia*, *Anaerostipes*, *Coprobacillus*, *Enterocloster*, *Lactonifactor*, and *Monoglobus* were more abundant in the microbiome of mice which little to no disease was detected. These genera providing a protective role are supported by previous studies. *Coprobacillus*, *Lactonifactor*, and *Monoglobus* have been shown to be involved in dietary fiber fermentation and associated with healthy communities [@Mabrok2011, @Kim2019, @doPrado2021, @Muthuramalingam2019]. *Anaerostipes* and *Coprobacillus* produce short chain fatty acids which also have been associated with healthy communities [@Han2019, @Duncan2004, @Ye2018]. Furthermore, *Coprobacillus*, which is abundant in mice with low clinical disease scores but rare in all other mice, has been shwon to contain putative type I lantibiotic gene cluster and inhibit *C. difficile* colonization [@Walsh2017, @Sandiford2018, @Stein2013]. *Akkermansia* and *Enterocloster* were also idenitified as more abundant in mice which had a low clinical disease but have contridictory supporting evidence in the current literature. In our data, *Akkermansia* is most abundant in the mice with least disease but there were some mice with severe disease which had increased populations of *Akkermansia*. This could be attributed to either a more protective mucus layer had developed in the mice with little disease and *Akkermansia* is inhibiting colonization [@Stein2013, @Nakashima2021] or *Akkermansia* could be crossfeeding or exposing a niche via its mucus consumption [@Geerlings2018, @Deng2018, @Engevik2020]. Similarly with *Enterocloster*, in our data this genus was more abundant and associated with low clinical disease scores. This genus has been associated with healthy populations and has been used to mono-colonize germ-free mice to reduce the ability of *C. difficile* to colonize [@Reeves2012, @Ma2021]. However, *Enterocloster* has mostly been indentified in infections that result in disease [@Haas2020, @Finegold2005]. These data demostrate a population of bacteria has the potential to be either protective or harmful. The disease outcome is not based on the abundance of a single population of bacteria rather the result of the interactions between the host, microbiome and infecting bacteria.
+
+The groups of bacteria that were associated with either a higher clinical disease score or severe disease are members of an indigenous gut community that also have been associated with disease. These are often referred to as opportunitic pathogens, however based on the the results reported in this study it is more appropriate to apply the damage-response framework for microbial pathogenesis [@Pirofski2008, @Casadevall2014]. The disease is not driven by a single entity, rather it is an emergent property of the responses of the host immune system, infecting microbe and the microbes of the indigenous community. Many of the populations with pathgenic potential that associated with worse outcomes are also facultative anaerobes.  *Enterococcus*, *Klebsiella*, *Shigella/Escherichia*, *Staphylococcus*, and *Streptococcus* have been shown to expand their population with antibiotic use [@VanInsberghe2020, @GarzaGonzalez2019, @Schubert2014] and are commonly detected in CDI cases [@Shafiq2020, @Keith2020, @Zackular2016, @Berkell2021]. In addition to these populations, another set of bacteria, *Eggerthella*, *Prevotellaceae* and *Helicobacter*, associated with worse outcomes have also been associated with intestinal inflammation [@Gardiner2014, @Iljazovic2020, @Nagalingam2013]. *Helicobacter hepaticus* has been demostrated to be sufficient to cause susceptibility to CDI in IL-10^(-/-) B57BL/6 mice [@AbernathyClose2021]. In our mice, if *Helicobacter* was detected the mouse resulted in either severe disease or a high clinical score. While we did not use IL-10^(-/-) mice, it is possible the bacterial communtity or host response are similarly modified by *Helicobacter* allowing C. difficile infection and resulting in host damage. 
+
+The damage-response framework for pathogenesis best explains how bacterial populations identified in this study potentiate CDI disease severity through the varied interactions with the host and *C. difficile*. In this set of experiments, we use the same host, C57BL/6 mice, the same infecting microbe, *C. difficile* RT027 isolate 431, with different gut bacterial communities. The members of those communities were often present in multiple levels of disease severity. Thus, it is not merely, the presence of the microbe but their activity in response to the other microbes and host which determine their effect on host damage. Additionally, while we are using the same host and infecting microbe, they too are reacting to the specific members of the bacterial community. Disease severity is driven by the cummulative effect of the host immune response and the activity of the gut bacteria and *C. difficile*. *C. difficile* can be driving host damage through the production of toxin. The gut microbiota could be contributing to the host damage through the balance of metabolic and competitive activities, such as bacteriocin production or mucin degradation. Low levels of mucin degradation can provide nutrients to other community members producing a diverse non-damaging community []. However, if mucin degradation becomes too great that it reducing the its protective function and exposes the epithelial cells []. This over-harvesting contributes to the host damage due to other members producing toxin. Thus disease is a balance of many activities of the community. Host damage is the emergent property of numerous damage-response curves, one for host immune response, one for *C. difficile* activity and another for microbiome community activity, each of which are a composite curve of the individual activities from each group, such as antibody production, neutrophil infiltration, toxin production, sporulation, fiber and mucin degradation, etc. 
+
+Many studies have investigated individual activities contributing to CDI. Here we have shown myraid bacterial groups and their associated activities result in variation in CDI disease severity. We must continue to explore how the host, microbiota, and *C. difficile* interactions result in severe disease. We can reduce the risk of severity with a better understanding of which interactions, whether be driven by specific community functions or groups of bacteria, reduce the host damage. Approaching this problem from a damage-response framework allows us to experiment with modifying subsets of activities to reduce overall host damage. Our current treatment approach treats an individual group in this tripartite system. Most commonly, CDI is treated with an antibiotic to eliminate *C. difficile*. Alternatively, another treatment uses antibodies to neutralize *C. difficile* toxins. These treatments are only addressing a single entity of the system, leaving the potential for the other two maintain responses that result in continued host damage. However we can continue this research to elucidate treatments that drive all three entities towards reduced host damage. When a patient is diagnosed with CDI, the gut community composition, in addition to information on the immune response and *C. difficile* ribotype, can inform the predicted severity and appropriate treatment. Treating the microbiome may contribute to reduced severity. From our results, promoting fiber metabolizing bacteria and reducing facultative anerobes could bolster the efficacy of current CDI treatments, reducing disease severities.
+
+
+## Materials and Methods
+
+**Animal care.** 5.
+64 mice, 33F and 31M, ages 6-13 weeks old, 3-4 mice/group (except 2 for C/DA00581 and MOUT/DA10093) each run once except for DA00581 which was run 4 times because we observed colonization resistance in one of the experiments 
+15 human fecal samples, selected to create a subset list with diverse responses to health questionaire
+
+***C. difficile* challenge.** M.
+
+**Sample collection.** F.
+
+**DNA sequencing.** T.
+
+**Sequence curation.** S.
+
+**Statistical analysis and modeling.** D.
+
+**Code availability.** Scripts necessary to reproduce our analysis and this paper are available in an online repository (https://github.com/SchlossLab/Lesniak_XXXX).
+
+**Sequence data accession number.** All 16S rRNA gene sequence data and associated metadata are available through the Sequence Read Archive via accession XXXX.
+
+## Acknowledgements
+
+This work was supported by several grants from the National Institutes for Health R01GM099514, U19AI090871, U01AI12455, and P30DK034933. Additionally, NAL was supported by the Molecular Mechanisms of Microbial Pathogenesis training grant (NIH T32 AI007528).
+The funding agencies had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.
+
+\newpage
+
+## References
+
+<div id="refs"></div>
+
+\newpage
+
+![](../results/figures/figure_1.jpg)
+
+**Figure 1. R.** (A-C).
+
+\hfill\break
+
+![](../results/figures/figure_2.jpg)
+
+**Figure 2. M.** F.
+
+\hfill\break
+
+![](../results/figures/figure_3.jpg)
+
+**Figure 3. O.** F.
+
+\hfill\break
+
+![](../results/figures/figure_4.jpg)
+
+**Figure 4. E.** A.
+
+\hfill\break
+
+![](../results/figures/figure_5.jpg)
+
+**Figure 5. D.** (A) L
+
+\hfill\break
+
+![](../results/figures/figure_6.jpg)
+
+**Figure 6. D.** (A) L
+
+\hfill\break
+
+![](../results/figures/figure_S1.jpg)
+
+**Figure S1. D.** (A) L
+
+\hfill\break
+
+![](../results/figures/figure_S2.jpg)
+
+**Figure S2. D.** (A) L
+
+\hfill\break
+
+![](../results/figures/figure_S3.jpg)
+
+**Figure S3. D.** (A) L
+
+\hfill\break
+
+
+**Table 1. D.** (A) L
+
+samples_used <- readxl::read_xlsx('data/raw/humanGF_ids.xlsx') %>% 
+	pull(human_source) %>% 
+	unique
+donor_data <- readxl::read_xlsx('data/raw/MIMARKS_cdclinical.xlsx') %>% 
+	filter(sample_id %in% samples_used) %>% 
+	select(sample_id, biome, age, gender, "antibiotics >3mo", protonpump, 
+		antacid, Healthworker, historyCdiff, Surgery6mos, Vegetarian, weight, disease_stat)
+
+**Table 2. D.** (A) L
+	
+read.csv(here('data/raw/Hanna_in_vitro_data_plus_germination.txt')) %>% 
+  rownames_to_column('isolate') %>% 
+  filter(isolate %in% c('DA00299', 'DA00395', 'DA00458', 'DA00431'))
