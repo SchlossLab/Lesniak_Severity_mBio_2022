@@ -68,4 +68,9 @@ workflow
 		get_good_seqs.batch
 		get_error.batch
 		get_shared.batch
-	
+	run_lefse_analysis.R
+	setup_ml_data.R
+	tune_ml.R
+	concat_tune_ml_results.sh
+	run_ml.R
+	concat_ml_results.sh
