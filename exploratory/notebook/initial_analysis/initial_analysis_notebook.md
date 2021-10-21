@@ -21,14 +21,13 @@ Sampled spread of diverse donors for inoculating germ-free mice
 Unique communities without conserved structure
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+Unsure about alpha plots
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 # Figure 2 - Mice were colonized without any perturbation
-
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 DA00581 is made up of 4 cages, and at day 1 we see 1 cage at \~10^7.5, 2
 cages just above 10^5 and 1 cage at 0. For the cage at 0 there are three
@@ -42,8 +41,6 @@ mouse has low cfu on days 6 and 7, another mouse on day 10.
 
 # Figure supplemental - weight loss
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
-
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 > NAs on Day 0 for DA01134, DA10034, DA00884  
@@ -51,25 +48,19 @@ mouse has low cfu on days 6 and 7, another mouse on day 10.
 
 # Figure 3 - Difference in severity
 
-![](initial_analysis_notebook_files/figure-gfm/histology-1.png)<!-- -->
-
-> **Splitting by mean epithelial damage for donor \< 1 = 12 mild, 15
-> severe, 17 moribund**  
-> Splitting of median summary score of 5 = 10 mild, 11 severe, 17
-> moribund  
-> (6 have a summary score of 5)  
-> Splitting of mean summary score of 4.4 = 10 mild, 17 severe, 17
-> moribund
-
 What is toxin distribution by outcome?
 
-![](initial_analysis_notebook_files/figure-gfm/toxin-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/histology-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/histology-2.png)<!-- -->
 
-## Can we use toxin to split severity?
+    ## # A tibble: 1 x 1
+    ##    pvalue
+    ##     <dbl>
+    ## 1 0.00306
 
-do mice split into +/- toxin based on outcome of moribund/mild/severe?
-
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+    ## # A tibble: 1 x 1
+    ##          pvalue
+    ##           <dbl>
+    ## 1 0.00000000296
 
 Mice were challenged with a strain isolated that matched Clostridioides
 difficile ribotype 027
@@ -78,23 +69,60 @@ difficile ribotype 027
 > how much variation is there in individual isolates of RT027?
 > RT027/BI/NAP1, toxinotype III VPI 10463 is ribotype 087, toxinotype 0
 
-![](initial_analysis_notebook_files/figure-gfm/individual%20cfu%20plots-1.png)<!-- -->
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+Expected correlation, since no cfu == no toxin, and cfu when greater
+popultion will produce more toxin
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
+Did not calculation correlation for toxin/clinical score since toxin
+only detected in 5 of 53 (with high clinica score) however within range
+of others with similar clinical score and no toxin and bias in number of
+samples w/o toxin  
+Correlations between CFU and histology score not significant.
 
-## Severe disease
+Same day toxin vs Genus
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+Correlation of day 0 otus with day 10 histology scores
+
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+Correlation of day 10 otus with histology scores
 
 ![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+\`\`\`
 
-## Toxin presence
+### LEfSe
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+#### day 0 prediction of future
 
-## Summary score
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-20-3.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-20-4.png)<!-- -->
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+#### same day
 
-## Epithelial damage
+![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
 
-![](initial_analysis_notebook_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+What is the genus Clostridioides made up of? Only stool? toxin + disease
+mild = limited access to epithelial
+
+Microbe-microbe Interactions during Clostridioides difficile Infection
+Arwa Abbas and Joseph P. Zackular. Curr Opin Microbiol. 2020 Feb; 53:
+19–25. doi: 10.1016/j.mib.2020.01.016
+
+    C. difficile infection (CDI) can cause a spectrum of disease from mild diarrhea to severe complications such as pseudomembranous colitis, toxic megacolon and death (reviewed in [3]). This broad spectrum of C. difficile-associated disease may be explained in part by bacterial genetic factors such as variation in the pathogenicity locus [4] and increased accessory gene content [5,6]. There is also likely a strong role for exogenous factors such as host genetics, comorbidities, treatment modalities and previous drug exposures. Here we focus on how resident microbiota can manipulate pathogen behavior and virulence.
+        competition for essential nutrients, limiting access to mucosal surfaces, direct production of antimicrobial molecules, modulating the intestinal metabolome, and activating the host immune system against the pathogen of interest
+    Exposure to low concentrations of deoxycholate, one of the most abundant cecal bile acids [39,40], reduced toxin production by most strains, without a concomitant reduction in general vegetative cell growth 
+    B. thetatiotaomicron cross-feeds sialic acid to C. difficile
+    succinate appears necessary for C. difficile expansion in the gut
+    inhibit via production of bile acids, antibiotics, acidification
+    lacto-conditioned media reduce toxin and ability to adhere to host cells
+    Enterobacteriaceae and Enterococcus are known to thrive during intestinal inflammation and during CDI 
+    Cdiff induces indole production via E. coli which inhibits anaerobes
+    Cdiff ferments tyrosine to p-cresol
+    C. difficile can also secrete proline-based cyclic dipeptides that can inhibit gut bacteria, including commensal Clostridium species
+
+microbiome/Cdifficile/host interactions lactobacillus inhibits cdiff
+biofilm can protect cdiff microbiome can secrete inhibitory compounds -
+turbomycin, lantibiotics microbiome can cross feed microbiome via sialic
+acid/succinate or even proline or AAs cdiff can inhibit microbiome w/
+indole or para-cresol
