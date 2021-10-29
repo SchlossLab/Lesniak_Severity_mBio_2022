@@ -3,9 +3,15 @@
 #	Common functions used across scripts
 #
 # need files:
-# 	data/process/metadata_tidy.tsv
-
-
+# 	produced by code/tidy_taxonomy.R
+#		data/process/final.taxonomy.tidy.tsv
+#	produced through running mothur scripts
+#		data/mothur/sample.final.0.03.subsample.shared
+#		data/mothur/sample.final.thetayc.0.03.lt.ave.dist
+#	produced by code/tidy_raw_data.R
+#		data/process/toxin_tidy.tsv
+#		data/process/histology_tidy.tsv
+# 		data/process/metadata_tidy.tsv
 #
 # Nick Lesniak 2021-10-26
 ###############################################################################
