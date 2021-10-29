@@ -13,64 +13,55 @@ source(here::here('code/utilities.R'))
 ###############################################################################
 # load data
 ###############################################################################
-metadata <- read_metadata
+metadata <- read_metadata()
 
 donor_aes <- donor_df
 
 ###############################################################################
 #  setup data
 ###############################################################################
+LOD_df <- data.frame(x = 14.5, y = 2)
+DECD_df <- data.frame(x = 12, y = 3, day = as.factor('Day 10'))
+
+cfu_data <- metadata %>% 
+	filter(cdiff_strain == 431,
+		day %in% c(1,10),
+		!is.na(cdiff_cfu)) %>% 
+	mutate(day = factor(paste('Day', day), levels = c('Day 1', 'Day 10')),
+		cdiff_cfu = ifelse(cdiff_cfu > 0, log10(cdiff_cfu), log10(60))) %>% 
+	left_join(donor_aes, by = c('human_source'))
 
 ###############################################################################
 #  plot data
 ###############################################################################
-cfu_plot <- metadata %>% 
-  filter(cdiff_strain == 431,
-         day %in% c(1,10)) %>% 
-  mutate(human_source = as.numeric(gsub('DA', '', human_source)),
-         human_source = factor(human_source, levels = 
-                                c('1324', '953', '581', '1134', '10148', 
-                                  '369', '430', '10093', '10027', '10034',
-                                  '10082', '884', '578', '431', '1245')),
-         day = factor(paste('Day', day), levels = c('Day 1', 'Day 10'))) %>% 
-  ggplot(aes(x = human_source, y = log10(cdiff_cfu + 60), color = human_source)) +
-    geom_jitter(width = 0.2) + 
-    facet_grid(day~.)+ 
-    scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    scale_color_manual(values = donor_colors) + 
-    theme_bw() + 
-    labs(x = 'Donor Source', y = 'C. difficile CFU (log10)') + 
-    guides(color = 'none')
-
-# presentation plot
-#presentation_cfu_plot <- metadata %>% 
-#  filter(cdiff_strain == 431,
-#         day %in% c(1,10)) %>% 
-#  mutate(human_source = as.numeric(gsub('DA', '', human_source)),
-#         human_source = factor(human_source, levels = 
-#                                c('1324', '953', '581', '1134', '10148', 
-#                                  '369', '430', '10093', '10027', '10034',
-#                                  '10082', '884', '578', '431', '1245'),
-#                               labels = LETTERS[1:15]),
-#         day = factor(paste('Day', day), levels = c('Day 1', 'Day 10'))) %>% 
-#  ggplot(aes(x = human_source, y = cdiff_cfu, color = human_source)) +
-#    geom_jitter(width = 0.2) + 
-#    facet_grid(day~.) + 
-#    scale_color_manual(values = donor_colors) + 
-#    scale_y_continuous(limits = c(1.5,8.5),
-#                       breaks = c(2,4,6,8),
-#                       labels = c('10^2', '10^4', '10^6', '10^8')) + 
-#    theme_bw() + 
-#    labs(x = 'Donor Source', y = '*C. difficile* CFU') + 
-#    guides(color = 'none') + 
-#    theme(axis.text.y = ggtext::element_markdown(),
-#          axis.title.y = ggtext::element_markdown(),
-#          strip.text.y = element_text(angle = 0, size = 12),
-#          strip.background = element_blank(),
-#          panel.spacing = unit(2, "lines")) + 
-#			geom_hline(yintercept = 2, linetype = 'dashed', size = .5, color = 'white') + 
-#			geom_label(x = 14, y = 2, label = "LOD", fill = 'white', color = 'white') + 
-#			geom_text(x = 14, y = 2, label = "LOD", color = 'lightgray', size = 12/.pt)
+cfu_plot <- cfu_data %>% 
+	ggplot(aes(x = donor_labels, y = cdiff_cfu, color = donor_colors)) +
+		geom_jitter(width = 0.2) + 
+		scale_color_identity() + 
+		facet_grid(day~.) + 
+		scale_y_continuous(limits = c(1.5,8.5),
+			breaks = c(2,4,6,8),
+			labels = c('10^2', '10^4', '10^6', '10^8')) + 
+		theme_bw() + 
+		labs(x = 'Donor Source', y = '*C. difficile* CFU') + 
+		guides(color = 'none') + 
+		theme(axis.text.y = ggtext::element_markdown(),
+			axis.title.y = ggtext::element_markdown(),
+			strip.text.y = element_text(angle = 0, size = 12),
+			strip.background = element_blank(),
+			panel.spacing = unit(2, "lines")) + 
+		geom_hline(yintercept = 2, linetype = 'dashed', 
+			size = .5, color = 'white') + 
+		geom_label(data = LOD_df, aes(x = x, y = y), label = "LOD", 
+			fill = 'white', color = 'white', inherit.aes = F) + 
+		geom_text(data = LOD_df, aes(x = x, y = y), label = "LOD", 
+			color = 'lightgray', size = 12/.pt, inherit.aes = F) + 
+		geom_segment(data = DECD_df, aes(x = 10, xend = 15, y = 3, yend = 3), 
+			size = .25, color = 'black') + 
+		geom_label(data = DECD_df, aes(x = 12.5, y = 3), label = "Deceased", 
+			fill = 'white', color = 'white', inherit.aes = F) + 
+		geom_text(data = DECD_df, aes(x = 12.5, y = 3), label = "Deceased", 
+			color = 'black', size = 12/.pt, inherit.aes = F)
 
 ###############################################################################
 #  save plot

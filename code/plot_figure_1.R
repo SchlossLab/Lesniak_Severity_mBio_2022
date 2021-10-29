@@ -24,6 +24,8 @@ shared <- read_shared() %>%
   mutate(relative_abundance = counts/2107 * 100)
 beta_df <- read_beta()
 
+donor_aes <- donor_df
+
 ###############################################################################
 #  setup data
 ###############################################################################
@@ -42,15 +44,13 @@ other_recipients <- beta_df %>%
   anti_join(corecipient, by = c('rows' = 'group.x', 'columns' = 'group.y')) %>% 
   mutate(comparison = 'Recipients compared to\nothers w/different donor')
 
-###############################################################################
-#  analyze data
-###############################################################################
-wilcox.test(corecipient$distances, other_recipients$distances)
+beta_data <- bind_rows(corecipient, other_recipients) %>% 
+  mutate(comparison = ifelse(comparison == 'Recipients compared to\nothers w/different donor',
+                             'Different donor', 'Same donor'),
+    comparison = factor(comparison, levels = 
+                              c('Different donor', 'Same donor')))
 
-###############################################################################
-#  plot data
-###############################################################################
-day_0_plot <- metadata %>% 
+relative_abundance_data <- metadata %>% 
   filter(day == 0,
          cdiff_strain == 431) %>% 
   select(group, human_source, mouse_id) %>% 
@@ -61,16 +61,25 @@ day_0_plot <- metadata %>%
   summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
   group_by(taxa_level) %>% 
   filter(!is.na(taxa_level)) %>% 
+  left_join(donor_aes, by = c('human_source')) %>% 
   mutate(median_ra = mean(relative_abundance),
-         human_source = as.character(as.numeric(gsub('DA', '', human_source))),
-         human_source = factor(human_source, levels =
-                                 c('10093', '10148', '431', '884', '1245',
-                                   '581', '1324', '953', '1134',
-                                   '369', '430', '10027', '10034',
-                                   '10082', '578')),
-         taxa_level = gsub('_unclassified', '', taxa_level),
          taxa_level = gsub('_', ' ', taxa_level),
-         taxa_level = paste0('*', taxa_level, '*')) %>% 
+         taxa_level = paste0('*', taxa_level, '*'),
+         taxa_level = ifelse(grepl('unclassified', taxa_level), 
+         		paste('Unclassified', gsub(' unclassified\\*', '*', taxa_level)),
+         		taxa_level)) %>% 
+  filter(median_ra > -0.677)
+
+
+###############################################################################
+#  analyze data
+###############################################################################
+#wilcox.test(corecipient$distances, other_recipients$distances)
+# p < 2.2e-16
+###############################################################################
+#  plot data
+###############################################################################
+day_0_plot <- relative_abundance_data %>% # only plot top 10
   ggplot(aes(x = group, 
              y = reorder(taxa_level, median_ra), 
              fill = relative_abundance)) + 
@@ -81,28 +90,21 @@ day_0_plot <- metadata %>%
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~human_source, scales = 'free_x') + 
+    facet_grid(.~donor_labels, scales = 'free_x') + 
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           legend.position = 'bottom',
           axis.text.y = ggtext::element_markdown(angle = 45),
-          strip.text.x = element_text(angle = 45),
           strip.background = element_blank(),
           legend.margin=margin(t=-0.1, r=0, b=-0.1, l=0, unit="cm"),
           legend.key.height = unit(0.3, 'cm'))
 
-refined_beta_plot <- bind_rows(corecipient, other_recipients) %>% 
-  mutate(comparison = ifelse(comparison == 'Recipients compared to\nothers w/different donor',
-                             'Different donor', 'Same donor'),
-    comparison = factor(comparison, levels = 
-                              c('Same donor',
-                                'Different donor'))) %>% 
+beta_plot <- beta_data %>% 
   ggplot(aes(x = comparison, y = distances)) + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.3) + 
-    labs(x = NULL, y = 'Similarity') +
-    scale_y_continuous(breaks = c(0, 1), limits = c(0,1),
-                       labels = c('Complete\nsimilarity', 'No similarity')) + 
+    #geom_jitter(alpha = 0.05, width = 0.3) + 
+    labs(x = NULL, y = expression(theta['YC'])) +
+    coord_flip() + 
     theme_bw()
 
 ###############################################################################
@@ -113,7 +115,7 @@ ggsave(here('results/figures/Figure_1.jpg'),
                      NULL,
                      beta_plot + theme(text=element_text(size = 9)), 
                      ncol = 1, 
-                     rel_heights = c(6, 0.3, 3),
+                     rel_heights = c(6, 0.3, 1.5),
                      labels = c('A', 'B', NULL)),
   height = 9.0625, width = 6.875, unit = 'in')
 ###############################################################################
