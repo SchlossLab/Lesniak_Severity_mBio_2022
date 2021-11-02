@@ -136,37 +136,33 @@ $(PROC)lefse/day_0_severity_Genus.0.03.lefse_summary $(PROC)lefse/day_0_severity
 #										code/run_lefse_analysis.R
 #	Rscript code/run_lefse_temporal_trend.R
 
-####SEARCH_DIR=data/temp/l2_otu
-####FINAL_DIR=data/process/l2_otu
-##### Create dataframe of subset samples classification column (cleared), and features (OTUs)
-##### and create correlation matrix of features
-####data/process/otu_input_data.csv data/process/otu_sample_names.txt data/process/sig_flat_corr_matrix_otu.csv : code/R/setup_model_data.R\
-####																	code/R/compute_correlation_matrix.R\
-####																	data/process/abx_cdiff_metadata_clean.txt\
-####																	data/process/abx_cdiff_taxonomy_clean.tsv\
-####																	data/mothur/sample.final.0.03.subsample.shared\
-####
-####	Rscript code/R/setup_model_data.R l2_otu
-####
-##### Run pipeline array
-####$SEARCH_DIR/walltime_L2_Logistic_Regression_1.csv : code/R/main.R\
-####						code/R/run_model.R\
-####						code/R/model_pipeline.R\
-####						code/R/tuning_grid.R\
-####						code/R/permutation_importance.R\
-####						code/run_logit.sbat\
-####						code/R/auprc.R\
-####						code/R/functions.R
-####	for seed in {1..100}
-####	do
-####		Rscript code/R/main.R --seed $seed --model L2_Logistic_Regression --level l2_otu --data  data/process/l2_otu_input_data.csv --hyperparams data/default_hyperparameters.csv --outcome clearance --permutation
-####	done
-####	# or run SBATCH code/run_logit.sbat on the Great Lakes cluster
-####
-##### concatenate results and determine feature importance
-####$FINAL_DIR/combined_all_imp_features_cor_results_L2_Logistic_Regression.csv : code/bash/process_l2_output.sh\
-####																				code/R/get_feature_rankings.R
-####	bash code/bash/process_l2_output.sh
+# Run random forest to predict C. difficile challenge outcome from day 0 community
+$(PROC)ml/ml_performance.tsv $(PROC)ml/ml_feature_imp.tsv $(PROC)ml/ml_hp_performance.tsv : $(PROC)metadata_tidy.tsv\
+										$(PROC)toxin_tidy.tsv\
+										$(PROC)histology_tidy.tsv\
+										$(MOTHUR)sample.final.0.03.subsample.shared\
+										code/ml/setup_ml_data.R\
+										$(PROC)ml/day_0*\
+										code/ml/tune_ml.R\
+										code/ml/run_ml.R\
+										$(PROC)ml/temp/*\
+										code/ml/concat_ml_results.sh\
+										code/ml/concat_tune_ml_results.sh
+	for seed in {1..100}
+	do
+		for tax_rank in {Phylum,Class,Order,Family,Genus,OTU}
+		do
+			echo 'Rscript code/ml/run_ml.R' $seed $tax_rank
+			for tune_frac in {0.5,0.6,0.7,0.8,0.9}
+			do
+				echo 'Rscript code/ml/tune_ml.R' $seed $tax_rank $tune_fraction
+			done
+		done
+	done
+	# instead of for loops, run SBATCH code/ml/run_ml_{tax_rank}.sbat and SBATCH code/ml/tune_ml_{tune_frac}.sbat
+	# combine the output from all the seeds and runs
+	bash code/ml/concat_ml_results.sh
+	bash code/ml/concat_tune_ml_results.sh
 
 
 ################################################################################
