@@ -28,19 +28,3 @@ done
 head -1 $FINAL_DIR/combined_ml_performance_Phylum.tsv  > $FINAL_DIR/ml_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_performance_*.tsv >> $FINAL_DIR/ml_performance.tsv
 head -1 $FINAL_DIR/combined_ml_feature_imp_Phylum.tsv  > $FINAL_DIR/ml_feature_imp.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_feature_imp_*.tsv >> $FINAL_DIR/ml_feature_imp.tsv
 head -1 $FINAL_DIR/combined_ml_hp_performance_Phylum.tsv  > $FINAL_DIR/ml_hp_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_hp_performance_*.tsv >> $FINAL_DIR/ml_hp_performance.tsv
-
-## combine multiclass models
-#for taxa_level in "OTU" "Genus" "Family" "Order" "Class" "Phylum"
-#	do
-#	head -1 $SEARCH_DIR/hist_ml_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_hist_ml_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/hist_ml_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_hist_ml_performance_"$taxa_level".tsv
-#	head -1 $SEARCH_DIR/hist_ml_feature_imp_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_hist_ml_feature_imp_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/hist_ml_feature_imp_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_hist_ml_feature_imp_"$taxa_level".tsv
-#	head -1 $SEARCH_DIR/hist_ml_hp_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_hist_ml_hp_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/hist_ml_hp_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_hist_ml_hp_performance_"$taxa_level".tsv
-#
-#	mv $SEARCH_DIR/combined_hist_ml_performance_"$taxa_level".tsv $FINAL_DIR/combined_hist_ml_performance_"$taxa_level".tsv
-#	mv $SEARCH_DIR/combined_hist_ml_feature_imp_"$taxa_level".tsv $FINAL_DIR/combined_hist_ml_feature_imp_"$taxa_level".tsv
-#	mv $SEARCH_DIR/combined_hist_ml_hp_performance_"$taxa_level".tsv $FINAL_DIR/combined_hist_ml_hp_performance_"$taxa_level".tsv
-#done
-#
-#head -1 $FINAL_DIR/combined_hist_ml_performance_Phylum.tsv  > $FINAL_DIR/hist_ml_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_hist_ml_performance_*.tsv >> $FINAL_DIR/hist_ml_performance.tsv
-#head -1 $FINAL_DIR/combined_hist_ml_feature_imp_Phylum.tsv  > $FINAL_DIR/hist_ml_feature_imp.tsv; tail -n +2 -q $FINAL_DIR/combined_hist_ml_feature_imp_*.tsv >> $FINAL_DIR/hist_ml_feature_imp.tsv
-#head -1 $FINAL_DIR/combined_hist_ml_hp_performance_Phylum.tsv  > $FINAL_DIR/hist_ml_hp_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_hist_ml_hp_performance_*.tsv >> $FINAL_DIR/hist_ml_hp_performance.tsv
