@@ -39,7 +39,7 @@ day_0_moribund <- metadata %>%
 	select(group, mouse_id, day, early_euth) %>% 
 	filter(day == 0) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
-	mutate(early_euth = ifelse(early_euth, 'Severe', 'Non-severe'))
+	mutate(early_euth = ifelse(early_euth, 'Moribund', 'Non-moribund'))
 
 ###############################################################################
 # create relative abundance plot
@@ -70,7 +70,7 @@ day_0_plot <- metadata %>%
 		theme_bw() + 
 		labs(x = NULL, y = NULL, fill = NULL) + 
 		scale_x_discrete(guide = guide_axis(angle = 45)) + 
-		facet_grid(.~donor_labels, scales = 'free_x') + 
+		facet_grid(.~donor_labels, scales = 'free_x', space = 'free_x') + 
 		theme(axis.ticks.x = element_blank(),
 			axis.text.x = element_blank(),
 			legend.position = 'bottom',
@@ -97,7 +97,7 @@ day_0_moribund_feature_plot <- day_0_moribund_plot_df %>%
 	ggplot(aes(x = reorder(taxa_level, median_diff), y = perf_metric_diff)) + 
 	stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
 	coord_flip() + 
-	labs(x = NULL, y = expression(Delta~AUC), title = 'Features of severe disease model') +
+	labs(x = NULL, y = 'Decrease AUC', title = 'Features of moribund model') +
 	theme_bw() +
 	theme(axis.text.y = ggtext::element_markdown())
 
@@ -138,7 +138,7 @@ ggsave(here('results/figures/Figure_S3.jpg'),
 				 cowplot::plot_grid(
 					 day_0_moribund_feature_plot + theme(text=element_text(size = 7)),
 					 day_0_moribund_feature_abundance_plot + theme(text=element_text(size = 7)),
-					 ncol = 1),
-				 nrow = 1),
+					 ncol = 1, labels = c('B', 'C')),
+				 nrow = 1, labels = c('A', NULL)),
 			 height = 7, width = 7, unit = 'in')
 ###############################################################################

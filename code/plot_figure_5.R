@@ -80,7 +80,7 @@ day_0_moribund <- metadata %>%
 	select(group, mouse_id, day, early_euth) %>% 
 	filter(day == 0) %>% 
 	inner_join(shared, by = c('group' = 'Group')) %>% 
-	mutate(early_euth = ifelse(early_euth, 'Severe', 'Non-severe')) %>% 
+	mutate(early_euth = ifelse(early_euth, 'Moribund', 'Non-moribund')) %>% 
 	inner_join(day_0_moribund_features, by = c('Class' = 'names')) %>% 
 	group_by(group, early_euth, taxa_label) %>% 
 	summarise(counts = sum(counts)) %>% 
@@ -109,10 +109,11 @@ day_0_histology <- metadata %>%
 	filter(early_euth == F) %>% 
 	inner_join(select(histology, mouse_id, summary_score), 
 		by = c('mouse_id')) %>% 
-	mutate(hist_score = case_when(summary_score > 5 ~ 'High',
-		summary_score < 5 ~ 'Low',
+	mutate(hist_score = case_when(summary_score > 5 ~ 'High histopathologic score',
+		summary_score < 5 ~ 'Low histopathologic score',
 		T ~ 'NA')) %>% 
-	filter(hist_score %in% c('High', 'Low')) %>% 
+	filter(hist_score %in% c('High histopathologic score', 
+		'Low histopathologic score')) %>% 
 	inner_join(day_0_histology_features, by = c('Genus' = 'names')) %>% 
 	group_by(group, hist_score, taxa_label) %>% 
 	summarise(counts = sum(counts)) %>% 
@@ -125,7 +126,7 @@ day_0_histology <- metadata %>%
 day_0_toxin_feature_abundance_plot <- day_0_predict_future_toxin_df %>% 
 	ggplot(aes(x = taxon, y = counts, color = toxin)) + 
 		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.2) + 
+			alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
@@ -141,7 +142,7 @@ day_0_toxin_feature_abundance_plot <- day_0_predict_future_toxin_df %>%
 day_0_moribund_feature_abundance_plot <- day_0_moribund %>% 
 	ggplot(aes(x = taxon, y = counts, color = early_euth)) + 
 		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.2) + 
+			alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
@@ -157,13 +158,14 @@ day_0_moribund_feature_abundance_plot <- day_0_moribund %>%
 day_0_hist_feature_abundance_plot <- day_0_histology %>% 
 	ggplot(aes(x = taxon, y = counts, color = hist_score)) + 
 		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.2) + 
+			alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
 		theme_bw() + 
 		coord_flip() + 
-		scale_color_manual(breaks = c('Low', 'High'),
+		scale_color_manual(breaks = c('Low histopathologic score', 
+				'High histopathologic score'),
 			values = c("#62ebc9", "#399283")) + 
 		labs(x = NULL, y = 'Relative Abundance (%)', color	= NULL) + 
 		theme(legend.position = 'top',

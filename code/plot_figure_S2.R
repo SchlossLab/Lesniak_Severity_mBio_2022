@@ -82,10 +82,11 @@ day_0_histology_plot_df <- features_df %>%
 day_0_toxin_perf_plot <- performance_df %>% 
   filter(dataset == 'day_0_predict_future_toxin') %>% 
   ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
+      position = position_dodge(width = .5)) +
     geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
     theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.48, ymax = 0.99, method = 'rf', taxonomic_level = 6, Performance = 1),
+    geom_rect(data = data.frame(ymin = 0.75, ymax = 0.9, method = 'rf', taxonomic_level = 6, Performance = 1),
               aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
               fill = NA) + 
     labs(x = NULL, y = 'Performance (AUC)', color = NULL)
@@ -102,10 +103,11 @@ day_0_toxin_feature_plot <- day_0_toxin_production %>%
 day_0_moribund_perf_plot <- performance_df %>% 
   filter(dataset == 'day_0_moribund') %>% 
   ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
+      position = position_dodge(width = .5)) +
     geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
     theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.65, ymax = 1.01, method = 'rf', taxonomic_level = 5, Performance = 1),
+    geom_rect(data = data.frame(ymin = 0.85, ymax = .98, method = 'rf', taxonomic_level = 5, Performance = 1),
               aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
               fill = NA) + 
     labs(x = NULL, y = 'Performance (AUC)', color = NULL)
@@ -115,18 +117,19 @@ day_0_moribund_feature_plot <- day_0_moribund_plot_df %>%
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     #geom_jitter(alpha = 0.1, width = 0.1) + 
     coord_flip() + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
+    labs(x = NULL, y = 'Decrease AUC') +
     theme_bw() + 
     theme(axis.text.y = ggtext::element_markdown())
 
 day_0_hist_perf_plot <- performance_df %>% 
   filter(dataset == 'day_0_histology') %>% 
   ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    geom_boxplot() + 
+    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
+      position = position_dodge(width = .5)) +
     geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
     #facet_grid(dataset~method, scales = 'free_y') + 
     theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.48, ymax = 1.01, method = 'rf', taxonomic_level = 2, Performance = 1),
+    geom_rect(data = data.frame(ymin = 0.92, ymax = 1.05, method = 'rf', taxonomic_level = 2, Performance = 1),
               aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
               fill = NA) + 
     labs(x = NULL, y = 'Performance (AUC)', color = NULL)
@@ -136,7 +139,7 @@ day_0_hist_feature_plot <- day_0_histology_plot_df %>%
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     geom_jitter(alpha = 0.1, width = 0.1) + 
     coord_flip() + 
-    labs(x = NULL, y = 'AUC Diff with feature permuted') +
+    labs(x = NULL, y = 'Decrease AUC') +
     theme_bw() + 
     theme(axis.text.y = ggtext::element_markdown())
 
@@ -147,15 +150,15 @@ ggsave(here::here('results/figures/Figure_S2.jpg'),
 	plot_grid(
 		plot_grid(NULL,
 			plot_grid(day_0_toxin_perf_plot + coord_flip(), 
-				day_0_toxin_feature_plot, nrow = 1),
-			labels = c('Toxin production', NULL), ncol = 1, rel_heights = c(1, 10)),
+				day_0_toxin_feature_plot, nrow = 1, labels = c('A', 'D')),
+			labels = c('Toxin activity', NULL), ncol = 1, rel_heights = c(1, 10)),
 		plot_grid(NULL,
 			plot_grid(day_0_moribund_perf_plot + coord_flip(), 
-				day_0_moribund_feature_plot, nrow = 1),
-			labels = c('Severe disease', NULL), ncol = 1, rel_heights = c(1, 10)),
+				day_0_moribund_feature_plot, nrow = 1, labels = c('B', 'E')),
+			labels = c('Moribundity', NULL), ncol = 1, rel_heights = c(1, 10)),
 		plot_grid(NULL,
 			plot_grid(day_0_hist_perf_plot + coord_flip(), 
-				day_0_hist_feature_plot, nrow = 1),
+				day_0_hist_feature_plot, nrow = 1, labels = c('C','F')),
 			labels = c('Histopathologic score', NULL), ncol = 1, rel_heights = c(1, 10)),
 		ncol = 1),  
 	height = 9, width = 6.875, unit = 'in')

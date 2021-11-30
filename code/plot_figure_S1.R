@@ -1,8 +1,9 @@
 ###############################################################################
 #
 # Figure S1
-#	main idea - mice lost weight with challenge
-# 	plot - % weight loss through experiment
+#	main idea - moribund mice had high levels of 
+#     epithelial damage, tissue edema and inflammation
+# 	plot - epithelial damage, tissue edema and inflammation
 #
 # Nick Lesniak 2021-10-26
 ###############################################################################
@@ -15,43 +16,50 @@ source(here::here('code/utilities.R'))
 ###############################################################################
 metadata <- read_metadata()
 
+histology <- read_histology()
+
 donor_aes <- donor_df
 
 ###############################################################################
 #  setup data
 ###############################################################################
-wt_loss_df <- metadata %>% 
-  filter(cdiff_strain == 431,
-         day %in% c(2,10)) %>% 
-  mutate(day = factor(paste('Day', day), levels = c('Day 2', 'Day 10'))) %>% 
-  left_join(donor_aes, by = 'human_source')
+histology <- histology %>% 
+  left_join(distinct(select(metadata, mouse_id, early_euth)), by = 'mouse_id') %>% 
+  filter(!is.na(early_euth)) %>% 
+  mutate(early_euth = ifelse(early_euth, 'Moribund', 'Non-moribund'),
+         early_euth = factor(early_euth, levels = c('Non-moribund', 'Moribund')),
+         mouse_id = paste0(cage_id, '_', ear_tag)) %>% 
+  left_join(donor_aes, by = 'human_source') %>% 
+  rename('Tissue edema' = edema_tissue,
+    'Tissue inflammation' = inflammation_tissue,
+    'Epithelial damage' = epithelial_damage) %>% 
+  pivot_longer(cols = c('Tissue edema', 'Tissue inflammation', 'Epithelial damage'),
+    names_to = 'type', values_to = 'score')
 
-DECD_df <- data.frame(x = 12, y = 75, day = as.factor('Day 10'))
 ###############################################################################
 #  plot data
 ###############################################################################
-wt_loss_plot <- wt_loss_df %>% 
-  ggplot(aes(x = donor_labels, y = percent_weightLoss, color = donor_colors)) +
-    geom_jitter(width = 0.2) + 
-	scale_color_identity() + 
-    facet_grid(day~.)+ 
+histology_plot <- histology %>%  
+  ggplot(aes(x = donor_labels, y = score, 
+      fill = donor_colors, color = donor_colors)) +
+    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 1) + 
     theme_bw() + 
-    labs(x = 'Donor Source', y = 'Weight (% relative to initial)') + 
-    guides(color = 'none') + 
-	theme(strip.text.y = element_text(angle = 0, size = 12),
-		strip.background = element_blank(),
-		panel.spacing = unit(2, "lines")) + 
-	geom_segment(data = DECD_df, aes(x = 10, xend = 15, y = 75, yend = 75), 
-		size = .25, color = 'black') + 
-	geom_label(data = DECD_df, aes(x = 12.5, y = 75), label = "Deceased", 
-		fill = 'white', color = 'white', inherit.aes = F) + 
-	geom_text(data = DECD_df, aes(x = 12.5, y = 75), label = "Deceased", 
-		color = 'black', size = 12/.pt, inherit.aes = F)
+    labs(x = NULL, y = 'Histopathological Score') +
+    scale_y_continuous(breaks = c(0,2,4,6,8,10), 
+                       labels = c(0,2,4,6,8,10)) + 
+    scale_fill_identity() + 
+    scale_color_identity() + 
+    facet_grid(type~early_euth, scales = 'free_x', space = 'free_x') + 
+    theme(legend.position = 'none',
+          strip.background.x = element_blank(),
+          strip.text.x = element_text(size = 12),
+          legend.margin=margin(t=-0.3, r=0, b=-0.2, l=0, unit="cm"),
+          legend.key.height = unit(0, 'cm'))
 
 ###############################################################################
 #  save plot
 ###############################################################################
 ggsave(here('results/figures/Figure_S1.jpg'),
-       wt_loss_plot,
-       width = 6, height = 4)
+  histology_plot,
+  width = 6, height = 4.5)
 ###############################################################################

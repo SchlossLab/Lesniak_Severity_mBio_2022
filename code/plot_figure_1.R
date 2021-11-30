@@ -90,7 +90,7 @@ day_0_plot <- relative_abundance_data %>% # only plot top 10
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     scale_x_discrete(guide = guide_axis(angle = 45)) + 
-    facet_grid(.~donor_labels, scales = 'free_x') + 
+    facet_grid(.~donor_labels, scales = 'free_x', space = 'free_x') + 
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           legend.position = 'bottom',
@@ -111,11 +111,13 @@ beta_plot <- beta_data %>%
 #  save plot
 ###############################################################################
 ggsave(here('results/figures/Figure_1.jpg'),
-  cowplot::plot_grid(day_0_plot + theme(text=element_text(size = 9)), 
+  cowplot::plot_grid(cowplot::plot_grid(
+                      day_0_plot + theme(text=element_text(size = 9)),
+                      labels = c('       Donor'), label_size = 9, label_fontface = 'plain'), 
                      NULL,
                      beta_plot + theme(text=element_text(size = 9)), 
                      ncol = 1, 
                      rel_heights = c(6, 0.3, 1.5),
                      labels = c('A', 'B', NULL)),
-  height = 9.0625, width = 6.875, unit = 'in')
+  height = 5.5, width = 4.5, unit = 'in')
 ###############################################################################

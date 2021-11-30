@@ -55,19 +55,19 @@ plot_lefse <- function(file_name){
 		mutate(taxa_label = Genus,
 			relative_abundance = ifelse(relative_abundance == 0, 0.045, 
 				relative_abundance),
-			class = case_when(class == 'severe' ~ 'Severe',
-				class == 'moderate' ~ 'Non-severe, High histopathologic score',
-				class == 'mild' ~ 'Non-severe, Low histopathologic score',
+			class = case_when(class == 'severe' ~ 'Moribund',
+				class == 'moderate' ~ 'Non-moribund, High histopathologic score',
+				class == 'mild' ~ 'Non-moribund, Low histopathologic score',
 				class == FALSE ~ 'Non-toxigenic',
 				class == TRUE ~ 'Toxigenic', 
 				T ~ 'NA'),
-			class = factor(class, levels = c('Non-severe, Low histopathologic score',
-				'Non-severe, High histopathologic score', 'Severe',
+			class = factor(class, levels = c('Non-moribund, Low histopathologic score',
+				'Non-moribund, High histopathologic score', 'Moribund',
 				'Non-toxigenic', 'Toxigenic')),
 			taxa_label = gsub('_', ' ', taxa_label),
 			taxa_label = paste0('*', taxa_label, '*'),
 			taxa_label = ifelse(grepl('unclassified', taxa_label), 
-				paste('Unclassified', gsub(' unclassified\\*', '*', taxa_label)),
+				gsub(' unclassified\\*', '* *', taxa_label),
 				taxa_label)) %>% 
 		ggplot(aes(x = taxa_label, y = relative_abundance, color = class)) +
 			stat_summary(fun.data = 'median_hilow', aes(group = class),
@@ -82,7 +82,9 @@ plot_lefse <- function(file_name){
 				panel.grid.major.y = element_line(color = 'gray95'),
 				panel.grid.major.x = element_line(color = 'gray85'),
 				panel.grid.minor.x = element_blank(),
-				legend.position = 'top') + 
+				legend.position = 'top',
+				legend.margin=margin(2,0,0,0),
+    	    	legend.box.margin=margin(2,-10,-10,-10)) + 
 			coord_flip()
 }
 
@@ -121,20 +123,19 @@ day_10_hist_genus_corr_plot <- day_10_hist_genus_corr %>%
 \\(', tax_otu_label),
 		taxa_label = paste0('*', taxa_label),
 		taxa_label = ifelse(grepl('unclassified', taxa_label), 
-			paste('Unclassified  
-', gsub('_unclassified', '', taxa_label)),
+			gsub('_unclassified\\*', '* *', taxa_label),
 			taxa_label)) %>% 
 	ggplot(aes(x = relative_abundance, y = test)) + 
 		geom_point(alpha = 0.3) +
 		scale_y_continuous(breaks = c(0,2,4,6,8,10), 
 			labels = c(0,2,4,6,8,10)) + 
-		geom_smooth(method = 'lm', se = F) +
+		#geom_smooth(method = 'lm', se = F) +
 		geom_vline(xintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
 		scale_x_log10(breaks=c(0.01, 0.1, 1, 10, 100),
 			labels=c("0","0.1","1","10","100")) + 
 		facet_wrap(taxa_label ~ ., scales = 'free_x') + 
 		theme_bw() + 
-		labs(x = 'Relative Abundance (%)', y = 'Clinical Score') + 
+		labs(x = 'Relative Abundance (%)', y = 'Summary score') + 
 		theme(strip.background = element_rect(fill = 'white'),
 			panel.grid.minor.x = element_blank(),
 			strip.text = ggtext::element_markdown())
