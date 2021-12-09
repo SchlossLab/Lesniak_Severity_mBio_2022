@@ -125,8 +125,8 @@ day_0_histology <- metadata %>%
 ###############################################################################
 day_0_toxin_feature_abundance_plot <- day_0_predict_future_toxin_df %>% 
 	ggplot(aes(x = taxon, y = counts, color = toxin)) + 
-		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.1) + 
+		#geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+		#	alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
@@ -141,8 +141,8 @@ day_0_toxin_feature_abundance_plot <- day_0_predict_future_toxin_df %>%
 
 day_0_moribund_feature_abundance_plot <- day_0_moribund %>% 
 	ggplot(aes(x = taxon, y = counts, color = early_euth)) + 
-		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.1) + 
+		#geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+		#	alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
@@ -157,8 +157,8 @@ day_0_moribund_feature_abundance_plot <- day_0_moribund %>%
 
 day_0_hist_feature_abundance_plot <- day_0_histology %>% 
 	ggplot(aes(x = taxon, y = counts, color = hist_score)) + 
-		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-			alpha = 0.1) + 
+		#geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+		#	alpha = 0.1) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 			position = position_dodge(width = 0.7)) +
 		scale_y_log10() + 
@@ -185,9 +185,9 @@ ggsave(here('results/figures/Figure_5.jpg'),
 		 cowplot::plot_grid(NULL,		 
 			day_0_hist_feature_abundance_plot,
 			nrow = 1, rel_widths = c(1, 20)),
-			rel_heights = c(9, 15, 14),
+			rel_heights = c(9, 16, 18),
 			labels = c('A', 'B', 'C'),
 			ncol = 1), 
 
-	height = 9, width = 6, unit = 'in')
+	height = 9, width = 5, unit = 'in')
 ###############################################################################

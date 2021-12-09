@@ -119,5 +119,5 @@ ggsave(here('results/figures/Figure_1.jpg'),
                      ncol = 1, 
                      rel_heights = c(6, 0.3, 1.5),
                      labels = c('A', 'B', NULL)),
-  height = 5.5, width = 4.5, unit = 'in')
+  height = 5.5, width = 5.1, unit = 'in')
 ###############################################################################

@@ -120,8 +120,8 @@ day_0_moribund_feature_abundance_plot <- day_0_moribund %>%
 	ggplot(aes(x = taxa_label, y = relative_abundance, color = early_euth)) + 
 		stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
 								 position = position_dodge(width = 0.7)) +
-		geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
-								alpha = 0.2) + 
+		#geom_jitter(position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+		#						alpha = 0.2) + 
 		scale_y_log10() + 
 		theme_bw() + 
 		coord_flip() + 

@@ -29,7 +29,7 @@ histology <- read_histology() %>%
 
 donor_aes <- donor_df
 
-donor_levels <- c(' ', 'G' ,'F', 'M')
+donor_levels <- c(' ', 'N7' ,'N6', 'M4')
 
 ###############################################################################
 #	setup data
@@ -73,16 +73,16 @@ cfu_plot <- cfu_data %>%
 		geom_point(position = position_jitterdodge(jitter.width = 0.1)) + 
 		geom_hline(yintercept = 2, linetype = 'dashed', color = 'lightgray') + 
 		geom_label(data = data.frame(x = 1, y = 2, 
-			donor_labels = factor('G', levels = donor_levels)), aes(x = x, y = y), 
+			donor_labels = factor('N7', levels = donor_levels)), aes(x = x, y = y), 
 			label = "LOD", fill = 'white', color = 'white', size = 8/.pt, inherit.aes = F) + 
 		geom_text(data = data.frame(x = 1, y = 2, 
-			donor_labels = factor('G', levels = donor_levels)), aes(x = x, y = y), 
+			donor_labels = factor('N7', levels = donor_levels)), aes(x = x, y = y), 
 			label = "LOD", color = 'lightgray', size = 8/.pt, inherit.aes = F) + 
 		geom_text(data = data.frame(x = 1, y = 1.65, 
-			donor_labels = factor('M', levels = donor_levels)), aes(x = x, y = y), 
+			donor_labels = factor('M4', levels = donor_levels)), aes(x = x, y = y), 
 			label = "DECD", color = "#3588d1", size = 8/.pt, inherit.aes = F) + 
 		geom_text(data = data.frame(x = 2, y = 1.65, 
-			donor_labels = factor('M', levels = donor_levels)), aes(x = x, y = y), 
+			donor_labels = factor('M4', levels = donor_levels)), aes(x = x, y = y), 
 			label = "DECD", color = "#76406b", size = 8/.pt, inherit.aes = F) + 
 		scale_color_manual(values = c("#3588d1", "#76406b")) + 
 		scale_y_continuous(limits = c(1.5, 8.5),
