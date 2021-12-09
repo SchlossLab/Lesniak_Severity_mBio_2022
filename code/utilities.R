@@ -69,4 +69,5 @@ donor_df <- tibble(
 	human_source = c('DA01324', 'DA00953', 'DA00581', 'DA01134', 'DA10148',
 		'DA00369', 'DA00430', 'DA10093', 'DA10027', 'DA10034', 
 		'DA10082', 'DA00884', 'DA00578', 'DA00431', 'DA01245'),
-	donor_labels = LETTERS[1:15])
+	donor_labels = factor(c(paste0('N', 1:9), paste0('M', 1:6)), 
+			levels = c(paste0('N', 1:9), paste0('M', 1:6))))
