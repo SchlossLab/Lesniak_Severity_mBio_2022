@@ -33,6 +33,9 @@ references : $(REFS)silva.v4.align $(REFS)trainset18_062020.v4.fasta $(REFS)trai
 #
 ################################################################################
 
+$(RAW)MIMARKS_cdclinical.xlsx : 
+	wget -P $(RAW) https://mothur.s3.us-east-2.amazonaws.com/data/CDI_MicrobiomeModeling/MIMARKS_cdclinical.xlsx 
+
 # Clean metadata for this project
 $(PROC)metadata_tidy.tsv $(PROC)toxin_tidy.tsv $(PROC)histology_tidy.tsv $(PROC)human_source_tidy.tsv : $(RAW)humanGF_ids.xlsx\
 										$(RAW)Alyx_Humice_toxinassay_results.xlsx\
