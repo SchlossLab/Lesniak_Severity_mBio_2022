@@ -89,12 +89,11 @@ day_0_plot <- relative_abundance_data %>% # only plot top 10
 			  breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100')) + 
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
-    scale_x_discrete(guide = guide_axis(angle = 45)) + 
     facet_grid(.~donor_labels, scales = 'free_x', space = 'free_x') + 
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           legend.position = 'bottom',
-          axis.text.y = ggtext::element_markdown(angle = 45),
+          axis.text.y = ggtext::element_markdown(),
           strip.background = element_blank(),
           legend.margin=margin(t=-0.1, r=0, b=-0.1, l=0, unit="cm"),
           legend.key.height = unit(0.3, 'cm'))

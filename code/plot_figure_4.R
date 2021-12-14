@@ -78,7 +78,7 @@ plot_lefse <- function(file_name){
 			scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100),
 				labels=c("0","0.1","1","10","100")) + 
 			theme(
-				axis.text.y = ggtext::element_markdown(angle = 45),
+				axis.text.y = ggtext::element_markdown(),
 				panel.grid.major.y = element_line(color = 'gray95'),
 				panel.grid.major.x = element_line(color = 'gray85'),
 				panel.grid.minor.x = element_blank(),
