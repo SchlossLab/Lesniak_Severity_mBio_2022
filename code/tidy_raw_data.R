@@ -17,18 +17,19 @@
 ################################################################################
 
 # load packages
-library(tidyverse)
 library(readxl)
+source('code/utilities.R')
 
 # file inputs/outputs
-input_metadata <- 'data/raw/humanGF_ids.xlsx'
-input_toxin <- 'data/raw/Alyx_Humice_toxinassay_results.xlsx'
-input_histology <- 'data/raw/histopathology_scores_raw.xlsx'
-input_human_source <- 'data/raw/MIMARKS_cdclinical.xlsx'
-output_metadata <- 'data/process/metadata_tidy.tsv'
-output_toxin <- 'data/process/toxin_tidy.tsv'
-output_histology <- 'data/process/histology_tidy.tsv'
-output_human_source <- 'data/process/human_source_tidy.tsv'
+input_metadata <- here('data/raw/humanGF_ids.xlsx')
+input_toxin <- here('data/raw/Alyx_Humice_toxinassay_results.xlsx')
+input_histology <- here('data/raw/histopathology_scores_raw.xlsx')
+input_human_source <- here('data/raw/MIMARKS_cdclinical.xlsx')
+output_metadata <- here('data/process/metadata_tidy.tsv')
+output_toxin <- here('data/process/toxin_tidy.tsv')
+output_histology <- here('data/process/histology_tidy.tsv')
+output_human_source <- here('data/process/human_source_tidy.tsv')
+output_supp_table1 <- here('submission/Table_S1.csv')
 
 # Read in metadata
 metadata <- read_xlsx(input_metadata, 
@@ -75,13 +76,16 @@ human_source_data <- read_xlsx(input_human_source,
 		sheet = 'Sheet1', range = 'A1:AW353') %>% 
 	filter(sample_id %in% c(unique(metadata$human_source), 
 							'DA00299', 'DA00395', 'DA00458')) %>% 
-	select(sample_id, biome, samp_mat_process, age, race, gender, 
+	select(sample_id, biome, samp_mat_process, age, gender, 
 		   recent_antibiotic_use = "antibiotics >3mo", protonpump, h2receptor, 
 		   antacid, Healthworker, historyCdiff, Surgery6mos, Vegetarian, weight, 
-		   disease_stat)
+		   disease_stat) %>% 
+	left_join(select(donor_df, human_source, plot_labels = donor_labels),
+		by = c('sample_id' = 'human_source'))
 
 #output tidied data
-write_tsv(metadata, path = output_metadata)
-write_tsv(toxin_data, path = output_toxin)
-write_tsv(histology_data, path = output_histology)
-write_tsv(human_source_data, path = output_human_source)
+write_tsv(metadata, file = output_metadata)
+write_tsv(toxin_data, file = output_toxin)
+write_tsv(histology_data, file = output_histology)
+write_tsv(human_source_data, file = output_human_source)
+write_csv(human_source_data, file = output_supp_table1)
