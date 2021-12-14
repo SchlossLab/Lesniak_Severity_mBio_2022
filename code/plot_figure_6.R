@@ -71,7 +71,7 @@ histology_data <- metadata %>%
 cfu_plot <- cfu_data %>% 
 	ggplot(aes(x = isolate, y = cdiff_cfu, color = isolate_431)) + 
 		geom_point(position = position_jitterdodge(jitter.width = 0.1)) + 
-		geom_hline(yintercept = 2, linetype = 'dashed', color = 'lightgray') + 
+		geom_hline(yintercept = 2, linetype = 'dashed', color = 'white') + 
 		geom_label(data = data.frame(x = 1, y = 2, 
 			donor_labels = factor('N7', levels = donor_levels)), aes(x = x, y = y), 
 			label = "LOD", fill = 'white', color = 'white', size = 8/.pt, inherit.aes = F) + 
@@ -87,7 +87,9 @@ cfu_plot <- cfu_data %>%
 		scale_color_manual(values = c("#3588d1", "#76406b")) + 
 		scale_y_continuous(limits = c(1.5, 8.5),
 			breaks = c(2,4,6,8), 
-			labels = c('10^2', '10^4', '10^6', '10^8')) + 
+			labels = c('10^2', '10^4', '10^6', '10^8'),
+			sec.axis = dup_axis(labels = NULL, breaks = c(2,4,6,8),
+                                name = "Day 10 post-challenge")) + 
 		facet_grid(.~donor_labels, scale = 'free_x', margins = c(1, 2, 2)) + 
 		theme_bw() + 
 		theme(legend.position = 'none',
@@ -95,15 +97,14 @@ cfu_plot <- cfu_data %>%
 			strip.background = element_rect(fill = 'white'),
 			axis.text.y = ggtext::element_markdown(),
 			axis.title.y = ggtext::element_markdown(),
-			axis.ticks.x = element_blank(),
-			axis.text.x = element_text(#hjust = c(1, .5),
-				size = 8),
+			axis.ticks = element_blank(),
+			axis.text.x = element_blank(),
 			legend.title = ggtext::element_markdown(),
 			plot.title = ggtext::element_markdown(hjust = 0.5),
-			panel.grid.major = element_blank(),
+			#panel.grid.major = element_blank(),
 			panel.grid.minor = element_blank()) + 
 		labs(x = NULL, y = '*C. difficile* CFU', 
-			title = 'Day 10 post-challenge', subtitle = 'Donor source',
+			subtitle = 'Donor source',
 			color = '*C. difficile*	
 isolate') +
 		ggh4x::force_panelsizes(cols = c(.001, 1, 1, 1), TRUE)
@@ -111,23 +112,25 @@ isolate') +
 histology_score_plot <- histology_data %>% 
 	ggplot(aes(x = isolate, y = summary_score, 
 			color = isolate_431, fill = isolate_431)) + 
-		geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = .5) + 
+		geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = .65) + 
 		facet_grid(.~donor_labels, scale = 'free_x') + 
 		theme_bw() + 
 		scale_color_manual(values = c("#3588d1", "#76406b")) + 
 		scale_fill_manual(values = c("#3588d1", "#76406b")) + 
-		scale_y_continuous(breaks = c(0,2,4,6,8,10)) +
+		scale_y_continuous(breaks = c(0,2,4,6,8,10),
+			labels = c('0', '2', '   4', '6', '8', '10'),
+			sec.axis = dup_axis(labels = NULL, breaks = c(0,2,4,6,8,10),
+                                name = "Endpoint")) +
 		theme(legend.position = 'none',
 			panel.spacing.x=unit(c(0,1,1), 'lines'),
-			strip.background = element_rect(fill = 'white'),
+			strip.text = element_blank(),
 			plot.title = element_text(hjust = 0.5),
-			axis.ticks.x = element_blank(),
+			axis.ticks = element_blank(),
 			axis.text.x = element_text(#hjust = c(1, .5),
 				size = 8),
-			panel.grid.major = element_blank(),
+			#panel.grid.major = element_blank(),
 			panel.grid.minor = element_blank()) + 
-		labs(title = 'Endpoint', subtitle = 'Donor source',
-			x = NULL, y = 'Histopathologic score') +
+		labs(x = NULL, y = 'Histopathologic score') +
 		coord_cartesian(ylim = c(0,10)) + 
 		ggh4x::force_panelsizes(cols = c(0.001, 1, 1, 1), TRUE)
 
