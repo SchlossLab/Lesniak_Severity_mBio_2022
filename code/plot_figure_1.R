@@ -57,7 +57,7 @@ relative_abundance_data <- metadata %>%
   left_join(filter(shared, counts > 0), by = c('group' = 'Group')) %>% 
   left_join(taxonomy, by = c('otu' = 'OTU')) %>% 
   rename(taxa_level = Class) %>% 
-  group_by(group, taxa_level, human_source) %>% 
+  group_by(group, taxa_level, human_source, mouse_id) %>% 
   summarise(relative_abundance = log10(sum(relative_abundance) + 0.0001)) %>% 
   group_by(taxa_level) %>% 
   filter(!is.na(taxa_level)) %>% 
@@ -67,7 +67,8 @@ relative_abundance_data <- metadata %>%
          taxa_level = paste0('*', taxa_level, '*'),
          taxa_level = ifelse(grepl('unclassified', taxa_level), 
          		paste('Unclassified', gsub(' unclassified\\*', '*', taxa_level)),
-         		taxa_level)) %>% 
+         		taxa_level),
+         mouse_id = ifelse(mouse_id %in% c('NP1_2597', 'NP1_2725'), '+', '')) %>% 
   filter(median_ra > -0.677)
 
 
@@ -87,12 +88,13 @@ day_0_plot <- relative_abundance_data %>% # only plot top 10
     scale_fill_gradient2(low="white", mid='#0B775E', high = 'black',
 		  	limits = c(-2,2), na.value = NA, midpoint = .3,
 			  breaks = c(-2.5, -1, 0, 1, 2), labels = c('', '0.1', '1', '10', '100')) + 
+    scale_x_discrete(labels = c(rep('', 8), rep('+', 2), rep('', 41))) + 
 	  theme_bw() + 
     labs(x = NULL, y = NULL, fill = NULL) + 
     facet_grid(.~donor_labels, scales = 'free_x', space = 'free_x') + 
     theme(axis.ticks.x = element_blank(),
-          axis.text.x = element_blank(),
           legend.position = 'bottom',
+          axis.text.x = element_text(margin = margin(t = -3)),
           axis.text.y = ggtext::element_markdown(),
           strip.background = element_blank(),
           legend.margin=margin(t=-0.1, r=0, b=-0.1, l=0, unit="cm"),

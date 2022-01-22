@@ -50,7 +50,8 @@ day_0_toxin_features <- features_df %>%
 day_0_predict_future_toxin_df <- toxin %>% 
 	group_by(mouse_id) %>% 
 	summarise(toxin = ifelse(max(Log_repiricoal_dilution) > 1, 
-		'Toxigenic', 'Non-toxigenic')) %>% 
+		'Toxin +', 'Toxin -'),
+		toxin = factor(toxin, levels = c('Toxin +', 'Toxin -'))) %>% 
 	left_join(select(metadata, mouse_id, day, group), 
 		by = c('mouse_id')) %>% 
 	filter(day == 0) %>% 
@@ -132,12 +133,14 @@ day_0_toxin_feature_abundance_plot <- day_0_predict_future_toxin_df %>%
 		scale_y_log10() + 
 		theme_bw() + 
 		coord_flip() + 
-		scale_color_manual(values = c("#e4b5ff", "#6a45c2")) + 
+		scale_color_manual(breaks = c('Toxin -', 'Toxin +'),
+			values = c("#e4b5ff", "#6a45c2")) + 
 		labs(x = NULL, y = 'Relative Abundance (%)', color	= NULL) + 
 		theme(legend.position = 'top',
 			axis.text.y = ggtext::element_markdown(),
 			legend.margin=margin(2,0,0,0),
         	legend.box.margin=margin(2,-10,-10,-10))
+
 
 day_0_moribund_feature_abundance_plot <- day_0_moribund %>% 
 	ggplot(aes(x = taxon, y = counts, color = early_euth)) + 
@@ -148,7 +151,8 @@ day_0_moribund_feature_abundance_plot <- day_0_moribund %>%
 		scale_y_log10() + 
 		theme_bw() + 
 		coord_flip() + 
-		scale_color_manual(values = c("4EBFA6", "#0c1b37")) + 
+		scale_color_manual(breaks = c('Non-moribund', 'Moribund'),
+			values = c("4EBFA6", "#0c1b37")) + 
 		labs(x = NULL, y = 'Relative Abundance (%)', color	= NULL) + 
 		theme(legend.position = 'top',
 			axis.text.y = ggtext::element_markdown(),

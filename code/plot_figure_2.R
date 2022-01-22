@@ -46,7 +46,7 @@ cfu_plot <- cfu_data %>%
 			sec.axis = dup_axis(labels = NULL, breaks = c(2,4,6,8),
                                            name = "Days post-challenge")) + 
 		theme_bw() + 
-		labs(x = 'Donor', y = '*C. difficile* CFU') + 
+		labs(x = 'Donor', y = '*C. difficile* CFU/g stool') + 
 		guides(color = 'none') + 
 		theme(axis.text.y = ggtext::element_markdown(),
 			axis.title.y = ggtext::element_markdown(),

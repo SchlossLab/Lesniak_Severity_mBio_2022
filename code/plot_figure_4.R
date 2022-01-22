@@ -58,18 +58,21 @@ plot_lefse <- function(file_name){
 			class = case_when(class == 'severe' ~ 'Moribund',
 				class == 'moderate' ~ 'Non-moribund, High histopathologic score',
 				class == 'mild' ~ 'Non-moribund, Low histopathologic score',
-				class == FALSE ~ 'Non-toxigenic',
-				class == TRUE ~ 'Toxigenic', 
+				class == FALSE ~ 'Toxin -',
+				class == TRUE ~ 'Toxin +', 
 				T ~ 'NA'),
-			class = factor(class, levels = c('Non-moribund, Low histopathologic score',
-				'Non-moribund, High histopathologic score', 'Moribund',
-				'Non-toxigenic', 'Toxigenic')),
+			class = factor(class, levels = c('Moribund',
+				'Non-moribund, High histopathologic score', 
+				'Non-moribund, Low histopathologic score',
+				'Toxin +', 'Toxin -')),
 			taxa_label = gsub('_', ' ', taxa_label),
+			taxa_label = gsub('2', '', taxa_label),
 			taxa_label = paste0('*', taxa_label, '*'),
 			taxa_label = ifelse(grepl('unclassified', taxa_label), 
 				gsub(' unclassified\\*', '* *', taxa_label),
 				taxa_label)) %>% 
-		ggplot(aes(x = taxa_label, y = relative_abundance, color = class)) +
+		ggplot(aes(x = reorder(taxa_label, desc(taxa_label)), y = relative_abundance, 
+				color = class)) +
 			stat_summary(fun.data = 'median_hilow', aes(group = class),
 				fun.args = (conf.int=0.5), position = position_dodge(width = .5)) +
 			geom_hline(yintercept = 0.047, linetype = 'dashed', lwd = 0.3) + 
@@ -85,6 +88,7 @@ plot_lefse <- function(file_name){
 				legend.position = 'top',
 				legend.margin=margin(2,0,0,0),
     	    	legend.box.margin=margin(2,-10,-10,-10)) + 
+			guides(color = guide_legend(reverse = TRUE)) + 
 			coord_flip()
 }
 
@@ -141,10 +145,10 @@ day_10_hist_genus_corr_plot <- day_10_hist_genus_corr %>%
 			strip.text = ggtext::element_markdown())
 
 day_0_toxin_production_plot <- plot_lefse('day_0_toxin_production_Genus') +
-	scale_color_manual(values = c("#e4b5ff", "#6a45c2"))
+	scale_color_manual(values = c("#6a45c2", "#e4b5ff"))
 
 day_0_severity_Genus_plot <- plot_lefse('day_0_severity_Genus') +
-	scale_color_manual(values = c("#62ebc9", "#399283", "#0c1b37")) + 
+	scale_color_manual(values = c("#0c1b37", "#399283", "#62ebc9")) + 
 	theme(legend.direction = 'vertical')
 
 ###############################################################################

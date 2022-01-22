@@ -22,6 +22,10 @@ histology <- read_histology()
 
 donor_aes <- donor_df
 
+LOD_df <- data.frame(x = 1.15, y = 2)
+DECD_df <- data.frame(x = 2, y = 2.5, day = 10, 
+  outcome = factor('Moribund', levels = c('Non-moribund', 'Moribund')))
+
 ###############################################################################
 #  setup data
 ###############################################################################
@@ -50,6 +54,8 @@ histology <- histology %>%
 toxin_plot <- toxin %>% 
   ggplot(aes(x = donor_labels, y = Log_repiricoal_dilution, 
              fill = donor_colors, color = donor_colors)) + 
+    geom_hline(yintercept = 2, linetype = 'dashed', 
+      size = 1, color = 'white') + 
     geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 1.5) + 
     scale_fill_identity() + 
     scale_color_identity() + 
@@ -64,8 +70,17 @@ toxin_plot <- toxin %>%
           strip.background = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks = element_blank(),
-          panel.grid.minor.y = element_blank())
-
+          panel.grid.minor.y = element_blank()) + 
+    geom_label(data = LOD_df, aes(x = x-.25, y = y), label = "LOD", 
+      fill = 'white', size = 10/.pt, color = 'white', inherit.aes = F) + 
+    geom_text(data = LOD_df, aes(x = x, y = y), label = "LOD", 
+      color = 'lightgray', inherit.aes = F) + 
+    geom_segment(data = DECD_df, aes(x = 1, xend = 6, y = 2.5, yend = 2.5), 
+      size = .25, color = 'black', inherit.aes = F) + 
+    geom_label(data = DECD_df, aes(x = 3.5, y = 2.5), label = "Deceased", 
+      fill = 'white', color = 'white', inherit.aes = F) + 
+    geom_text(data = DECD_df, aes(x = 3.5, y = 2.5), label = "Deceased", 
+      color = 'black', inherit.aes = F)
 
 histology_plot <- histology %>%  
   ggplot(aes(x = donor_labels, y = score, 
