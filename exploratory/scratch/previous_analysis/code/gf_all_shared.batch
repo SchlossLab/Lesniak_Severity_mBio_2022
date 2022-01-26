@@ -1,7 +1,0 @@
-set.dir(input=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw, output=/mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw)
-make.shared(list=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.list, count=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.count_table, label=0.03)
-classify.otu(list=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.an.unique_list.list, count=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.denovo.uchime.pick.pick.pick.count_table, taxonomy=gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.pick.taxonomy, label=0.03)
-system(mv /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.shared /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_all.an.shared)
-system(mv /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_all.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy /mnt/EXT/Schloss-data/kaitlin/Schubert_humanCdGF_XXXX_2016/data/raw/gf_all.an.cons.taxonomy)
-count.groups(shared=gf_all.an.shared)
-#phylotype(taxonomy=Schubert_humanCdGF_XXXX_2016/data/raw.trim.contigs.good.unique.good.filter.unique.precluster.pick.pds.wang.pick.pick.taxonomy)

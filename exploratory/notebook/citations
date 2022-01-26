@@ -1,0 +1,72 @@
+citations
+
+ribotype 027 (R20291)
+	Epidemic ribotypes of Clostridium (now Clostridioides) difficile are likely to be more virulent than non-epidemic ribotypes in animal models. John C. Vitucci, Mark Pulse, Leslie Tabor-Simecka, and Jerry Simecka. BMC Microbiol. 2020; 20: 27. doi: 10.1186/s12866-020-1710-5
+		Tested multiple isolates of 027 in mice, hamsters and vitro
+			Female C57BL6 mice with antibiotic cocktail
+			toxin and in vitro data does not accurately predict outcome
+
+	The binary toxin CDT enhances Clostridium difficile virulence by suppressing protective colonic eosinophilia. Carrie A. Cowardin,1 Erica L. Buonomo,1 Mahmoud M. Saleh,1 Madeline G. Wilson,1 Stacey L. Burgess,1 Sarah A. Kuehne,4 Carsten Schwan,5 Anna M. Eichhoff,6 Friedrich Koch-Nolte,6 Dena Lyras,7 Klaus Aktories,5 Nigel P. Minton,4 and William A. Petri, Jr. Nat Microbiol. 2016; 1(8): 16108. doi: 10.1038/nmicrobiol.2016.108
+		Two different RT 027 strains tested in C57BL6
+			Reduced histology (10 to 5) wthout toxin
+
+	Humanized microbiota mice as a model of recurrent Clostridium difficile disease. James Collins, Jennifer M. Auchtung, Laura Schaefer, Kathryn A. Eaton, and Robert A. Britton. Microbiome. 2015; 3: 35. doi: 10.1186/s40168-015-0097-2
+		"humanized" germ-free C57BL/6 + abx cocktail/clinda 
+			challenged with RT 027
+			"moribund (those mice that required euthanasia, n = 4) and recovered (mice that survived CDI, n = 9) with the differential abundances of OTUs immediately prior to C. difficile infection analyze"
+			humanized - one community stably colonized over multiple generations
+
+	Clostridioides difficile exploits toxin-mediated inflammation to alter the host nutritional landscape and exclude competitors from the gut microbiota. Joshua R. Fletcher, Colleen M. Pike, Ruth J. Parsons, Alissa J. Rivera, Matthew H. Foley, Michael R. McLaren, Stephanie A. Montgomery, and Casey M. Theriot. Nat Commun. 2021; 12: 462. doi: 10.1038/s41467-020-20746-4
+
+toxin
+	The Regulatory Networks That Control Clostridium difficile Toxin Synthesis. Isabelle Martin-Verstraete, Johann Peltier, Bruno Dupuy. Toxins (Basel). 2016 May 14;8(5):153. doi: 10.3390/toxins8050153. https://pubmed.ncbi.nlm.nih.gov/27187475/
+	toxin similar in symptomatic and asymptomatic Pollack 2019
+		https://academic.oup.com/cid/article/68/1/78/4996976
+
+mucus
+	https://www.cell.com/cell-host-microbe/fulltext/S1931-3128(15)00417-5
+		https://doi.org/10.1016/j.chom.2015.10.007
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC3063600/
+027 biofilm
+	https://pubmed.ncbi.nlm.nih.gov/29118745/
+027 variation
+	https://pubmed.ncbi.nlm.nih.gov/31715298/
+	https://pubmed.ncbi.nlm.nih.gov/28279860/
+027 toxin
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC5408908/
+	https://dx-doi-org.proxy.lib.umich.edu/10.1128%2FJCM.02083-15
+	https://pubmed.ncbi.nlm.nih.gov/16182895/
+lacto inhibits 027
+	https://pubmed.ncbi.nlm.nih.gov/30714187/
+mircobiome and cdiff
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC7244385/
+	https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4892173/
+immunology
+	https://aspenjournals-onlinelibrary-wiley-com.proxy.lib.umich.edu/doi/full/10.1002/jpen.1053
+gf colonization
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC8401286/ - ASF colonize within 7 days
+	doi: 10.1016/j.isci.2021.102049, doi: 10.1128/AEM.05239-11 - begin to stabilize at 14 days
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC8317959/ - allow for 2 weeks post inoculation (method example)
+	https://www-ncbi-nlm-nih-gov.proxy.lib.umich.edu/pmc/articles/PMC8220245/ - FMT colonization protocol
+
+Add citation of 
+	Reeves et al Gut Microbes 2011 doi:10.4161/gmic.2.3.16333
+		antibiotic cocktail + clindamycin > chanllenged with VPI
+			5 of 12 mice had no clinical signs of disease, lower levels of toxin and cdiff, community resembled untreated
+			more akin to +/- perturbation
+	Reeves et al Infect Immun 2012 doi: 10.1128/IAI.00647-12
+		germfree mice colonized with either lachno or e coli, lachno reduces mortality from 100% to 20%
+
+
+investigate vero cell assay?
+	stool frozen? 
+	what affects assay/toxin activity?
+	toxin diffuse through mucus?
+
+nutrient environment can suppress/prevent toxin production
+
+high toxin no moribundity
+	no access
+no toxin high morbunity
+	inconsistent expression
+

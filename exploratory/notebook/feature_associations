@@ -1,0 +1,108 @@
+proteobacteria							RF toxin
+	Alphaproteobacteria					RF severe
+	Betaproteobacteria					RF severe
+		Neisseria						RF high CS
+	Deltaproteobacteria					RF severe	
+	Epsilonproteobacteria				
+	Gammaproteobacteria					RF severe
+			pseudomonas					LEfSe severe
+		enterobacteriaceae
+			escherichia/shigella		LEfSe high CS, LEfSe severe, + linear trend w/severity , LEfSe toxin
+			klebsiella					LEfSe toxin, cooreration w/CS
+
+tenericutes								RF no toxin
+	Mollicutes 							RF severe
+			anaeroplasma				RF low CS
+
+Verrucomicrobia							RF no toxin
+			akkermansia					LEfSe severe, LEfSe low CS
+
+campilobacterota						RF no toxin
+			Helicobacter 				Coorelation high CS
+
+firmicutes								RF no toxin
+	Unclassified						RF severe
+	Bacilli 							RF severe
+			Enterococcus				LEfSe toxin
+			Staphylococcus 				LEfSe severe
+		Lactobacillaceae
+			Limosilactobacillus			RF low CS
+			Ligilactobacillus			Correlation high CS
+	Clostridia							RF non-severe
+		Clostridiaceae
+			Lactonifactor				LEfSe no toxin, RF low CS
+			Enterocloster				LEfSe low CS (neg linear trend)
+			Hungatella					LEfSe no toxin, LEfSe high CS
+			clostridium IV				LEfSe high CS
+			clostridium XIVa			LEfSe no toxin
+			clostridium senso stricto	LEfSe severe, LEfSe low CS
+		Peptostrpeotcocaceae
+			Clostridioides				Correlation high CS
+		Eubacteriales/Oscillospiraceae
+			Flavonifractor				Lefse toxin
+			Intestinimonas				LEfSe no toxin
+		Streptocaceae
+			Streptococcus 				LEfSe severe
+		Lachnospiraceae
+			Anaerostipes				LEfSe severe, RF low CS, LEfSe high CS
+			Anaerotignum				LEfSe no toxin, LEfSe high CS
+			Blautia						LEfSe no toxin
+			Eisenbergiella 				LEfSe high CS
+			Enterocloster				LEfSe no toxin
+			Extibacter					LEfSe no toxin
+			Murimonas					LEfSe no toxin, LEfSe severe, LEfSe low CS
+			Sellimonas					RF low CS
+		Ruminococcaceae
+			Dysosmobacter				LEfSe no toxin
+			Monoglobus					LEfSe no toxin, LEfSe severe, RF low CS, LEfSe low CS
+			Ruminococcaceae				LEfSe toxin
+	Erysipelotrichia					RF non-severe
+			Coprobacillus				LEfSe severe, RF low CS
+			Turicibacter				LEfSe severe
+
+actinobacteria							RF no toxin
+	actinobacteria/actinomycetia		RF severe
+	bifidobacteriales
+			Bifidobacterium				LEfSe toxin, RF high CS
+	coriobacteriia						RF severe
+			eggerthella					RF high CS
+
+bacteroidetes
+	Bacteroidia 						RF severe
+		Bacteroidales
+			Prevotellaceae				LEfSe toxin, COrrelation high CS
+			Muribaculaceae				LEfSe toxin
+				Duncaniella				RF high CS
+			Bacteroides					LEfSe toxin, LEfSe severe (linear trend), Corelation CS
+			Phocaeicola 				LEfSe severe
+			Parabacteroides 			LEfSe severe
+			ihubacter(porphy)			LEfSe low CS
+
+Deinococcus-thermus
+	Deinococci							RF severe
+
+
+
+proteobacteria
+		Neisseria
+			mucosal
+			decreased in low protein diets 
+				10.3390/ani11030686 
+				10.3389/fmicb.2021.717727
+		Sutterellaceae
+				anaerobic/mircoaerophilic
+				increased in IBS 10.5009/gnl19379
+	gamma
+		escherichia/shigella
+			facultative anaerobe
+		klebsiella
+			facultative anaerobe
+			opportunistic pathogen
+		pseudomonas
+			hemolytic activity
+			opportunistic pathogen
+
+staphylococcus
+	facultative anaerobes
+streptococcus
+	facultative anaerobes
