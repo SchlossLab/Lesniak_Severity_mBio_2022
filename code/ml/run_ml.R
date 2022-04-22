@@ -67,44 +67,42 @@ day_0_moribund <- setup_ml_df(day_0_moribund, 'early_euth')
 day_0_histology <- setup_ml_df(day_0_histology, 'hist_score')
 
 
-# run random forest
-new_hp <- list(mtry = c(1:10, 15, 20, 25, 40, 50, 100))
-print('Running Random Forest on day 0 to predict toxin production')
-day_0_predict_future_toxin_rf <- run_ml(day_0_predict_future_toxin,
-	   'rf',
+## run logistic regression
+fraction <- 0.8
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict toxin production')
+day_0_predict_future_toxin_lr <- run_ml(day_0_predict_future_toxin,
+	   'glmnet',
        outcome_colname = 'toxin',
-       training_frac = 0.6,
+       training_frac = fraction,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
-print('Running Random Forest on day 0 to predict severity')
-day_0_moribund_rf <- run_ml(day_0_moribund,
-	   'rf',
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict severity')
+day_0_moribund_lr <- run_ml(day_0_moribund,
+	   'glmnet',
        outcome_colname = 'early_euth',
-       training_frac = 0.6,
+       training_frac = fraction,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
-print('Running Random Forest on day 0 to predict day 10 severity')
-day_0_histology_rf_80 <- run_ml(day_0_histology,
-	   'rf',
+new_hp <- list(alpha = 0,
+			   lambda = c(1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4))
+print('Running Logistic Regression on day 0 to predict day 10 severity')
+day_0_histology_lr <- run_ml(day_0_histology,
+	   'glmnet',
        outcome_colname = 'hist_score',
-       training_frac = 0.8,
+       training_frac = fraction,
 	   hyperparameters = new_hp,
 	   find_feature_importance = TRUE,
        seed = current_seed)
-day_0_histology_rf_50 <- run_ml(day_0_histology,
-	   'rf',
-       outcome_colname = 'hist_score',
-       training_frac = 0.5,
-	   hyperparameters = new_hp,
-	   find_feature_importance = TRUE,
-       seed = current_seed)
-
 
 print('Modeling complete, saving data') 
 
-model_list <- c('same_day_toxin_rf', 'day_0_predict_future_toxin_rf', 'day_0_moribund_rf', 'day_0_histology_rf_50', 'day_0_histology_rf_80')
+model_list <- c('day_0_predict_future_toxin_lr', 'day_0_moribund_lr', 'day_0_histology_lr')
 
 ml_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
@@ -119,7 +117,7 @@ ml_performance <- map_dfr(model_list, function(df_name){
 		mutate(dataset = gsub('(_rf|_lr)', '', df_name),
 			   taxonomic_level = taxonomic_level)
 	})
-write_tsv(ml_performance, paste0('data/process/ml/temp/ml_performance_', taxonomic_level, '_', current_seed, '.tsv'))	
+write_tsv(ml_performance, paste0('data/process/ml/temp/lr_performance_', taxonomic_level, '_', current_seed, '.tsv'))	
 
 ml_feature_imp <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)
@@ -137,7 +135,7 @@ ml_feature_imp <- map_dfr(model_list, function(df_name){
 				seed = current_seed,
 				taxonomic_level = taxonomic_level)
 	})
-write_tsv(ml_feature_imp, paste0('data/process/ml/temp/ml_feature_imp_', taxonomic_level, '_', current_seed, '.tsv'))
+write_tsv(ml_feature_imp, paste0('data/process/ml/temp/lr_feature_imp_', taxonomic_level, '_', current_seed, '.tsv'))
 
 ml_hp_performance <- map_dfr(model_list, function(df_name){
 	i <- get(df_name)$trained_model$results %>% 
@@ -157,4 +155,4 @@ ml_hp_performance <- map_dfr(model_list, function(df_name){
 				params = 'mtry')
 		}
 	})
-write_tsv(ml_hp_performance, paste0('data/process/ml/temp/ml_hp_performance_', taxonomic_level, '_', current_seed, '.tsv'))
+write_tsv(ml_hp_performance, paste0('data/process/ml/temp/lr_hp_performance_', taxonomic_level, '_', current_seed, '.tsv'))

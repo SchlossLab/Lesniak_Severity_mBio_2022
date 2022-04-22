@@ -24,8 +24,7 @@ LOD_df <- data.frame(x = 14.5, y = 2)
 DECD_df <- data.frame(x = 12, y = 3, day = 10)
 
 cfu_data <- metadata %>% 
-	filter(cdiff_strain == 431,
-		day %in% c(1,10),
+	filter(day %in% c(1,10),
 		!is.na(cdiff_cfu)) %>% 
 	mutate(cdiff_cfu = ifelse(cdiff_cfu > 0, log10(cdiff_cfu), log10(60))) %>% 
 	left_join(donor_aes, by = c('human_source'))
@@ -57,17 +56,20 @@ cfu_plot <- cfu_data %>%
 			fill = 'white', color = 'white', inherit.aes = F) + 
 		geom_text(data = LOD_df, aes(x = x, y = y), label = "LOD", 
 			color = 'lightgray', size = 12/.pt, inherit.aes = F) + 
-		geom_segment(data = DECD_df, aes(x = 10, xend = 15, y = 5, yend = 5), 
+		geom_segment(data = DECD_df, aes(x = 10, xend = 10.8, y = 1.8, yend = 1.8), 
 			size = .25, color = 'black') + 
-		geom_label(data = DECD_df, aes(x = 12.5, y = 5), label = "Deceased", 
-			fill = 'white', color = 'white', inherit.aes = F) + 
-		geom_text(data = DECD_df, aes(x = 12.5, y = 5), label = "Deceased", 
+		geom_segment(data = DECD_df, aes(x = 14.2, xend = 15, y = 1.8, yend = 1.8), 
+			size = .25, color = 'black') + 
+		#geom_label(data = DECD_df, aes(x = 12.5, y = 1.8), label = "Deceased", 
+		#	fill = 'white', color = 'white', inherit.aes = F) + 
+		geom_text(data = DECD_df, aes(x = 12.5, y = 1.8), label = "Deceased", 
 			color = 'black', size = 12/.pt, inherit.aes = F)
 
 ###############################################################################
 #  save plot
 ###############################################################################
-ggsave(here('results/figures/Figure_2.jpg'),
+ggsave(here('submission/Figure_2.tiff'),
        cfu_plot,
-       width = 4.5, height = 3)
+       width = 4.5, height = 3, unit = 'in',
+  compression = 'lzw')
 ###############################################################################

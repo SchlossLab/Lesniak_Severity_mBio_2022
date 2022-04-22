@@ -34,18 +34,23 @@ lefse_design <- data.table::fread(here('data/process/lefse/temporal_trend_hilo.d
     
 lefse_df <- data.table::fread(here('data/process/lefse/temporal_trend_hilo.0.03.lefse_summary'),
 		fill = T) %>% 
-	filter(!is.na(LDA)) %>% 
-	rename(Genus = OTU) %>% 
+	filter(!is.na(LDA),
+    LDA > 3) %>% 
+	rename(tax_otu_label = OTU) %>% 
 	mutate(fctr_class = factor(Class),
 		order = LDA + 10 * as.numeric(fctr_class),
-		taxa_label = gsub('_unclassified', '*', Genus),
+    tax_otu_label = gsub('_', ' ', tax_otu_label),
+    tax_otu_label = gsub(' cla', '_cla', tax_otu_label),
+		taxa_label = gsub('_unclassified', '*', tax_otu_label),
 		taxa_label = gsub('_', ' ', taxa_label),
-		taxa_label = paste0('*', taxa_label, '*'))
+		taxa_label = paste0('*', taxa_label),
+    taxa_label = gsub(' \\(', '*  
+      \\(', taxa_label))
 ###############################################################################
 #  setup data
 ###############################################################################
 temporal_lefse_df <- taxonomy_df %>% 
-  inner_join(lefse_df, by = 'Genus') %>% 
+  inner_join(lefse_df, by = 'tax_otu_label') %>% 
   left_join(shared, by = 'OTU') %>% 
   left_join(metadata, by = c('Group' = 'group')) %>%
   group_by(mouse_id, day, taxa_label, early_euth) %>% 
@@ -55,10 +60,11 @@ temporal_lefse_df <- taxonomy_df %>%
          outcome = factor(outcome, levels = c('Low', 'High', 'Severe'))) %>% 
   filter(outcome != 'NA') %>% 
   group_by(taxa_label) %>% 
-  mutate(present = sum(relative_abundance > 0),
+  mutate(median_ra = median(relative_abundance),
+    present = sum(relative_abundance > 0),
   	relative_abundance = ifelse(relative_abundance == 0, 0.045, 
   		relative_abundance)) %>% 
-  filter(present > 60)
+  filter(present > 86)
 
 ###############################################################################
 #  plot data
@@ -70,7 +76,7 @@ temporal_lefse_plot <- temporal_lefse_df %>%
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5),
                  position = position_dodge(width = 0.7)) +
     geom_hline(yintercept = 1/21.07, linetype = 'dashed', size = 0.25) + 
-    facet_wrap(taxa_label~., scales = 'free_y', ncol = 3) + 
+    facet_wrap(taxa_label~., scales = 'free_y', ncol = 4) + 
     scale_y_log10() + scale_x_continuous(breaks = c(0:10)) + 
     theme_bw() + 
     theme(strip.text = ggtext::element_markdown(),
@@ -83,7 +89,8 @@ temporal_lefse_plot <- temporal_lefse_df %>%
 ###############################################################################
 #  save plot
 ###############################################################################
-ggsave(here('results/figures/Figure_S4.jpg'),
+ggsave(here('submission/Figure_S4.tiff'),
        temporal_lefse_plot,
-       height = 9, width = 6)
+       height = 9, width = 6, unit = 'in',
+  compression = 'lzw')
 ###############################################################################
