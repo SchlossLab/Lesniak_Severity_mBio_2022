@@ -1,0 +1,78 @@
+---
+title: ""
+output:
+  pdf_document:
+    keep_tex: false
+    includes:
+      in_header: header.tex
+geometry: margin=1.0in
+---
+
+```{r knitr_settings, eval=TRUE, echo=FALSE, cache=FALSE,  warning=FALSE, message=FALSE}
+######################################################################
+#----------------- Read in necessary libraries -------------------#
+######################################################################
+deps = c("knitr","rmarkdown","tidyverse");
+for (dep in deps){
+  if (dep %in% installed.packages()[,"Package"] == FALSE){
+    install.packages(as.character(dep), quiet=TRUE);
+  }
+  library(dep, verbose=FALSE, character.only=TRUE)
+}
+######################################################################
+#-------------- Define knitr options to allow kable ----------------#
+######################################################################
+library(kableExtra)
+options(kableExtra.latex.load_packages = FALSE)
+options(kableExtra.auto_format = FALSE)
+options(knitr.table.format = "latex")
+```
+
+
+```{r table_2, echo=FALSE, results='asis'}
+######################################################################
+# We load a human_source_tidy.tsv file to make Table S1
+# This file is generated from subsetting MIMARKS_cdclinical.xlsx 
+# from Schubert et al. mBio 2014 in code/tidy_raw_data.R
+######################################################################
+
+human_src_meta <- read_tsv(here::here('data/process/human_source_tidy.tsv'),
+                           col_types = cols(.default = col_character())) %>% 
+    select(plot_labels, everything()) %>%
+    rename_if(is.character,
+           ~ c("Sample Label", "Subject ID", "Subject Location", 
+                     "Sample Medium", "Subject Age", "Subject Sex", 
+                     "Recent Antibiotic Use", "Proton Pump Inhibitor Use",
+                     "H2 Receptor Blocker Use", "Antacid Use", "Healthcare Worker",
+                     "History of CDI", "Surgery within 6 Months", "Vegetarian",
+                     "Weight", "Disease Status")) %>% 
+    arrange(`Sample Label`)
+
+#------------------------Table S1 generation------------------------#
+TableS1 <- kable(human_src_meta,
+                "latex",
+                caption = "Table S1. Demographic information of subjects whose stool samples used to colonize germ-free mice.",
+                booktabs = T, 
+                linesep = "") %>%
+  # latex options make table to be condensed
+  # table itseld is left aligned
+  kable_styling(latex_options = c("striped", "scale_down", "hold_position"),
+                position = "left") %>%
+  # Adjust header widths
+  column_spec(1, width = '4em') %>%
+  column_spec(3, width = '5em') %>%
+  column_spec(4, width = '7em') %>%
+  column_spec(5, width = '3em') %>%
+  column_spec(6, width = '5em') %>%
+  column_spec(7, width = '5em') %>%
+  column_spec(8, width = '5em') %>%
+  column_spec(9, width = '5em') %>%
+  column_spec(10, width = '5em') %>%
+  column_spec(11, width = '5em') %>%
+  column_spec(12, width = '5em') %>%
+  column_spec(13, width = '5em') %>%
+  # Add bold header
+  row_spec(0,bold=TRUE)
+
+TableS1
+```

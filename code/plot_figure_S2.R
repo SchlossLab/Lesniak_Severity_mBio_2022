@@ -1,165 +1,93 @@
 ###############################################################################
 #
-# Figure 
-#	main idea - how did we chose the model/features
-# 	plot - model performance by taxonomic rank and feature mean decrease AUC
-#
-# need files:
-# 	data/process/ml/ml_performance.tsv
-#	data/process/ml/ml_feature_imp.tsv
+# Figure S1
+#	main idea - moribund mice had high levels of 
+#     epithelial damage, tissue edema and inflammation
+# 	plot - epithelial damage, tissue edema and inflammation
 #
 # Nick Lesniak 2021-10-26
 ###############################################################################
 # setup environment
 ###############################################################################
-library(tidyverse)
-library(cowplot)
+source(here::here('code/utilities.R'))
 
 ###############################################################################
 # load data
 ###############################################################################
-performance_df <- read_tsv(here::here('data/process/ml/ml_performance.tsv'),
-		col_type = 'dddddddddddddddcdcc') %>% 
-	filter(dataset != 'day_0_histology_50') %>% 
-	mutate(dataset = gsub('_80', '', dataset),
-		dataset = factor(dataset, c('same_day_toxin', 'day_0_predict_future_toxin',
-			'day_0_moribund', 'day_0_histology')))  %>% 
-	select(method, seed, dataset, `Cross\nValidation` = cv_metric_AUC, Test = AUC, taxonomic_level) %>% 
-	pivot_longer(cols = c(`Cross\nValidation`, 'Test'), 
-		names_to = 'metric', values_to = 'Performance') %>% 
-	mutate(taxonomic_level = factor(taxonomic_level, 
-		levels = c('OTU', 'Genus', 'Family', 'Order', 'Class', 'Phylum')))
+metadata <- read_metadata()
 
-features_df <- read_tsv(here::here('data/process/ml/ml_feature_imp.tsv'),
-		col_type = 'ddcccddcc') %>% 
-	filter(dataset != 'day_0_histology_50') %>% 
-	mutate(dataset = gsub('_80', '', dataset))
+histology <- read_histology()
+
+donor_aes <- donor_df
 
 ###############################################################################
 #  setup data
 ###############################################################################
-day_0_toxin_production <- features_df %>% 
-  filter(dataset == 'day_0_predict_future_toxin',
-         (method == 'rf' & taxonomic_level == 'Phylum')) %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff),
-  	mean_diff = mean(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0 & mean_diff > 0) %>% 
-  mutate(names = paste0('*', names, '*'))
+histology <- histology %>% 
+  left_join(distinct(select(metadata, mouse_id, early_euth)), by = 'mouse_id') %>% 
+  filter(!is.na(early_euth)) %>% 
+  mutate(early_euth = ifelse(early_euth, 'Moribund', 'Non-moribund'),
+         early_euth = factor(early_euth, levels = c('Non-moribund', 'Moribund')),
+         mouse_id = paste0(cage_id, '_', ear_tag)) %>% 
+  left_join(donor_aes, by = 'human_source') %>% 
+  rename('Tissue edema*' = edema_tissue,
+    'Tissue inflammation*' = inflammation_tissue,
+    'Epithelial damage*' = epithelial_damage) %>% 
+  pivot_longer(cols = c('Tissue edema*', 'Tissue inflammation*', 'Epithelial damage*'),
+    names_to = 'type', values_to = 'score')
 
-day_0_moribund_plot_df <- features_df %>% 
-  filter(dataset == 'day_0_moribund',
-         method == 'rf',
-         taxonomic_level == 'Class') %>% 
-  group_by(names) %>% 
-  mutate(median_diff = median(perf_metric_diff),
-  	mean_diff = mean(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(median_diff > 0 & mean_diff > 0) %>% 
-  mutate(names = paste0('*', names, '*'),
-  	names = gsub('_', ' ', names),
-  	names = gsub(' unclassified', '*', names))
-
-day_0_histology_plot_df <- features_df %>% 
-  filter(dataset == 'day_0_histology',
-         method == 'rf',
-         taxonomic_level == 'Genus') %>% 
-  group_by(names) %>% 
-  mutate(mean_diff = mean(perf_metric_diff)) %>% 
-  ungroup() %>% 
-  filter(mean_diff > 0) %>% 
-  mutate(names = paste0('*', names, '*'),
-  	names = gsub('_', ' ', names),
-  	names = gsub(' unclassified', '*', names))
 ###############################################################################
-#  analyze data
+#  test data
 ###############################################################################
-
+#histology %>% 
+#	filter(type == 'Tissue edema') %>% 
+#	summarize(pvalue = 
+#	wilcox.test( 
+#		pull(filter(., early_euth == 'Moribund'), score),
+#		pull(filter(., early_euth == 'Non-moribund'), score))$p.value)
+# p = 0.0000000390
+#
+#histology %>% 
+#	filter(type == 'Tissue inflammation') %>% 
+#	summarize(pvalue = 
+#	wilcox.test( 
+#		pull(filter(., early_euth == 'Moribund'), score),
+#		pull(filter(., early_euth == 'Non-moribund'), score))$p.value)
+# p = 0.000139
+#
+#histology %>% 
+#	filter(type == 'Epithelial damage') %>% 
+#	summarize(pvalue = 
+#	wilcox.test( 
+#		pull(filter(., early_euth == 'Moribund'), score),
+#		pull(filter(., early_euth == 'Non-moribund'), score))$p.value)
+# p = 0.0000124
+#
 ###############################################################################
 #  plot data
 ###############################################################################
-day_0_toxin_perf_plot <- performance_df %>% 
-  filter(dataset == 'day_0_predict_future_toxin') %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
-      position = position_dodge(width = .5)) +
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.75, ymax = 0.9, method = 'rf', taxonomic_level = 6, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA) + 
-    labs(x = NULL, y = 'Performance (AUC)', color = NULL)
-
-day_0_toxin_feature_plot <- day_0_toxin_production %>%
-  ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    labs(x = NULL, y = 'Decrease AUC') +
+histology_plot <- histology %>%  
+  ggplot(aes(x = donor_labels, y = score, 
+      fill = donor_colors, color = donor_colors)) +
+    geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 1) + 
     theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
-
-day_0_moribund_perf_plot <- performance_df %>% 
-  filter(dataset == 'day_0_moribund') %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
-      position = position_dodge(width = .5)) +
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.85, ymax = .98, method = 'rf', taxonomic_level = 5, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA) + 
-    labs(x = NULL, y = 'Performance (AUC)', color = NULL)
-
-day_0_moribund_feature_plot <- day_0_moribund_plot_df %>% 
-  ggplot(aes(x = reorder(names,median_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    #geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    labs(x = NULL, y = 'Decrease AUC') +
-    theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
-
-day_0_hist_perf_plot <- performance_df %>% 
-  filter(dataset == 'day_0_histology') %>% 
-  ggplot(aes(x = taxonomic_level, y = Performance, color = metric)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5), 
-      position = position_dodge(width = .5)) +
-    geom_hline(yintercept = 0.5, linetype = 'dashed', size = 0.25) +
-    #facet_grid(dataset~method, scales = 'free_y') + 
-    theme_bw() +
-    geom_rect(data = data.frame(ymin = 0.92, ymax = 1.05, method = 'rf', taxonomic_level = 2, Performance = 1),
-              aes(xmin = taxonomic_level - 0.5, xmax = taxonomic_level + 0.5, ymin = ymin, ymax = ymax, color = NA), 
-              fill = NA) + 
-    labs(x = NULL, y = 'Performance (AUC)', color = NULL)
-
-day_0_hist_feature_plot <- day_0_histology_plot_df %>% 
-  ggplot(aes(x = reorder(names,mean_diff), y = perf_metric_diff)) + 
-    stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
-    geom_jitter(alpha = 0.1, width = 0.1) + 
-    coord_flip() + 
-    labs(x = NULL, y = 'Decrease AUC') +
-    theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
+    labs(x = NULL, y = 'Histopathological Score') +
+    scale_y_continuous(breaks = c(0,2,4,6,8,10), 
+                       labels = c(0,2,4,6,8,10)) + 
+    scale_fill_identity() + 
+    scale_color_identity() + 
+    facet_grid(type~early_euth, scales = 'free_x', space = 'free_x') + 
+    theme(legend.position = 'none',
+          strip.background = element_blank(),
+          strip.text.x = element_text(size = 12),
+          legend.margin=margin(t=-0.3, r=0, b=-0.2, l=0, unit="cm"),
+          legend.key.height = unit(0, 'cm'))
 
 ###############################################################################
 #  save plot
 ###############################################################################
-ggsave(here::here('results/figures/Figure_S2.jpg'),
-	plot_grid(
-		plot_grid(NULL,
-			plot_grid(day_0_toxin_perf_plot + coord_flip(), 
-				day_0_toxin_feature_plot, nrow = 1, labels = c('A', 'D')),
-			labels = c('Toxin activity', NULL), ncol = 1, rel_heights = c(1, 10)),
-		plot_grid(NULL,
-			plot_grid(day_0_moribund_perf_plot + coord_flip(), 
-				day_0_moribund_feature_plot, nrow = 1, labels = c('B', 'E')),
-			labels = c('Moribundity', NULL), ncol = 1, rel_heights = c(1, 10)),
-		plot_grid(NULL,
-			plot_grid(day_0_hist_perf_plot + coord_flip(), 
-				day_0_hist_feature_plot, nrow = 1, labels = c('C','F')),
-			labels = c('Histopathologic score', NULL), ncol = 1, rel_heights = c(1, 10)),
-		ncol = 1),  
-	height = 9, width = 6.875, unit = 'in')
+ggsave(here('submission/Figure_S2.tiff'),
+  histology_plot,
+  width = 6, height = 4.5, unit = 'in',
+  compression = 'lzw')
 ###############################################################################

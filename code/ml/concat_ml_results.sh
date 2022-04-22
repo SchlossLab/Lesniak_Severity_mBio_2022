@@ -16,15 +16,15 @@ FINAL_DIR=data/process/ml/
 # combine binary models
 for taxa_level in "OTU" "Genus" "Family" "Order" "Class" "Phylum"
 	do
-	head -1 $SEARCH_DIR/ml_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_ml_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/ml_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_ml_performance_"$taxa_level".tsv
-	head -1 $SEARCH_DIR/ml_feature_imp_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_ml_feature_imp_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/ml_feature_imp_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_ml_feature_imp_"$taxa_level".tsv
-	head -1 $SEARCH_DIR/ml_hp_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_ml_hp_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/ml_hp_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_ml_hp_performance_"$taxa_level".tsv
+	head -1 $SEARCH_DIR/lr_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_lr_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/lr_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_lr_performance_"$taxa_level".tsv
+	head -1 $SEARCH_DIR/lr_feature_imp_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_lr_feature_imp_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/lr_feature_imp_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_lr_feature_imp_"$taxa_level".tsv
+	head -1 $SEARCH_DIR/lr_hp_performance_"$taxa_level"_1.tsv  > $SEARCH_DIR/combined_lr_hp_performance_"$taxa_level".tsv; tail -n +2 -q $SEARCH_DIR/lr_hp_performance_"$taxa_level"_+([0-9]).tsv >> $SEARCH_DIR/combined_lr_hp_performance_"$taxa_level".tsv
 
-	mv $SEARCH_DIR/combined_ml_performance_"$taxa_level".tsv $FINAL_DIR/combined_ml_performance_"$taxa_level".tsv
-	mv $SEARCH_DIR/combined_ml_feature_imp_"$taxa_level".tsv $FINAL_DIR/combined_ml_feature_imp_"$taxa_level".tsv
-	mv $SEARCH_DIR/combined_ml_hp_performance_"$taxa_level".tsv $FINAL_DIR/combined_ml_hp_performance_"$taxa_level".tsv
+	mv $SEARCH_DIR/combined_lr_performance_"$taxa_level".tsv $FINAL_DIR/combined_lr_performance_"$taxa_level".tsv
+	mv $SEARCH_DIR/combined_lr_feature_imp_"$taxa_level".tsv $FINAL_DIR/combined_lr_feature_imp_"$taxa_level".tsv
+	mv $SEARCH_DIR/combined_lr_hp_performance_"$taxa_level".tsv $FINAL_DIR/combined_lr_hp_performance_"$taxa_level".tsv
 done
 
-head -1 $FINAL_DIR/combined_ml_performance_Phylum.tsv  > $FINAL_DIR/ml_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_performance_*.tsv >> $FINAL_DIR/ml_performance.tsv
-head -1 $FINAL_DIR/combined_ml_feature_imp_Phylum.tsv  > $FINAL_DIR/ml_feature_imp.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_feature_imp_*.tsv >> $FINAL_DIR/ml_feature_imp.tsv
-head -1 $FINAL_DIR/combined_ml_hp_performance_Phylum.tsv  > $FINAL_DIR/ml_hp_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_ml_hp_performance_*.tsv >> $FINAL_DIR/ml_hp_performance.tsv
+head -1 $FINAL_DIR/combined_lr_performance_Phylum.tsv  > $FINAL_DIR/lr_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_lr_performance_*.tsv >> $FINAL_DIR/lr_performance.tsv
+head -1 $FINAL_DIR/combined_lr_feature_imp_Phylum.tsv  > $FINAL_DIR/lr_feature_imp.tsv; tail -n +2 -q $FINAL_DIR/combined_lr_feature_imp_*.tsv >> $FINAL_DIR/lr_feature_imp.tsv
+head -1 $FINAL_DIR/combined_lr_hp_performance_Phylum.tsv  > $FINAL_DIR/lr_hp_performance.tsv; tail -n +2 -q $FINAL_DIR/combined_lr_hp_performance_*.tsv >> $FINAL_DIR/lr_hp_performance.tsv

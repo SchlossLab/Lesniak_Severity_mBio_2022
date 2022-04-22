@@ -31,7 +31,8 @@ read_taxonomy <- function(){
 
 read_metadata <- function(){
 	read_tsv(here('data/process/metadata_tidy.tsv'),
-		col_type = 'cccccDddddDcdddddcdl') 
+			col_type = 'cccccDddddDcdddddcdl') %>% 
+		filter(cdiff_strain == 431)
 }
 
 read_shared <- function(){

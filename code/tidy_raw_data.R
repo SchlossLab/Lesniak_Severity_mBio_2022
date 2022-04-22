@@ -29,7 +29,6 @@ output_metadata <- here('data/process/metadata_tidy.tsv')
 output_toxin <- here('data/process/toxin_tidy.tsv')
 output_histology <- here('data/process/histology_tidy.tsv')
 output_human_source <- here('data/process/human_source_tidy.tsv')
-output_supp_table1 <- here('submission/Table_S1.csv')
 
 # Read in metadata
 metadata <- read_xlsx(input_metadata, 
@@ -74,8 +73,7 @@ histology_data <- read_xlsx(input_histology,
 # Read in human source data
 human_source_data <- read_xlsx(input_human_source,
 		sheet = 'Sheet1', range = 'A1:AW353') %>% 
-	filter(sample_id %in% c(unique(metadata$human_source), 
-							'DA00299', 'DA00395', 'DA00458')) %>% 
+	filter(sample_id %in% c(unique(metadata$human_source))) %>% 
 	select(sample_id, biome, samp_mat_process, age, gender, 
 		   recent_antibiotic_use = "antibiotics >3mo", protonpump, h2receptor, 
 		   antacid, Healthworker, historyCdiff, Surgery6mos, Vegetarian, weight, 
@@ -88,4 +86,3 @@ write_tsv(metadata, file = output_metadata)
 write_tsv(toxin_data, file = output_toxin)
 write_tsv(histology_data, file = output_histology)
 write_tsv(human_source_data, file = output_human_source)
-write_csv(human_source_data, file = output_supp_table1)

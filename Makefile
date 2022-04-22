@@ -131,16 +131,16 @@ $(PROC)lefse/day_0_severity_Genus.0.03.lefse_summary $(PROC)lefse/day_0_severity
 	Rscript code/run_lefse_analysis.R
 
 # Run LEfSe on temporal trends
-#$(PROC)lefse/temporal_trend_hilo.0.03.lefse_summary $(PROC)lefse/temporal_trend_hilo.design : $(PROC)metadata_tidy.tsv\
-#										$(MOTHUR)sample.final.0.03.subsample.shared\ 
-#										$(PROC)toxin_tidy.tsv\
-#										$(PROC)histology_tidy.tsv\
-#										$(PROC)final.taxonomy.tidy.tsv\
-#										code/run_lefse_analysis.R
-#	Rscript code/run_lefse_temporal_trend.R
+$(PROC)lefse/temporal_trend_hilo.0.03.lefse_summary $(PROC)lefse/temporal_trend_hilo.design : $(PROC)metadata_tidy.tsv\
+										$(MOTHUR)sample.final.0.03.subsample.shared\ 
+										$(PROC)toxin_tidy.tsv\
+										$(PROC)histology_tidy.tsv\
+										$(PROC)final.taxonomy.tidy.tsv\
+										code/run_lefse_analysis.R
+	Rscript code/run_lefse_temporal_trend.R
 
 # Run random forest to predict C. difficile challenge outcome from day 0 community
-$(PROC)ml/ml_performance.tsv $(PROC)ml/ml_feature_imp.tsv $(PROC)ml/ml_hp_performance.tsv : $(PROC)metadata_tidy.tsv\
+$(PROC)ml/lr_performance.tsv $(PROC)ml/lr_feature_imp.tsv $(PROC)ml/lr_hp_performance.tsv : $(PROC)metadata_tidy.tsv\
 										$(PROC)toxin_tidy.tsv\
 										$(PROC)histology_tidy.tsv\
 										$(MOTHUR)sample.final.0.03.subsample.shared\
@@ -156,10 +156,6 @@ $(PROC)ml/ml_performance.tsv $(PROC)ml/ml_feature_imp.tsv $(PROC)ml/ml_hp_perfor
 		for tax_rank in {Phylum,Class,Order,Family,Genus,OTU}
 		do
 			echo 'Rscript code/ml/run_ml.R' $seed $tax_rank
-			for tune_frac in {0.5,0.6,0.7,0.8,0.9}
-			do
-				echo 'Rscript code/ml/tune_ml.R' $seed $tax_rank $tune_fraction
-			done
 		done
 	done
 	# instead of for loops, run SBATCH code/ml/run_ml_{tax_rank}.sbat and SBATCH code/ml/tune_ml_{tune_frac}.sbat
@@ -188,8 +184,8 @@ submission/Figure_2.tiff : code/plot_figure_2.R\
 							$(PROC)metadata_tidy.tsv
 	Rscript code/plot_figure_2.R
 
-# Figure 3
-submission/Figure_3.tiff : code/plot_figure_3.R\
+# Figure 3 and S1
+submission/Figure_3.tiff submission/Figure_S1.tiff : code/plot_figure_3.R\
 							code/utlities.R\
 							$(PROC)metadata_tidy.tsv\
 							$(PROC)toxin_tidy.tsv\
@@ -220,33 +216,16 @@ submission/Figure_5.tiff : code/plot_figure_5.R\
 							$(PROC)ml/ml_feature_imp.tsv
 	Rscript code/plot_figure_5.R
 
-# Figure 6
-submission/Figure_6.tiff : code/plot_figure_6.R\
-							code/utlities.R\
-							$(PROC)metadata_tidy.tsv\
-							$(PROC)toxin_tidy.tsv\
-							$(PROC)histology_tidy.tsv
-	Rscript code/plot_figure_6.R
-
-# Figure S1
-submission/Figure_S1.tiff : code/plot_figure_S1.R\
-							code/utlities.R\
-							$(PROC)metadata_tidy.tsv\
-	Rscript code/plot_figure_S1.R
-
 # Figure S2
 submission/Figure_S2.tiff : code/plot_figure_S2.R\
-							$(PROC)ml/ml_performance.tsv\
-							$(PROC)ml/ml_feature_imp.tsv
-	Rscript code/plot_figure_S2.R
-
-# Figure 5
-submission/Figure_S3.tiff : code/plot_figure_S3.R\
 							code/utlities.R\
 							$(PROC)metadata_tidy.tsv\
-							$(MOTHUR)sample.final.0.03.subsample.shared\
-							$(PROC)final.taxonomy.tidy.tsv\
-							$(PROC)ml/ml_feature_imp.tsv
+	Rscript code/plot_figure_S2.R
+
+# Figure S3
+submission/Figure_S3.tiff : code/plot_figure_S3.R\
+							$(PROC)ml/lr_performance.tsv\
+							$(PROC)ml/lr_feature_imp.tsv
 	Rscript code/plot_figure_S3.R
 
 # Figure S4
@@ -256,9 +235,15 @@ submission/Figure_S4.tiff : code/plot_figure_S4.R\
 							$(MOTHUR)sample.final.0.03.subsample.shared\
 							$(PROC)final.taxonomy.tidy.tsv\
 							$(PROC)histology_tidy.tsv\
-							$(PROC)lefse/temporal_trend_hilo.0.03.lefse_summary\
-							$(PROC)lefse/temporal_trend_hilo.design
-	Rscript code/plot_figure_S4.R
+							$(PROC)/lefse/temporal_trend_hilo.0.03.lefse_summary\
+							$(PROC)/lefse/temporal_trend_hilo.design
+	Rscript code/plot_figure_S3.R
+
+# Table S1
+submission/Table_S1.pdf : code/render_table_S1.sh\
+							results/table/Table_S1.Rmd\
+							results/table/header.tex
+	bash code/render_table_S1.sh
 
 ################################################################################
 # Create manuscript
@@ -271,10 +256,10 @@ submission/manuscript.pdf submission/manuscript.docx : submission/manuscript.Rmd
 		submission/figure_3.tiff\
 		submission/figure_4.tiff\
 		submission/figure_5.tiff\
-		submission/figure_6.tiff\
 		submission/figure_S1.tiff\
 		submission/figure_S2.tiff\
 		submission/figure_S3.tiff\
+		submission/figure_S4.tiff\
 		submission/mbio.csl\
 		submission/references.bib
 	R -e 'library(rmarkdown);render("submission/manuscript.Rmd", output_format="all")'

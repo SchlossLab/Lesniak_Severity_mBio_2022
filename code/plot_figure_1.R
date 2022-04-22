@@ -1,7 +1,7 @@
 ###############################################################################
 #
 # Figure 1
-#	main idea - germ0free mice colonized with human feces produce diverse communities
+#	main idea - germ-free mice colonized with human feces produce diverse communities
 # 	plot - relative abundance of communities for each sample and 
 #		beta diversity to compare distance from mice recieving same donor to others
 #
@@ -33,22 +33,30 @@ day_0_samples <- metadata %>%
   filter(day == 0) %>% 
   select(group, human_source)
 
+donor <- bind_rows(
+  day_0_samples %>% 
+    inner_join(beta_df, by = c('group' = 'columns', 'human_source' = 'rows')) %>% 
+    mutate(comparison = 'Donor to\nrecipient'),
+  day_0_samples %>% 
+    inner_join(beta_df, by = c('group' = 'rows', 'human_source' = 'columns')) %>% 
+    mutate(comparison = 'Donor to\nrecipient'))
+
 corecipient <- day_0_samples %>% 
   left_join(day_0_samples, by = c('human_source')) %>% 
   filter(group.x != group.y) %>% 
   inner_join(beta_df, by = c('group.x' = 'rows', 'group.y' = 'columns')) %>% 
-  mutate(comparison = 'Recipients compared to\nothers w/same donor')
+  mutate(comparison = 'Recipients of\nsame donor')
 
 other_recipients <- beta_df %>% 
   filter(grepl('D0', rows) & grepl('D0', columns)) %>% 
   anti_join(corecipient, by = c('rows' = 'group.x', 'columns' = 'group.y')) %>% 
-  mutate(comparison = 'Recipients compared to\nothers w/different donor')
+  mutate(comparison = 'Recipients of\ndifferent donor')
 
-beta_data <- bind_rows(corecipient, other_recipients) %>% 
-  mutate(comparison = ifelse(comparison == 'Recipients compared to\nothers w/different donor',
-                             'Different donor', 'Same donor'),
-    comparison = factor(comparison, levels = 
-                              c('Different donor', 'Same donor')))
+beta_data <- bind_rows(donor, corecipient, other_recipients) %>% 
+  mutate(comparison = factor(comparison, levels = 
+                              c('Recipients of\ndifferent donor', 
+                                'Recipients of\nsame donor',
+                                'Donor to\nrecipient')))
 
 relative_abundance_data <- metadata %>% 
   filter(day == 0,
@@ -77,6 +85,10 @@ relative_abundance_data <- metadata %>%
 ###############################################################################
 #wilcox.test(corecipient$distances, other_recipients$distances)
 # p < 2.2e-16
+#wilcox.test(corecipient$distances, donor$distances)
+# p < 2.2e-16
+#wilcox.test(donor$distances, other_recipients$distances)
+# p = 0.004092
 ###############################################################################
 #  plot data
 ###############################################################################
@@ -111,14 +123,15 @@ beta_plot <- beta_data %>%
 ###############################################################################
 #  save plot
 ###############################################################################
-ggsave(here('results/figures/Figure_1.jpg'),
+ggsave(here('submission/Figure_1.tiff'),
   cowplot::plot_grid(cowplot::plot_grid(
                       day_0_plot + theme(text=element_text(size = 9)),
                       labels = c('       Donor'), label_size = 9, label_fontface = 'plain'), 
                      NULL,
                      beta_plot + theme(text=element_text(size = 9)), 
                      ncol = 1, 
-                     rel_heights = c(6, 0.3, 1.5),
+                     rel_heights = c(6, 0.4, 2.2),
                      labels = c('A', 'B', NULL)),
-  height = 5.5, width = 5.1, unit = 'in')
+  height = 5.5, width = 5.1, unit = 'in',
+  compression = 'lzw')
 ###############################################################################
