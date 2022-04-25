@@ -252,18 +252,19 @@ mouse colonies, we colonized germ-free mice with bacteria from human
 feces (17). We inoculated germ-free C57BL/6 mice with homogenized feces
 from each of 15 human fecal samples via oral gavage. These human fecal
 samples were selected because they represented diverse community
-structures based on community clustering (18). The gut communities were
-allowed to colonize for two weeks post-inoculation (19). We then
-surveyed the bacterial members of the gut communities by 16S rRNA gene
-sequencing of murine fecal pellets (Figure 1A). The bacterial
-communities from each mouse grouped more closely to those communities
-from mice that received the same human fecal donor community than to the
-mice who received a different human fecal donor community (Figure 1B).
-The communities were primarily composed of populations of
-\emph{Clostridia}, \emph{Bacteroidia}, \emph{Erysipelotrichia},
-\emph{Bacilli}, and \emph{Gammaproteobacteria}. However, the gut
-bacterial communities of each donor group of mice harbored unique
-relative abundance distributions of the shared bacterial classes.
+structures based on community clustering (18). After the gut communities
+had colonized for two weeks, we confirmed them to be \emph{C. difficile}
+negative by culture (19). We then surveyed the bacterial members of the
+gut communities by 16S rRNA gene sequencing of murine fecal pellets
+(Figure 1A). The bacterial communities from each mouse grouped more
+closely to those communities from mice that received the same human
+fecal donor community than to the mice who received a different human
+fecal donor community (Figure 1B). The communities were primarily
+composed of populations of \emph{Clostridia}, \emph{Bacteroidia},
+\emph{Erysipelotrichia}, \emph{Bacilli}, and \emph{Gammaproteobacteria}.
+However, the gut bacterial communities of each donor group of mice
+harbored unique relative abundance distributions of the shared bacterial
+classes.
 
 Next, we tested this set of mice with their human-derived gut microbial
 communities for susceptibility to \emph{C. difficile} infection. A
@@ -677,16 +678,17 @@ I error rate of 0.05 (86). We built L2 logistic regression models using
 the mikropml package (87). Sequence counts were summed by taxonomic
 ranks from day 0 samples, normalized by centering to the feature mean
 and scaling by the standard deviation, and features positively or
-negatively correlated were collapsed into a single feature. We ran our
-models using alpha = 0 and lambda values of 1e-0, 1e1, 1e2, 2e2, 3e2,
-4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4 with a split of 80\% of the data
-for training and 20\% of the data for testing. Lastly, we did not
-compare murine communities to donor community or clinical data because
-germ-free mice colonized with non-murine fecal communities have been
-shown to more closely resemble the murine communities than the donor
-species community (88). Furthermore, it is not our intention to make any
-inferences regarding human associated bacteria and their relationship
-with human CDI outcome.
+negatively correlated were collapsed into a single feature. For each L2
+logistic regression model, we ran 100 random iterations using values of
+1e-0, 1e1, 1e2, 2e2, 3e2, 4e2, 5e2, 6e2, 7e2, 8e2, 9e2, 1e3, 1e4 for the
+L2 regularization penalty with a split of 80\% of the data for training
+and 20\% of the data for testing. Lastly, we did not compare murine
+communities to donor community or clinical data because germ-free mice
+colonized with non-murine fecal communities have been shown to more
+closely resemble the murine communities than the donor species community
+(88). Furthermore, it is not our intention to make any inferences
+regarding human associated bacteria and their relationship with human
+CDI outcome.
 
 \textbf{Code availability.} Scripts necessary to reproduce our analysis
 and this paper are available in an online repository
@@ -718,9 +720,7 @@ P.D.S.; Resources: N.A.L., A.M.S., P.D.S.; Software: NAL; Visualization:
 N.A.L., K.J.F., P.D.S.; Writing - original draft: N.A.L.; Writing -
 review \& editing: N.A.L., A.M.S., K.J.F., J.L.L., H.S., I.L.B., V.B.Y.,
 P.D.S.; Funding acquisition: V.B.Y.; Project administration: P.D.S.;
-Supervision: P.D.S.
-
-\newpage
+Supervision: P.D.S. \newpage
 
 \hypertarget{references}{%
 \subsection{References}\label{references}}
