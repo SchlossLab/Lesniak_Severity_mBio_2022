@@ -1,6 +1,14 @@
-## TITLE OF YOUR PAPER GOES HERE
+## The gut bacterial community potentiates *Clostridioides difficile* infection severity.
 
-YOUR PAPER'S ABSTRACT GOES HERE
+### Abstract
+
+The severity of *Clostridioides difficile* infections (CDI) has increased over the last few decades. Patient age, white blood cell count, creatinine levels as well as *C. difficile* ribotype and toxin genes have been associated with disease severity. However, it is unclear whether specific members of the gut microbiota associate with variation in disease severity. The gut microbiota is known to interact with *C. difficile* during infection. Perturbations to the gut microbiota are necessary for *C. difficile* to colonize the gut. The gut microbiota can inhibit *C. difficile* colonization through bile acid metabolism, nutrient consumption and bacteriocin production. Here we sought to demonstrate that members of the gut bacterial communities can also contribute to disease severity. We derived diverse gut communities by colonizing germ-free mice with different human fecal communities. The mice were then infected with a single *C. difficile* ribotype 027 clinical isolate which resulted in moribundity and histopathologic differences. The variation in severity was associated with the human fecal community that the mice received. Generally, bacterial populations with pathogenic potential, such as *Enterococcus*, *Helicobacter*, and *Klebsiella*, were associated with more severe outcomes. Bacterial groups associated with fiber degradation and bile acid metabolism, such as *Anaerotignum*, *Blautia*, *Lactonifactor*, and *Monoglobus*, were associated with less severe outcomes. These data indicate that, in addition to the host and *C. difficile* subtype, populations of gut bacteria can influence CDI disease severity.
+
+### Importance
+
+*Clostridioides difficile* colonization can be asymptomatic or develop into an infection, ranging in severity from mild diarrhea to toxic megacolon, sepsis, and death. Models that predict severity and guide treatment decisions are based on clinical factors and *C. difficile* characteristics. Although the gut microbiome plays a role in protecting against CDI, its effect on CDI disease severity is unclear and has not been incorporated into disease severity models. We demonstrated that variation in the microbiome of mice colonized with human feces yielded a range of disease outcomes. These results revealed groups of bacteria associated with both severe and mild *C. difficile* infection outcomes. Gut bacterial community data from patients with CDI could improve our ability to identify patients at risk of developing more severe disease and improve interventions which target *C. difficile* and the gut bacteria to reduce host damage.
+
+
 
 
 
@@ -8,27 +16,21 @@ YOUR PAPER'S ABSTRACT GOES HERE
 ### Overview
 
 	project
-	|- README          # the top level description of content (this doc)
-	|- CONTRIBUTING    # instructions for how to contribute to your project
-	|- LICENSE         # the license for this project
+	|- README         # the top level description of content (this doc)
+	|- CONTRIBUTING   # instructions for how to contribute to your project
+	|- LICENSE        # the license for this project
 	|
-	|- submission/
-	| |- study.Rmd    # executable Rmarkdown for this study, if applicable
-	| |- study.md     # Markdown (GitHub) version of the *.Rmd file
-	| |- study.tex    # TeX version of *.Rmd file
-	| |- study.pdf    # PDF version of *.Rmd file
-	| |- header.tex   # LaTeX header file to format pdf version of manuscript
-	| |- references.bib # BibTeX formatted references
-	| |- XXXX.csl     # csl file to format references for journal XXX
+	|- submission/	  # files for manuscript submission
 	|
 	|- data           # raw and primary data, are not changed once created
 	| |- references/  # reference files to be used in analysis
 	| |- raw/         # raw data, will not be altered
 	| |- mothur/      # mothur processed data
-	| +- process/     # cleaned data, will not be altered once created;
-	|                 # will be committed to repo
+	| +- process/     # cleaned data, will not be altered once created
 	|
 	|- code/          # any programmatic code
+	| |- ml/          # R scripts to run machine learning model and process data
+	| |- mothur/      # dir for local copy of mothur
 	|
 	|- results        # all output from workflows and analyses
 	| |- tables/      # text version of tables to be rendered with kable in R
@@ -54,7 +56,7 @@ YOUR PAPER'S ABSTRACT GOES HERE
 #### Running analysis
 
 ```
-git clone https://github.com/SchlossLab/LastName_BriefDescription_Journal_Year.git
+git clone https://github.com/SchlossLab/Lesniak_Severity_XXXX_2022.git
 make write.paper
 ```
 
