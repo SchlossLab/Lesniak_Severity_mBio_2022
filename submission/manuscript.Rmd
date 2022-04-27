@@ -186,3 +186,7 @@ Conceptualization: N.A.L., A.M.S., K.J.F., P.D.S.; Data curation: N.A.L., K.J.F.
 \hfill\break
 
 **Figure S4. Temporal dynamics of OTUs that differed between histopathologic summary score.** Relative abundance of OTUs on each day relative to the time of *C. difficile* challenge (Day 0) that have a significantly different temporal trend by the histopathologic summary score by LEfSe analysis. Median (points) and interquartile range (lines) are plotted. Points and lines are colored by infection outcome of moribund (colored black) or non-moribund with either a high histopathologic score (score greater than the median score of 5, colored green) or a low histopathologic summary score (score less than the median score of 5, colored light green).
+
+\hfill\break
+
+**Table S1. Demographic information of subjects whose stool samples used to colonize germ-free mice.**
