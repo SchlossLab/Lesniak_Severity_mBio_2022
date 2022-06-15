@@ -84,41 +84,64 @@ day_0_histology_features <- features_df %>%
 ###############################################################################
 # Features odds ratios
 day_0_toxin_OR_plot <- day_0_toxin_features %>%
-  ggplot(aes(x = reorder(taxa_label, median_coef), y = OR_outcome)) + 
+	mutate(color = ifelse(OR_outcome < 1, 'Toxin -', 'Toxin +')) %>% 
+  ggplot(aes(x = reorder(taxa_label, median_coef), y = OR_outcome,
+  		color = color)) + 
   	geom_hline(yintercept = 1, linetype = 'dashed') + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     coord_flip(ylim = c(0.94,1.05)) + 
     labs(x = NULL, y = 'Toxin activity odds ratio') +
+    scale_color_manual(breaks = c('Toxin -', 'Toxin +'),
+			values = c("#e4b5ff", "#6a45c2")) + 
     theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
+    theme(axis.text.y = ggtext::element_markdown(),
+    	legend.position = 'none')
 
 day_0_moribund_OR_plot <- day_0_moribund_features %>% 
-  ggplot(aes(x = reorder(taxa_label, median_coef), y = OR_outcome)) + 
+	mutate(color = ifelse(OR_outcome < 1, 'Non-moribund', 'Moribund')) %>% 
+  ggplot(aes(x = reorder(taxa_label, median_coef), y = OR_outcome,
+  		color = color)) + 
   	geom_hline(yintercept = 1, linetype = 'dashed') + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     coord_flip() + 
     labs(x = NULL, y = 'Moribundity odds ratio') +
+    scale_color_manual(breaks = c('Non-moribund', 'Moribund'),
+			values = c("4EBFA6", "#0c1b37")) + 
     theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
+    theme(axis.text.y = ggtext::element_markdown(),
+    	legend.position = 'none')
 
 day_0_hist_OR_plot <- day_0_histology_features %>% 
-  ggplot(aes(x = reorder(taxa_label, -median_coef), y = OR_outcome)) + 
+	group_by(taxa_label) %>% 
+	mutate(median_or = median(OR_outcome)) %>% 
+	mutate(color = ifelse(median_or < 1, 'Low histopathologic score', 
+				'High histopathologic score')) %>% 
+  ggplot(aes(x = reorder(taxa_label, -median_coef), y = OR_outcome, 
+  		color = color)) + 
   	geom_hline(yintercept = 1, linetype = 'dashed') + 
     stat_summary(fun.data = 'median_hilow', fun.args = (conf.int=0.5)) +
     coord_flip() + 
+    scale_color_manual(breaks = c('Low histopathologic score', 
+				'High histopathologic score'),
+			values = c("#62ebc9", "#399283")) + 
     labs(x = NULL, y = 'High histopathology odds ratio') +
     theme_bw() + 
-    theme(axis.text.y = ggtext::element_markdown())
+    theme(axis.text.y = ggtext::element_markdown(),
+    	legend.position = 'none')
 
 ###############################################################################
 #	save plot
 ###############################################################################
 ggsave(here('submission/Figure_5.tiff'),
 	plot_grid(
-		plot_grid(NULL, day_0_toxin_OR_plot, nrow = 1, rel_widths = c(1, 4.17)),
-		plot_grid(NULL, day_0_moribund_OR_plot, nrow = 1, rel_widths = c(1, 4.7)),
+		plot_grid(NULL, 
+			day_0_toxin_OR_plot, 
+			nrow = 1, rel_widths = c(1, 4.17)),
+		plot_grid(NULL, 
+			day_0_moribund_OR_plot, 
+			nrow = 1, rel_widths = c(1, 4.7)),
 		day_0_hist_OR_plot, 
 		ncol = 1, rel_heights = c(10, 17, 37), labels = c('A', 'B', 'C')),
 	height = 8, width = 4, unit = 'in',
-  compression = 'lzw')
+  compression = 'lzw', bg = 'white')
 ###############################################################################
