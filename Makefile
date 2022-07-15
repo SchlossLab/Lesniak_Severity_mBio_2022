@@ -45,10 +45,9 @@ $(PROC)metadata_tidy.tsv $(PROC)toxin_tidy.tsv $(PROC)histology_tidy.tsv $(PROC)
 	Rscript code/tidy_raw_data.R
 
 # get the fastq files
-#### UPDATE USING SRA to download fastqs into data/mothur ####
-#$(RAW)get_data : code/get_fastqs.sh $(MOTHUR)humanGF_cdiff.files
-#	bash code/get_fastqs.sh $(MOTHUR)humanGF_cdiff.files;\
-#	touch $(RAW)get_data
+$(RAW)get_data : code/get_fastqs.sh $(MOTHUR)SRR_Acc_List.txt
+	bash code/get_fastqs.sh\
+	touch $(RAW)get_data
 
 # build the files file. 
 $(MOTHUR)humanGF_cdiff.files : code/make_files_file.R $(RAW)human_source_tidy.tsv

@@ -4,43 +4,59 @@
 #
 # get_fastqs.sh
 #
-# Currently this pulls the fastq files from Joe's directory on Axiom. In the
-# future, we'll have to replace the cp command below with a pull out of the SRA,
-# convert to fastq, and decompression.
-#
-#
 # Dependencies...
-# * The *.files file out of the data/mothur/ directory
+#   SRA Toolkit installed
+#   Accession List file downloaded
+#       data/mothur/SRR_Acc_List.txt
 #
 # Output...
-# * Puts the listed fastq files into the data/raw folder
+#   data/mothur/*.fastq.gz
 #
 ################################################################################
 
-# the name of the files file that will be used in make.contigs
-FILES_FILE=$1
+################################################################################
+# Setup enviroment for download
+################################################################################
 
+# Following NIH SRA download guide - https://www.ncbi.nlm.nih.gov/sra/docs/sradownload/
+#   ensure SRA Toolkit is installed by running:
+which prefetch
 
-# where are the raw fastqs?
-ORIG_LOCATION=/mnt/EXT/Schloss-data/humanGF_cdiff_fastqs
+# Download Accession List file
+#   Goto https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP350240&o=acc_s%3Aa
+#   Download the Accession List file, which is a text file of all the SRR run ids
+#   Move Accession List file into /data/mothur
 
+################################################################################
+# Prepare directory for download
+################################################################################
 
-# where are we putting the fastqs?
-RAW_FOLDER=data/raw
+# set location for sequence files
+DATA=data/mothur
 
+# remove fastq files from raw dir
+rm $DATA/*.fastq
 
-# let's clean the fastq files out of the raw folder
-rm $RAW_FOLDER/*.fastq
+# check for Accession List file
+if test -f "$DATA/SRR_Acc_List.txt"; then
+    echo "$DATA/SRR_Acc_List.txt exists"
+else
+    echo "ERROR: $DATA/SRR_Acc_List.txt is missing. Check dependencies in code/get_fastqs.sh"
+    exit
+fi
 
+################################################################################
+# Download sequence data
+################################################################################
 
-# the second column of the files file contains the file names for read 1 and the
-# third column contains the file names for read 2
-FASTQ="$(cut -f 2 $FILES_FILE) $(cut -f 3 $FILES_FILE)"
-
-
-# cycle through the FASTQ file names and copy them from one place to the next
-for FILE in $FASTQ
+# For each SRR run file,
+# Prefetch, download, split and gzip each fastq 
+for sample in `cat $DATA/SRR_Acc_List.txt`
 do
-    echo $FILE
-    cp "$ORIG_LOCATION/$FILE" "$RAW_FOLDER"
+  echo $sample
+    prefetch $sample
+  fasterq-dump --split-files $sample -O $DATA
+
+    gzip -f $DATA/${sample}_1.fastq
+    gzip -f $DATA/${sample}_2.fastq
 done
