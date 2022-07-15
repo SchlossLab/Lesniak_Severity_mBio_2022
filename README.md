@@ -56,7 +56,7 @@ The severity of *Clostridioides difficile* infections (CDI) has increased over t
 #### Running analysis
 
 ```
-git clone https://github.com/SchlossLab/Lesniak_Severity_XXXX_2022.git
-make write.paper
+git clone https://github.com/SchlossLab/Lesniak_Severity_mBio_2022.git
+make submission/manuscript.pdf
 ```
 
